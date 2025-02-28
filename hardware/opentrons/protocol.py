@@ -26,10 +26,7 @@ from utils.load_save_functions import (
     save_results,
 )
 from utils.logger import Logger
-from utils.utils import (
-    play_sound,
-    calculate_average_in_column,
-)
+from utils.utils import play_sound, calculate_average_in_column
 
 
 class Protocol:
@@ -68,7 +65,7 @@ class Protocol:
         )
         self.opentrons_api.home()
         self.logger.info("Initialization finished.")
-        play_sound("Initialized.")
+        play_sound("Irem & Wojtek.")
 
     def calibrate(self):
         self.logger.info("Starting calibration...")
@@ -168,11 +165,7 @@ class Protocol:
         play_sound("DATA DATA.")
 
     def measure_same_well(self, well_id: str, repeat: int = 3):
-        drop_parameters = {
-            "drop_volume":12,
-            "max_measure_time": 30,
-            "flow_rate": 1
-        }
+        drop_parameters = {"drop_volume": 12, "max_measure_time": 30, "flow_rate": 1}
         for i in range(repeat):
             dynamic_surface_tension, drop_parameters = (
                 self.droplet_manager.measure_pendant_drop(
@@ -185,3 +178,20 @@ class Protocol:
             df.to_csv(
                 f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension_{i}.csv"
             )
+
+    def measure_plate(self, well_volume: float, solution_name: str, plate_location: int):
+        self.logger.info("Starting measure whole plate protocol...")
+        self.settings = load_settings()  # update settings
+        well_info = load_info(file_name=self.settings["WELL_INFO_FILENAME"])
+        wells_ids = well_info["location"].astype(str) + well_info["well"].astype(str)
+        self.logger.info("Filling plate with solution.")
+        self.right_pipette.fill_plate(well_volume=well_volume, solution_name=solution_name, plate_location=plate_location)
+        for i, well_id in enumerate(wells_ids):
+            self.left_pipette.measure_pendant_drop(
+                source=self.containers[well_id],
+                drop_volume=float(well_info["drop volume (uL)"][i]),
+                delay=60,
+                flow_rate=float(well_info["flow rate (uL/s)"][i]),
+                pendant_drop_camera=self.pendant_drop_camera
+            )
+        

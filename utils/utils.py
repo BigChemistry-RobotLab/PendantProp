@@ -20,3 +20,6 @@ def play_sound(text: str):
     engine = pyttsx3.init()
     engine.say(text)
     engine.runAndWait()
+
+
+

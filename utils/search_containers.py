@@ -37,3 +37,14 @@ def get_well_id_concentration(containers: dict, solution: str, requested_concent
             f"No container found with a higher concentration than requested."
         )
 
+
+def get_plate_ids(location: int):
+    # letters = ["A", "B", "C", "D", "E", "F", "G", "H"]
+    letters = ["A", "B"]
+    numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    well_ids = []
+    for letter in letters:
+        for number in numbers:
+            well_id = f"{location}{letter}{number}"
+            well_ids.append(well_id)
+    return well_ids

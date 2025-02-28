@@ -1,6 +1,6 @@
 from utils.logger import Logger
 from utils.load_save_functions import load_settings
-from utils.search_containers import get_well_id
+from utils.search_containers import get_well_id, get_plate_ids
 from hardware.opentrons.containers import *
 from hardware.opentrons.http_communications import OpentronsAPI
 from hardware.cameras import PendantDropCamera
@@ -567,6 +567,20 @@ class Pipette:
 
         # log end of serial dilution
         self.protocol_logger.info("End of serial dilution.")
+    
+    def fill_plate(self, well_volume: float, solution_name: str, plate_location: int):
+        well_id_stock = get_well_id(containers=self.CONTAINERS, solution=solution_name)
+        well_ids = get_plate_ids(location=plate_location)
+        self.pick_up_tip()
+
+        for well_id in well_ids:
+
+            self.transfer(
+                volume=well_volume,
+                source=self.CONTAINERS[well_id_stock],
+                destination=self.CONTAINERS[well_id],
+                touch_tip=True,
+            )
 
     def __str__(self):
         return f"""
