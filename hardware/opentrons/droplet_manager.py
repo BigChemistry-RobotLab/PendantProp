@@ -25,7 +25,10 @@ class DropletManager:
         incremental_decrease_vol = 1
         max_retries = 5
 
+        self.left_pipette.pick_up_tip()
+
         while not valid_droplet and drop_count <= max_retries:
+
             drop_volume = initial_volume - incremental_decrease_vol * (drop_count - 1)
             self.logger.info(f"Start measurment of pendant drop of {source.WELL_ID} with drop volume {drop_volume} uL and drop count {drop_count}.")
             self._make_pendant_drop(
@@ -53,7 +56,7 @@ class DropletManager:
                     last_st = 0
                     last_t = 0
                 if (
-                    last_st < 10 # or time.time() - start_time > last_t
+                    last_st < 20 # or time.time() - start_time > last_t
                 ):  # check if lower than 10 mN/m (not possible) or that the measure time becomes longer than the last recorded time of the droplet (i.e. no droplet is more found.)
                     self.logger.warning("No droplet detected, will remake droplet.")
                     drop_count += 1
@@ -74,6 +77,8 @@ class DropletManager:
         self._return_pendant_drop(
             source=source, drop_volume=drop_parameters["drop_volume"]
         )
+        self.left_pipette.drop_tip()
+
         # update drop parameters
         drop_parameters["drop_volume"] = drop_volume
         drop_parameters["drop_count"] = drop_count
@@ -87,7 +92,7 @@ class DropletManager:
     def _make_pendant_drop(
         self, source: Container, drop_volume: float, flow_rate: float, drop_count: int
     ):
-        self.left_pipette.pick_up_tip()
+
         self.left_pipette.mixing(container=source, mix=("before", 15, 3))
         self.left_pipette.aspirate(volume=15, source=source, flow_rate=5)
         self.left_pipette.air_gap(air_volume=5)
@@ -116,4 +121,3 @@ class DropletManager:
         self.logger.info("Re-aspirated the pendant drop into the tip.")
         self.left_pipette.dispense(volume=15, destination=source)
         self.logger.info("Returned volume in tip to source.")
-        self.left_pipette.drop_tip()

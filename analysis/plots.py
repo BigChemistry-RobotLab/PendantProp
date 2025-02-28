@@ -67,7 +67,7 @@ class Plotter:
             ax.set_title(f"Well ID: {well_id}, drop count: {drop_count}", fontsize=self.fontsize_labels)
             ax.grid(axis="y")
 
-            plt.savefig(f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension_plot.png")
+            plt.savefig(f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension_plot_{drop_count}.png")
             plt.savefig("server/static/plots_cache/dynamic_surface_tension_plot.png")
             plt.close(fig)
 

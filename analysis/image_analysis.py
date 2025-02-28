@@ -45,6 +45,7 @@ class PendantDropAnalysis:
 
         # Read the selected image file
         self.raw_image = cv2.imread(self.file_path)
+        return self.raw_image
 
     def load_raw_image(self, file_path: str):
         self.file_path = file_path
