@@ -92,9 +92,6 @@ def settings():
     settings["EXPLORE_POINTS"] = request.form.get("EXPLORE_POINTS")
     settings["EXPLOIT_POINTS"] = request.form.get("EXPLOIT_POINTS")
     settings["WELL_VOLUME"] = request.form.get("WELL_VOLUME")
-    settings["DYNAMIC_EQUILIBRATION_TIME"] = request.form.get(
-        "DYNAMIC_EQUILIBRATION_TIME"
-    )
 
     save_settings(settings)
     session["last_action"] = "Settings updated"

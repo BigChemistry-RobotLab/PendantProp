@@ -65,7 +65,7 @@ class Protocol:
         )
         self.opentrons_api.home()
         self.logger.info("Initialization finished.")
-        play_sound("Irem & Wojtek.")
+        play_sound("HASTA LA VISTA.")
 
     def calibrate(self):
         self.logger.info("Starting calibration...")

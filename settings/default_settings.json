@@ -6,12 +6,11 @@
     "EQUILIBRATION_TIME": 60,
     "FLOW_RATE": 1,
     "DENSITY": 0.99776,
-    "SCALE": "0.0026369648692579654",
+    "SCALE": "0.002599",
     "DILUTION_FACTOR": 2,
     "EXPLORE_POINTS": 8,
     "EXPLOIT_POINTS": 4,
     "WELL_VOLUME": 200,
-    "DYNAMIC_EQUILIBRATION_TIME": "True",
     "CONFIG_FILENAME": "default.csv",
     "UPLOAD_FOLDER": "/var/lib/jupyter/notebooks"
 }
