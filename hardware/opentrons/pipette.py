@@ -434,7 +434,7 @@ class Pipette:
         )
         for i in range(3):
             offset = self.OFFSET.copy()
-            offset["z"] = -7
+            offset["z"] = -3
             self.api.move_to_well(
                 pipette_id=self.PIPETTE_ID,
                 labware_id=sponge.LABWARE_ID,
@@ -528,6 +528,7 @@ class Pipette:
                 source=self.CONTAINERS[well_id_water],
                 destination=self.CONTAINERS[f"{row_id}{i+1}"],
                 touch_tip=True,
+                blow_out=True
             )
         self.drop_tip()
 
@@ -536,12 +537,13 @@ class Pipette:
         self.aspirate(
             volume=well_volume, source=self.CONTAINERS[well_id_solution]
         )
-        self.touch_tip(container=self.CONTAINERS[well_id_solution], repeat=3)
+        self.touch_tip(container=self.CONTAINERS[well_id_solution])
         self.dispense(
             volume=well_volume,
             destination=self.CONTAINERS[f"{row_id}1"],
             mix=("after", well_volume / 2, 5),
         )
+        self.blow_out(container=self.CONTAINERS[f"{row_id}1"])
 
         # serial dilution of surfactant
         for i in range(1, n_dilutions):
@@ -550,9 +552,13 @@ class Pipette:
             )
             self.dispense(
                 volume=well_volume,
-                destination=self.CONTAINERS[f"{row_id}{i+1}"],
+                destination=self.CONTAINERS[f"{row_id}{i+1}"]
+            )
+            self.mixing(
+                container=self.CONTAINERS[f"{row_id}{i+1}"],
                 mix=("after", well_volume / 2, 5),
             )
+            self.blow_out(container=self.CONTAINERS[f"{row_id}{i+1}"])
 
         # transfering half of the volume of the last well to trash to ensure equal volume in all wells
         self.aspirate(
@@ -567,7 +573,7 @@ class Pipette:
 
         # log end of serial dilution
         self.protocol_logger.info("End of serial dilution.")
-    
+
     def fill_plate(self, well_volume: float, solution_name: str, plate_location: int):
         well_id_stock = get_well_id(containers=self.CONTAINERS, solution=solution_name)
         well_ids = get_plate_ids(location=plate_location)

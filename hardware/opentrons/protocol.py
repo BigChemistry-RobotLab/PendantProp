@@ -181,17 +181,21 @@ class Protocol:
 
     def measure_plate(self, well_volume: float, solution_name: str, plate_location: int):
         self.logger.info("Starting measure whole plate protocol...")
+        self.droplet_manager.set_max_retries = 1
         self.settings = load_settings()  # update settings
         well_info = load_info(file_name=self.settings["WELL_INFO_FILENAME"])
         wells_ids = well_info["location"].astype(str) + well_info["well"].astype(str)
         self.logger.info("Filling plate with solution.")
         self.right_pipette.fill_plate(well_volume=well_volume, solution_name=solution_name, plate_location=plate_location)
+        self.logger.info("Done filling plate.")
+
         for i, well_id in enumerate(wells_ids):
-            self.left_pipette.measure_pendant_drop(
+            drop_parameters = {
+                "drop_volume": float(well_info["drop volume (uL)"][i]),
+                "max_measure_time": float(self.settings["EQUILIBRATION_TIME"]),
+                "flow_rate": float(well_info["flow rate (uL/s)"][i]),
+            }
+            self.droplet_manager.measure_pendant_drop(
                 source=self.containers[well_id],
-                drop_volume=float(well_info["drop volume (uL)"][i]),
-                delay=60,
-                flow_rate=float(well_info["flow rate (uL/s)"][i]),
-                pendant_drop_camera=self.pendant_drop_camera
+                drop_parameters=drop_parameters
             )
-        

@@ -15,6 +15,14 @@ class DropletManager:
         self.opentrons_api = opentrons_api
         self.plotter = plotter
         self.logger = logger
+        self.max_retries = 5
+        self.incremental_decrease_vol = 0.5
+
+    def set_max_retries(self, retries: int):
+        self.max_retries = retries
+
+    def set_incremental_decrease_vol(self, delta_vol: float):
+        self.incremental_decrease_vol = delta_vol
 
     def measure_pendant_drop(
         self, source: Container, drop_parameters: dict, calibrate=False
@@ -22,14 +30,11 @@ class DropletManager:
         drop_count = 1
         valid_droplet = False
         initial_volume = drop_parameters["drop_volume"]
-        incremental_decrease_vol = 1
-        max_retries = 5
-
         self.left_pipette.pick_up_tip()
 
-        while not valid_droplet and drop_count <= max_retries:
+        while not valid_droplet and drop_count <= self.max_retries:
 
-            drop_volume = initial_volume - incremental_decrease_vol * (drop_count - 1)
+            drop_volume = initial_volume - self.incremental_decrease_vol * (drop_count - 1)
             self.logger.info(f"Start measurment of pendant drop of {source.WELL_ID} with drop volume {drop_volume} uL and drop count {drop_count}.")
             self._make_pendant_drop(
                 source=source,
@@ -56,7 +61,7 @@ class DropletManager:
                     last_st = 0
                     last_t = 0
                 if (
-                    last_st < 20 # or time.time() - start_time > last_t
+                    last_st < 25 # or time.time() - start_time > last_t
                 ):  # check if lower than 10 mN/m (not possible) or that the measure time becomes longer than the last recorded time of the droplet (i.e. no droplet is more found.)
                     self.logger.warning("No droplet detected, will remake droplet.")
                     drop_count += 1
@@ -70,7 +75,7 @@ class DropletManager:
 
         if not valid_droplet:
             self.logger.warning(
-                f"Failed to create valid droplet for {source.WELL_ID} after {max_retries} attempts."
+                f"Failed to create valid droplet for {source.WELL_ID} after {self.max_retries} attempts."
             )
 
         self.pendant_drop_camera.stop_capture()
@@ -94,7 +99,7 @@ class DropletManager:
     ):
 
         self.left_pipette.mixing(container=source, mix=("before", 15, 3))
-        self.left_pipette.aspirate(volume=15, source=source, flow_rate=5)
+        self.left_pipette.aspirate(volume=15, source=source, flow_rate=15)
         self.left_pipette.air_gap(air_volume=5)
         self.left_pipette.clean_tip()
         self.left_pipette.remove_air_gap(at_drop_stage=True)

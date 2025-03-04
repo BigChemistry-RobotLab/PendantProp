@@ -39,8 +39,8 @@ def get_well_id_concentration(containers: dict, solution: str, requested_concent
 
 
 def get_plate_ids(location: int):
-    # letters = ["A", "B", "C", "D", "E", "F", "G", "H"]
-    letters = ["A", "B"]
+    letters = ["A", "B", "C", "D", "E", "F", "G", "H"]
+    # letters = ["A", "B"]
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     well_ids = []
     for letter in letters:

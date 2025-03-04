@@ -50,12 +50,6 @@
         <label for="WELL_VOLUME">Well volume (µL):</label>
         <input type="float" id="WELL_VOLUME" name="WELL_VOLUME" value="{{ settings.WELL_VOLUME }}" required>
         <br>
-        <label for="DYNAMIC_EQUILIBRATION_TIME">Dynamic equilibration time:</label>
-        <select id="DYNAMIC_EQUILIBRATION_TIME" name="DYNAMIC_EQUILIBRATION_TIME" required>
-        <option value="True" {% if settings.DYNAMIC_EQUILIBRATION_TIME == 'True' %}selected{% endif %}>True</option>
-        <option value="False" {% if settings.DYNAMIC_EQUILIBRATION_TIME == 'False' %}selected{% endif %}>False</option>
-        </select>
-        <br>
         <br>
         <button type="submit">Update settings</button>
     </form>
