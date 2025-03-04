@@ -357,7 +357,7 @@ class OpentronsAPI:
         well: str,
         depth: float = 0,
         offset: dict = dict(x=0, y=0, z=0),
-        flow_rate=200,
+        flow_rate=50,
         intent="setup",
     ):
         offset["z"] = depth + offset["z"]

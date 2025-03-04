@@ -136,6 +136,7 @@ class Protocol:
                 drop_volume_suggestion = suggest_volume(
                     results=self.results,
                     next_concentration=float(self.containers[well_id].concentration),
+                    solution_name=surfactant
                 )
                 drop_parameters = {
                     "drop_volume": drop_volume_suggestion,

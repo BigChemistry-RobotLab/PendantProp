@@ -4,16 +4,15 @@ from numpyro import infer
 from sklearn.feature_selection import mutual_info_regression
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
+import pandas as pd
 
 from utils.logger import Logger
 from utils.data_processing import smooth
 
 
-
 class ActiveLearner:
-    def __init__(self, model = None, parameters: list = None, resolution: int = 1000):
-        
-        
+    def __init__(self, model, parameters: list, logger: Logger, resolution: int = 1000):
+
         self.key = random.PRNGKey(42)
         self.model = model
         self.parameters = parameters
@@ -23,22 +22,26 @@ class ActiveLearner:
         self.tolerance = 4
         self.obs = None
         self.post_pred = None
-        self.x_new = None        
-    
-        self.logger = Logger(name="analysis", file_path="C:/Users/pim/Documents/PhD/Code/PendantProp") #TODO relative folder
-
-    
-        if self.model == None:
-            self.logger.error("analysis: no model given!")
-
-        if self.parameters == None:
-            self.logger.error("analysis: no parameters given!")
+        self.x_new = None
+        self.logger = logger        
 
         # plot settings
-        plt.rc("text", usetex=True)
+        # plt.rc("text", usetex=True)
+
+    def suggest(self, results: pd.DataFrame, solution_name: str, outlier_check = False):
+        results_solution = results.loc[results["solution"] == solution_name]
+        x_obs = results_solution["concentration"].to_numpy() / 1000
+        y_obs = results_solution["surface tension eq. (mN/m)"].to_numpy() / 1000
+        obs = (x_obs, y_obs)
+        self.fit(obs=obs, outlier_check=outlier_check)
+        suggested_concentration, st_at_suggested_concentration = self.bayesian_suggestion()
+        # self.plot_suggestion(x_suggestion=suggested_concentration)
+        suggested_concentration = float(suggested_concentration[0] * 1000) # back to mM
+        st_at_suggested_concentration = float(st_at_suggested_concentration[0] * 1000) # back to mN/m
+        
+        return suggested_concentration, st_at_suggested_concentration
 
     def fit(self, obs: tuple, outlier_check = False):
-
 
         key, key_ = random.split(self.key)
         kernel = infer.NUTS(self.model, step_size=0.2)
@@ -48,7 +51,6 @@ class ActiveLearner:
         x_obs, y_obs = self.obs
         mcmc.run(key_, x_obs=x_obs, y_obs=y_obs)
         self.logger.info("analysis: fitting model to data")
-        # mcmc.print_summary()
         posterior_samples = mcmc.get_samples()
 
         observables = ["obs"]
@@ -81,7 +83,7 @@ class ActiveLearner:
                 idx_max_difference = jnp.argmax(differences)
                 if differences[idx_max_difference] > self.tolerance * st_std[idx_max_difference]:
                     no_outlier = False
-                    self.logger.info(
+                    self.logger.warning(
                         f"analysis: outlier detected at {x_obs[idx_max_difference]}, datapoint {idx_max_difference}"
                     )
                     x_obs = jnp.delete(x_obs, idx_max_difference)
@@ -127,7 +129,7 @@ class ActiveLearner:
         idx = peaks[jnp.argsort(U_of_interest[peaks])][-n_suggestions:]
         x_suggestion = self.x_new[idx]
         st_at_suggestion = self.post_pred["obs"][:, idx].mean(axis=0)
-        
+
         return x_suggestion, st_at_suggestion
 
     def plot_fit(self, filename: str = "test"):
@@ -147,8 +149,8 @@ class ActiveLearner:
         ax.set_xscale("log")
         ax.set_xlabel("concentration (mM)", fontsize = 15)
         ax.set_ylabel("surface tension (mN/m)", fontsize = 15)
-        file_path = f"C:/Users/pim/Documents/PhD/Code/PendantProp/graphic/{filename}.png" #TODO exp folder + relative file name
-        fig.savefig(file_path, dpi=1200)
+        filename = f"{filename}.png"
+        fig.savefig(filename, dpi=400)
 
         self.logger.info("analysis: plotted fit")
 
@@ -162,7 +164,7 @@ class ActiveLearner:
         ax1.scatter(x_obs*1000, y_obs*1000, c="C1", label="observed")
         for x in x_suggestion:
             ax1.axvline(x=x*1000, color="C2", linestyle='--', label="suggestion")
-        
+
         # mutual information
         U_total = jnp.zeros(self.post_pred["obs"].shape[1])
         for parameter in self.parameters:
@@ -177,7 +179,7 @@ class ActiveLearner:
             U_total += U
             ax2.plot(self.x_new*1000, U, label=parameter, alpha=0.5)
         ax2.plot(self.x_new*1000, U_total, label="total", alpha=0.5)
-        
+
         # settings
         ax1.set_ylim(20, 80)
         ax1.set_ylabel(r"ST (mN/m)", fontsize=15)
@@ -186,12 +188,12 @@ class ActiveLearner:
         ax2.set_ylabel(r"Mutual Information", fontsize=15)
         ax2.legend()
         ax1.legend()
-        file_path = f"C:/Users/pim/Documents/PhD/Code/PendantProp/graphic/{filename}.png" #TODO exp folder + relative file name
-        fig.savefig(file_path, dpi=1200)
+        filename = f"{filename}.png" 
+        fig.savefig(filename, dpi=600)
 
     def get_properties(self):
         if self.post_pred == None:
-            self.logger.error("analysis: model was not fitted on data!")
+            self.logger.info("analysis: model was not fitted on data!")
         properties = {}
         for parameter in self.parameters:
             prop_mean = self.post_pred[parameter].mean(axis=0)

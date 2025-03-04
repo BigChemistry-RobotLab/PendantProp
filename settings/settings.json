@@ -1,7 +1,7 @@
 {
     "ROBOT_IP": "169.254.220.146",
     "ROBOT_TYPE": "OT2",
-    "EXPERIMENT_NAME": "AULAB_PSP0066",
+    "EXPERIMENT_NAME": "test_AL",
     "DROP_VOLUME": "6",
     "EQUILIBRATION_TIME": "120",
     "FLOW_RATE": "0.3",
@@ -11,9 +11,9 @@
     "EXPLORE_POINTS": "8",
     "EXPLOIT_POINTS": "4",
     "WELL_VOLUME": "150",
-    "CONFIG_FILENAME": "layout_characterization.csv",
+    "CONFIG_FILENAME": "layout_characterization_AL.csv",
     "UPLOAD_FOLDER": "/var/lib/jupyter/notebooks",
     "WELL_INFO_FILENAME": "well_info_measure_plate.csv",
     "CHARACTERIZATION_INFO_FILENAME": "characterization_info.csv",
-    "GIT_COMMIT_HASH": "1c9c11c6e19c95a1ebd2ea358a8f77037ef6ad0b"
+    "GIT_COMMIT_HASH": "0190e12c5f61e89204c24448f7bd43973a32f63e"
 }

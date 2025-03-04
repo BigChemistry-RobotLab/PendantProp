@@ -15,7 +15,7 @@ class Plotter:
         self.window_size = 20
         self.logger = Logger(
             name="protocol",
-            file_path=f'experiments/{self.settings['EXPERIMENT_NAME']}/meta_data',
+            file_path=f"experiments/{self.settings['EXPERIMENT_NAME']}/meta_data",
         )
 
     def plot_results_well_id(self, df: pd.DataFrame):
