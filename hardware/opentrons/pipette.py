@@ -1,6 +1,6 @@
 from utils.logger import Logger
 from utils.load_save_functions import load_settings
-from utils.search_containers import get_well_id, get_plate_ids
+from utils.search_containers import get_well_id_solution, get_plate_ids
 from hardware.opentrons.containers import *
 from hardware.opentrons.http_communications import OpentronsAPI
 from hardware.cameras import PendantDropCamera
@@ -452,141 +452,83 @@ class Pipette:
         self.protocol_logger.info("Pipette tip cleaned on sponge.")
         sponge.update_well()
 
-    def measure_pendant_drop(
-        self,
-        source: Container,
-        drop_volume: float,
-        delay: float,
-        flow_rate: float,
-        pendant_drop_camera: PendantDropCamera,
-        depth_offset: float = -23.4,
-        calibrate = False
-    ):
-        if self.PIPETTE_NAME != "p20_single_gen2":
-            self.protocol_logger.error(
-                f"Wrong pipette is given. Expected p20_single_gen2 but got {self.PIPETTE_NAME}."
-            )
-            return
-        self.protocol_logger.info(f"Start pendant drop measurement of {source.WELL_ID}, containing {source.concentration} mM {source.solution_name}")
-        if self.has_tip == False:
-            self.pick_up_tip()
-        self.mixing(container=source, mix=("before", 15, 3))
-        self.aspirate(volume=15, source=source, flow_rate=flow_rate)
-        self.air_gap(air_volume=5)
-        self.clean_tip()
-        self.remove_air_gap(at_drop_stage=True)
-        pendant_drop_camera.initialize_measurement(well_id=source.WELL_ID)
-        pendant_drop_camera.start_stream()
-        self.dispense(
-            volume=drop_volume,
-            destination=self.CONTAINERS["drop_stage"],
-            depth_offset=depth_offset,
-            flow_rate=flow_rate,
-            log=False,
-            update_info=False
-        )
-        pendant_drop_camera.start_capture()
-        self.api.delay(seconds=delay)
-        pendant_drop_camera.stop_capture()
-        pendant_drop_camera.stop_stream()
-        self.aspirate(
-            volume=drop_volume,
-            source=self.CONTAINERS["drop_stage"],
-            depth_offset=depth_offset,
-            log=False,
-            update_info=False
-        )  # aspirate drop in tip
-        self.protocol_logger.info("Re-aspirated the pendant drop into the tip.")
-        self.dispense(volume=15, destination=source)  # return liquid to source
-        self.protocol_logger.info("Returned volume in tip to source.")
-        self.drop_tip()
-        self.protocol_logger.info("Done with pendant drop measurement.")
-        if calibrate:
-            return pendant_drop_camera.scale_t
-        else:
-            return pendant_drop_camera.st_t
+    # def serial_dilution(
+    #     self, row_id: str, solution_name: str, n_dilutions: int, well_volume: float
+    # ):
+    #     # find relevant well id's
+    #     well_id_trash = get_well_id_solution(
+    #         containers=self.CONTAINERS, solution_name="trash"
+    #     )  # well ID liquid waste
+    #     well_id_water = get_well_id_solution(
+    #         containers=self.CONTAINERS, solution_name="water"
+    #     )  # well ID water stock
+    #     well_id_solution = get_well_id_solution(
+    #         containers=self.CONTAINERS, solution_name=solution_name
+    #     )
 
-    def serial_dilution(self, row_id: str, solution_name: str, n_dilutions: int, well_volume: float):
-        # find relevant well id's
-        well_id_trash = get_well_id(containers=self.CONTAINERS, solution="trash") # well ID liquid waste
-        well_id_water = get_well_id(containers=self.CONTAINERS, solution="water") # well ID water stock
-        well_id_solution = get_well_id(containers=self.CONTAINERS, solution=solution_name)
+    #     # log start of serial dilution
+    #     self.protocol_logger.info(
+    #         f"Start of serial dilution of {solution_name} in row {row_id}, with {n_dilutions} dilutions."
+    #     )
 
-        # log start of serial dilution
-        self.protocol_logger.info(
-            f"Start of serial dilution of {solution_name} in row {row_id}, with {n_dilutions} dilutions."
-        )
+    #     # pick up tip if pipette has no tip
+    #     if self.has_tip == False:
+    #         self.pick_up_tip()
 
-        # pick up tip if pipette has no tip
-        if self.has_tip == False:
-            self.pick_up_tip()
+    #     # adding water to all wells
+    #     for i in range(n_dilutions):
+    #         self.transfer(
+    #             volume=well_volume,
+    #             source=self.CONTAINERS[well_id_water],
+    #             destination=self.CONTAINERS[f"{row_id}{i+1}"],
+    #             touch_tip=True,
+    #             blow_out=True,
+    #         )
+    #     self.drop_tip()
 
-        # adding water to all wells
-        for i in range(n_dilutions):
-            self.transfer(
-                volume=well_volume,
-                source=self.CONTAINERS[well_id_water],
-                destination=self.CONTAINERS[f"{row_id}{i+1}"],
-                touch_tip=True,
-                blow_out=True
-            )
-        self.drop_tip()
+    #     # adding surfactant to the first well
+    #     self.pick_up_tip()
+    #     self.aspirate(volume=well_volume, source=self.CONTAINERS[well_id_solution])
+    #     self.touch_tip(container=self.CONTAINERS[well_id_solution])
+    #     self.dispense(
+    #         volume=well_volume,
+    #         destination=self.CONTAINERS[f"{row_id}1"],
+    #         mix=("after", well_volume / 2, 5),
+    #     )
+    #     self.blow_out(container=self.CONTAINERS[f"{row_id}1"])
 
-        # adding surfactant to the first well
-        self.pick_up_tip()
-        self.aspirate(
-            volume=well_volume, source=self.CONTAINERS[well_id_solution]
-        )
-        self.touch_tip(container=self.CONTAINERS[well_id_solution])
-        self.dispense(
-            volume=well_volume,
-            destination=self.CONTAINERS[f"{row_id}1"],
-            mix=("after", well_volume / 2, 5),
-        )
-        self.blow_out(container=self.CONTAINERS[f"{row_id}1"])
+    #     # serial dilution of surfactant
+    #     for i in range(1, n_dilutions):
+    #         self.aspirate(
+    #             volume=well_volume,
+    #             source=self.CONTAINERS[f"{row_id}{i}"],
+    #             touch_tip=True,
+    #         )
+    #         self.dispense(
+    #             volume=well_volume, destination=self.CONTAINERS[f"{row_id}{i+1}"]
+    #         )
+    #         self.mixing(
+    #             container=self.CONTAINERS[f"{row_id}{i+1}"],
+    #             mix=("after", well_volume / 2, 5),
+    #         )
+    #         self.blow_out(container=self.CONTAINERS[f"{row_id}{i+1}"])
 
-        # serial dilution of surfactant
-        for i in range(1, n_dilutions):
-            self.aspirate(
-                volume=well_volume, source=self.CONTAINERS[f"{row_id}{i}"], touch_tip=True
-            )
-            self.dispense(
-                volume=well_volume,
-                destination=self.CONTAINERS[f"{row_id}{i+1}"]
-            )
-            self.mixing(
-                container=self.CONTAINERS[f"{row_id}{i+1}"],
-                mix=("after", well_volume / 2, 5),
-            )
-            self.blow_out(container=self.CONTAINERS[f"{row_id}{i+1}"])
+    #     # transfering half of the volume of the last well to trash to ensure equal volume in all wells
+    #     self.aspirate(
+    #         volume=well_volume,
+    #         source=self.CONTAINERS[f"{row_id}{n_dilutions}"],
+    #         touch_tip=True,
+    #     )
+    #     self.dispense(
+    #         volume=well_volume,
+    #         destination=self.CONTAINERS[well_id_trash],
+    #         touch_tip=True,
+    #         update_info=False,
+    #     )
+    #     self.drop_tip()
 
-        # transfering half of the volume of the last well to trash to ensure equal volume in all wells
-        self.aspirate(
-            volume=well_volume,
-            source=self.CONTAINERS[f"{row_id}{n_dilutions}"],
-            touch_tip=True,
-        )
-        self.dispense(
-            volume=well_volume, destination=self.CONTAINERS[well_id_trash], touch_tip=True, update_info=False
-        )
-        self.drop_tip()
-
-        # log end of serial dilution
-        self.protocol_logger.info("End of serial dilution.")
-
-    def fill_plate(self, well_volume: float, solution_name: str, plate_location: int):
-        well_id_stock = get_well_id(containers=self.CONTAINERS, solution=solution_name)
-        well_ids = get_plate_ids(location=plate_location)
-        self.pick_up_tip()
-
-        for well_id in well_ids:
-
-            self.transfer(
-                volume=well_volume,
-                source=self.CONTAINERS[well_id_stock],
-                destination=self.CONTAINERS[well_id],
-                touch_tip=True,
-            )
+    #     # log end of serial dilution
+    #     self.protocol_logger.info("End of serial dilution.")
 
     def __str__(self):
         return f"""

@@ -8,12 +8,12 @@
     "DENSITY": "0.99776",
     "SCALE": "0.002599",
     "DILUTION_FACTOR": "2",
-    "EXPLORE_POINTS": "8",
+    "EXPLORE_POINTS": "12",
     "EXPLOIT_POINTS": "4",
     "WELL_VOLUME": "150",
     "CONFIG_FILENAME": "layout_characterization_AL.csv",
     "UPLOAD_FOLDER": "/var/lib/jupyter/notebooks",
     "WELL_INFO_FILENAME": "well_info_measure_plate.csv",
     "CHARACTERIZATION_INFO_FILENAME": "characterization_info.csv",
-    "GIT_COMMIT_HASH": "0190e12c5f61e89204c24448f7bd43973a32f63e"
+    "GIT_COMMIT_HASH": "1a13cf350c2afeb564ea5a8ab82aa557061defed"
 }

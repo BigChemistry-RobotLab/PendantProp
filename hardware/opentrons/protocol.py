@@ -13,6 +13,7 @@ from analysis.plots import Plotter
 from analysis.utils import suggest_volume
 from hardware.opentrons.http_communications import OpentronsAPI
 from hardware.opentrons.droplet_manager import DropletManager
+from hardware.opentrons.formulater import Formulater
 from hardware.opentrons.configuration import Configuration
 from hardware.opentrons.containers import Container
 from hardware.cameras import PendantDropCamera
@@ -62,6 +63,12 @@ class Protocol:
             opentrons_api=self.opentrons_api,
             plotter=self.plotter,
             logger=self.logger,
+        )
+        self.formulater = Formulater(
+            left_pipette=self.left_pipette,
+            right_pipette=self.right_pipette,
+            containers=self.containers,
+            logger=self.logger
         )
         self.opentrons_api.home()
         self.logger.info("Initialization finished.")
@@ -125,7 +132,7 @@ class Protocol:
 
         for i, surfactant in enumerate(characterization_info["surfactant"]):
             row_id = characterization_info["row id"][i]
-            self.right_pipette.serial_dilution(
+            self.formulater.serial_dilution(
                 row_id=row_id,
                 solution_name=surfactant,
                 n_dilutions=explore_points,
@@ -186,9 +193,7 @@ class Protocol:
         self.settings = load_settings()  # update settings
         well_info = load_info(file_name=self.settings["WELL_INFO_FILENAME"])
         wells_ids = well_info["location"].astype(str) + well_info["well"].astype(str)
-        self.logger.info("Filling plate with solution.")
-        self.right_pipette.fill_plate(well_volume=well_volume, solution_name=solution_name, plate_location=plate_location)
-        self.logger.info("Done filling plate.")
+        self.formulater.fill_plate(well_volume=well_volume, solution_name=solution_name, plate_location=plate_location)
 
         for i, well_id in enumerate(wells_ids):
             drop_parameters = {

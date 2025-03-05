@@ -1,12 +1,12 @@
 import numpy as np
 
-def get_well_id(containers: dict, solution: str) -> str:
+def get_well_id_solution(containers: dict, solution_name: str) -> str:
     for key, container in containers.items():
         if "tube" in container.CONTAINER_TYPE:
-            if container.solution_name == solution:
+            if container.solution_name == solution_name:
                 return container.WELL_ID
     raise ValueError(
-        f"No container with type 'tube' and solution name '{solution}' found."
+        f"No container with type 'tube' and solution name '{solution_name}' found."
     )
 
 
