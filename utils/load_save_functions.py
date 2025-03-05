@@ -86,6 +86,7 @@ def initialize_results():
             "well id",
             "solution",
             "concentration",
+            "point type",
             "surface tension eq. (mN/m)",
             "drop count",
             "drop volume (uL)",
@@ -106,6 +107,7 @@ def load_info(file_name: str):
 
 def append_results(
     results: pd.DataFrame,
+    point_type: str,
     dynamic_surface_tension: list,
     well_id: str,
     drop_parameters: dict,
@@ -122,6 +124,7 @@ def append_results(
         )
         results = add_data_to_results(
             results=results,
+            point_type=point_type,
             well_id=well_id,
             surface_tension_eq=st_eq,
             drop_parameters=drop_parameters,
@@ -145,6 +148,7 @@ def save_dynamic_surface_tension(dynamic_surface_tension, well_id):
 
 def add_data_to_results(
     results: pd.DataFrame,
+    point_type: str,
     well_id: str,
     surface_tension_eq: float,
     drop_parameters: dict,
@@ -158,6 +162,7 @@ def add_data_to_results(
             "well id": [well_id],
             "solution": [container.solution_name],
             "concentration": [container.concentration],
+            "point type": [point_type],
             "surface tension eq. (mN/m)": [surface_tension_eq],
             "drop count": [drop_parameters["drop_count"]],
             "drop volume (uL)": [drop_parameters["drop_volume"]],

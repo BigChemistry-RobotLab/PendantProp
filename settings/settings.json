@@ -8,7 +8,7 @@
     "DENSITY": "0.99776",
     "SCALE": "0.002599",
     "DILUTION_FACTOR": "2",
-    "EXPLORE_POINTS": "12",
+    "EXPLORE_POINTS": "8",
     "EXPLOIT_POINTS": "4",
     "WELL_VOLUME": "150",
     "CONFIG_FILENAME": "layout_characterization_AL.csv",

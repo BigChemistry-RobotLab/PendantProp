@@ -3,7 +3,10 @@ from analysis.active_learning import ActiveLearner
 from analysis.models import szyszkowski_model
 parameters = ["cmc", "gamma_max", "Kad"]
 results = pd.read_csv("results.csv")
-active_learner = ActiveLearner(model=szyszkowski_model, parameters=parameters)
-c, st = active_learner.suggest(results=results, solution_name="SDS_2")
-print(c)
-print(type(c))
+point_types = results["point type"]
+explore_points = results[point_types == "explore"]
+print(explore_points)
+# active_learner = ActiveLearner(model=szyszkowski_model, parameters=parameters)
+# c, st = active_learner.suggest(results=results, solution_name="SDS_2")
+# print(c)
+# print(type(c))

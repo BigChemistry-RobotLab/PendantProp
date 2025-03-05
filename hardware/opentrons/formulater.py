@@ -23,30 +23,47 @@ class Formulater:
 
     def formulate_exploit_point(
         self,
-        suggest_c: float,
+        suggest_concentration: float,
         solution_name: str,
         well_volume: float,
         well_id_exploit: str,
     ):
         self.logger.info(
-            f"Formulating exploit point with concentration {suggest_c} mM, at well ID {well_id_exploit}."
+            f"Formulating exploit point with concentration {suggest_concentration} mM, at well ID {well_id_exploit}."
         )
         well_id_source = get_well_id_concentration(
             containers=self.containers,
             solution=solution_name,
-            requested_concentration=suggest_c,
+            requested_concentration=suggest_concentration,
         )
-        well_id_water = get_well_id_solution(
-            containers=self.containers, solution_name="water"
+
+        volume_source, volume_water = self._calculate_volumes_exploit(
+            suggest_concentration=suggest_concentration,
+            well_id_source=well_id_source,
+            well_volume=well_volume,
         )
-        ratio = suggest_c / float(self.containers[well_id_source].concentration)
-        volume_source = ratio * well_volume
+
+        if volume_source > self.containers[well_id_source].volume_mL * 1000:
+            # TODO take one concentration lower instead of stock
+            well_id_source = get_well_id_solution(
+                containers=self.containers, solution_name=solution_name
+            )
+            # recalculate if aspiration volume was too big for the container
+            volume_source, volume_water = self._calculate_volumes_exploit(
+                suggest_concentration=suggest_concentration,
+                well_id_source=well_id_source,
+                well_volume=well_volume,
+            )
+
         self._transfer(
             volume=volume_source,
             source=self.containers[well_id_source],
             destination=self.containers[well_id_exploit],
         )
-        volume_water = well_volume - volume_source
+
+        well_id_water = get_well_id_solution(
+            containers=self.containers, solution_name="water"
+        )
         self._transfer(
             volume=volume_water,
             source=self.containers[well_id_water],
@@ -54,6 +71,16 @@ class Formulater:
             mix=("after", well_volume / 2, 5),
         )
         self.logger.info("Finished formulating exploit point.")
+
+    def _calculate_volumes_exploit(
+        self, suggest_concentration: float, well_id_source: str, well_volume: float
+    ):
+        ratio = suggest_concentration / float(
+            self.containers[well_id_source].concentration
+        )
+        volume_source = ratio * well_volume
+        volume_water = well_volume - volume_source
+        return volume_source, volume_water
 
     def _transfer(
         self, volume: float, source: Container, destination: Container, mix=None
