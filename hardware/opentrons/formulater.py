@@ -83,7 +83,7 @@ class Formulater:
         return volume_source, volume_water
 
     def _transfer(
-        self, volume: float, source: Container, destination: Container, mix=None
+        self, volume: float, source: Container, destination: Container, mix=None, drop_tip = True
     ):
         if volume < 20:
             pipette = self.left_pipette
@@ -104,8 +104,8 @@ class Formulater:
         )
         if mix:
             pipette.mixing(container=destination, mix=mix)
-
-        pipette.drop_tip()
+        if drop_tip:
+            pipette.drop_tip()
 
     def serial_dilution(
         self, row_id: str, solution_name: str, n_dilutions: int, well_volume: float
@@ -192,11 +192,13 @@ class Formulater:
             containers=self.containers, solution_name=solution_name
         )
         well_ids = get_plate_ids(location=plate_location)
+        self.right_pipette.pick_up_tip()
         for well_id in well_ids:
             self._transfer(
                 volume=well_volume,
                 source=self.containers[well_id_stock],
                 destination=self.containers[well_id],
-                touch_tip=True,
+                drop_tip=False
             )
+        self.right_pipette.drop_tip()
         self.logger.info("Done filling plate.")

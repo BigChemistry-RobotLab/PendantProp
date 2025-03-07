@@ -15,8 +15,8 @@ class DropletManager:
         self.opentrons_api = opentrons_api
         self.plotter = plotter
         self.logger = logger
-        self.max_retries = 5
-        self.incremental_decrease_vol = 0.5
+        self.max_retries = 2
+        self.incremental_decrease_vol = 0
 
     def set_max_retries(self, retries: int):
         self.max_retries = retries
