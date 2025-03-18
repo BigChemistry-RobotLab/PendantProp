@@ -357,8 +357,8 @@ class Pipette:
             return
 
         if air_volume + self.volume > self.MAX_VOLUME:
-            self.protocol_logger.error("Air gap exceeds pipette capacity!")
-            return
+            self.protocol_logger.warning("Air gap exceeds pipette capacity!")
+            # return
 
         if self.last_source == None:
             self.protocol_logger.error(

@@ -1,5 +1,6 @@
 import warnings
 import pandas as pd
+import numpy as np
 
 # Suppress the specific FutureWarning of Pandas
 warnings.filterwarnings(
@@ -218,19 +219,27 @@ class Protocol:
         play_sound("DATA DATA.")
 
     def measure_same_well(self, well_id: str, repeat: int = 3):
-        drop_parameters = {"drop_volume": 12, "max_measure_time": 30, "flow_rate": 1}
+        drop_parameters = {"drop_volume": 11, "max_measure_time": 30, "flow_rate": 0.3}
+        mean_sts = []
         for i in range(repeat):
             dynamic_surface_tension, drop_parameters = (
                 self.droplet_manager.measure_pendant_drop(
                     source=self.containers[well_id], drop_parameters=drop_parameters
                 )
             )
+            mean_sts.append(np.mean(dynamic_surface_tension[-1][:]))
             df = pd.DataFrame(
                 dynamic_surface_tension, columns=["time (s)", "surface tension (mN/m)"]
             )
             df.to_csv(
                 f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension_{i}.csv"
             )
+        mean_st_data = pd.DataFrame(mean_sts, columns=["mean_surface_tension (mN/m)"])
+        mean_st_data.to_csv(
+            f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/mean_surface_tension.csv"
+        )
+        if self.left_pipette.has_tip:
+            self.left_pipette.drop_tip()
 
     def measure_plate(self, well_volume: float, solution_name: str, plate_location: int):
         # TODO save results correctly!
