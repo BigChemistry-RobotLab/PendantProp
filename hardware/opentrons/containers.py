@@ -97,7 +97,7 @@ class Container:
         # case 3: containers contains solution and water is added from source
         elif self.solution_name != "water" and source.solution_name == "water":
             self.concentration = (
-                float(self.concentration) * volume * 1e-3
+                float(self.concentration) * (self.volume_mL - volume * 1e-3)
             ) / self.volume_mL
 
         # case 4: container contains solution and same solution, but different concentration, is added from source

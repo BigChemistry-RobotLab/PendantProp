@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 pd_cam = PendantDropCamera()
-# pd_cam.initialize_measurement(well_id="7A1", drop_count=1)
+pd_cam.initialize_measurement(well_id="7A1", drop_count=1)
 pd_cam.start_stream()
-# pd_cam.start_capture()
+pd_cam.start_capture()
 
 cv2.namedWindow("Pendant Drop Camera Feed", cv2.WINDOW_NORMAL)
 
@@ -33,7 +33,7 @@ try:
                 break
 finally:
     pd_cam.stop_stream()
-    # pd_cam.stop_capture()
+    pd_cam.stop_capture()
     # cv2.destroyAllWindows()
     # scale_t = pd_cam.scale_t
     # st_t = pd_cam.st_t

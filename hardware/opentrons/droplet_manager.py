@@ -15,7 +15,7 @@ class DropletManager:
         self.opentrons_api = opentrons_api
         self.plotter = plotter
         self.logger = logger
-        self.max_retries = 1
+        self.max_retries = 3
         self.incremental_decrease_vol = 0.5
 
     def set_max_retries(self, retries: int):
@@ -44,6 +44,7 @@ class DropletManager:
                 flow_rate=drop_parameters["flow_rate"],
                 drop_count=drop_count,
             )
+            time.sleep(5)
             self.pendant_drop_camera.start_capture()
 
             start_time = time.time()

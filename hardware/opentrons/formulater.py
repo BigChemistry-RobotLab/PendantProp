@@ -68,7 +68,7 @@ class Formulater:
             volume=volume_water,
             source=self.containers[well_id_water],
             destination=self.containers[well_id_exploit],
-            mix=("after", well_volume / 2, 5),
+            mix=("after", well_volume / 1.2, 12),
         )
         self.logger.info("Finished formulating exploit point.")
 
@@ -131,12 +131,12 @@ class Formulater:
         if pipette.has_tip == False:
             pipette.pick_up_tip()
 
-        # adding water to all wells
-        for i in range(n_dilutions):
+        # adding water to all wells except the first one
+        for i in range(n_dilutions-1):
             pipette.transfer(
                 volume=well_volume,
                 source=self.containers[well_id_water],
-                destination=self.containers[f"{row_id}{i+1}"],
+                destination=self.containers[f"{row_id}{i+2}"],
                 touch_tip=True,
                 blow_out=True,
             )
@@ -144,12 +144,11 @@ class Formulater:
 
         # adding surfactant to the first well
         pipette.pick_up_tip()
-        pipette.aspirate(volume=well_volume, source=self.containers[well_id_solution])
+        pipette.aspirate(volume=well_volume*2, source=self.containers[well_id_solution])
         pipette.touch_tip(container=self.containers[well_id_solution])
         pipette.dispense(
-            volume=well_volume,
+            volume=well_volume*2,
             destination=self.containers[f"{row_id}1"],
-            mix=("after", well_volume / 2, 5),
         )
         pipette.blow_out(container=self.containers[f"{row_id}1"])
 
@@ -165,7 +164,7 @@ class Formulater:
             )
             pipette.mixing(
                 container=self.containers[f"{row_id}{i+1}"],
-                mix=("after", well_volume / 2, 5),
+                mix=("after", well_volume / 1.2, 12),
             )
             pipette.blow_out(container=self.containers[f"{row_id}{i+1}"])
 

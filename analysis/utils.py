@@ -29,13 +29,13 @@ def predict_surface_tension(results: pd.DataFrame, next_concentration: float):
 def volume_for_st(st: float):
     # could be more fancy but suffice for now
     max_drop_72 = 12
-    max_drop_35 = 6
+    max_drop_35 = 6.5
     volume = max_drop_35 + (max_drop_72 - max_drop_35) / (72 - 33) * (st - 33)
 
-    if volume < 6:
-        volume = 6
-    elif volume > 12:
-        volume = 12
+    if volume < max_drop_35:
+        volume = max_drop_35
+    elif volume > max_drop_72:
+        volume = max_drop_72
     return volume
 
 def suggest_volume(results: pd.DataFrame, next_concentration: float, solution_name: str):
