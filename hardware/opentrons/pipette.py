@@ -4,6 +4,7 @@ from utils.search_containers import get_well_id_solution, get_plate_ids
 from hardware.opentrons.containers import *
 from hardware.opentrons.http_communications import OpentronsAPI
 from hardware.cameras import PendantDropCamera
+import time
 
 
 class Pipette:
@@ -23,8 +24,9 @@ class Pipette:
         self.PIPETTE_ID = pipette_id
         self.TIPS_INFO = tips_info
         self.CONTAINERS = containers
-        self.DIFFERENCE_NEEDLE_PICK_UP = 8
-        self.DIFFERENCE_NEEDLE = 16.65
+        self.DIFFERENCE_NEEDLE_PICK_UP = 6
+        self.DIFFERENCE_NEEDLE_Z = 14.65
+        self.DIFFERENCE_NEEDLE_Y = 1 
         self.has_tip = False
         self.has_needle = False
         self.volume = 0
@@ -63,6 +65,12 @@ class Pipette:
             )
             return
 
+        if self.has_needle:
+            self.logger.error(
+                f"Could not pick up tip as {self.MOUNT} pipette has a needle attached."
+            )
+            return
+
         if well == None:
             tips_id, well = self._find_well_and_tips_id()
             if tips_id == None:
@@ -79,6 +87,22 @@ class Pipette:
         self.has_tip = True
         self.well_index += 1
         self.logger.info("Picked up tip.")
+
+    def drop_tip(self):
+        if not self.has_tip:
+            self.logger.error("Pipette does not have a tip to drop!")
+            return
+
+        if self.has_needle:
+            self.logger.warning("Pipette has needle, which should be returned.")
+
+        self.api.drop_tip(pipette_id=self.PIPETTE_ID)
+        self.logger.info(
+            f"{self.MOUNT.capitalize()} pipette dropped tip into trash."
+        )
+        self.has_tip = False
+        self.volume = 0
+        self.current_solution = "empty"
 
     def pick_up_needle(self):
         if self.has_tip:
@@ -97,8 +121,9 @@ class Pipette:
             offset=offset,
         )
         self.has_needle = True
-        self.OFFSET['z'] += self.DIFFERENCE_NEEDLE
-        self.logger.info("Picked up tip.")
+        self.OFFSET['z'] += self.DIFFERENCE_NEEDLE_Z
+        self.OFFSET['y'] += self.DIFFERENCE_NEEDLE_Y
+        self.logger.info("Picked up needle.")
 
     def return_needle(self):
         if not self.has_needle:
@@ -107,7 +132,7 @@ class Pipette:
 
         depth_offset = self.DIFFERENCE_NEEDLE_PICK_UP
         offset = self.OFFSET.copy()
-        offset["z"] += depth_offset
+        offset["z"] -= self.DIFFERENCE_NEEDLE_Z - self.DIFFERENCE_NEEDLE_PICK_UP
         tips_id = self.TIPS_INFO[next(iter(self.TIPS_INFO))]["labware_id"]
         well = "H12"
         self.api.drop_tip(
@@ -117,8 +142,10 @@ class Pipette:
             offset=offset,
         )
         self.has_tip = False
-        self.OFFSET["z"] -= self.DIFFERENCE_NEEDLE
-        self.logger.info("Returned tip.")
+        self.volume = 0
+        self.OFFSET["z"] -= self.DIFFERENCE_NEEDLE_Z
+        self.OFFSET["y"] -= self.DIFFERENCE_NEEDLE_Y
+        self.logger.info("Returned needle.")
 
     def _find_well_and_tips_id(self):
         tips_ids = []
@@ -135,19 +162,6 @@ class Pipette:
                 well = tips_orderings[i][self.well_index - i * total_wells]
                 return tips_id, well
 
-    def drop_tip(self):
-        if not self.has_tip:
-            self.logger.error("Pipette does not have a tip to drop!")
-            return
-
-        self.api.drop_tip(pipette_id=self.PIPETTE_ID)
-        self.logger.info(
-            f"{self.MOUNT.capitalize()} pipette dropped tip into trash."
-        )
-        self.has_tip = False
-        self.volume = 0
-        self.current_solution = "empty"
-
     def aspirate(
         self,
         volume: float,
@@ -161,9 +175,9 @@ class Pipette:
     ):
 
         # check if pipette has tip
-        if not self.has_tip or not self.has_needle:
+        if not self.has_tip and not self.has_needle:
             self.logger.error(
-                f"{self.MOUNT.capitalize()} pipette ({self.PIPETTE_NAME}) does not have a tip! Cancelled aspirating step."
+                f"{self.MOUNT.capitalize()} pipette ({self.PIPETTE_NAME}) does not have a tip or needle! Cancelled aspirating step."
             )
             return
 
@@ -226,9 +240,9 @@ class Pipette:
         log=True,
         update_info=True,
     ):
-        if not self.has_tip or not self.has_needle:
+        if not self.has_tip and not self.has_needle:
             self.logger.error(
-                f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have a tip! Cancelled dispensing step."
+                f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have a tip or needle! Cancelled dispensing step."
             )
             return
 
@@ -329,8 +343,8 @@ class Pipette:
         )
 
     def touch_tip(self, container: Container, repeat=1):
-        if not self.has_tip:
-            self.logger.error("No tip attached to perform touch_tip!")
+        if not self.has_tip and not self.has_needle:
+            self.logger.error("No tip or needle attached to perform touch_tip!")
             return
         depth = (
             0.05 * container.DEPTH
@@ -395,8 +409,8 @@ class Pipette:
         self.logger.info(f"blow out done in container {container.WELL_ID}")
 
     def air_gap(self, air_volume: float):
-        if not self.has_tip or not self.has_needle:
-            self.logger.error("No tip attached to perform air_gap!")
+        if not self.has_tip and not self.has_needle:
+            self.logger.error("No tip/needle attached to perform air_gap!")
             return
 
         if air_volume + self.volume > self.MAX_VOLUME:
@@ -427,8 +441,8 @@ class Pipette:
         )
 
     def remove_air_gap(self, at_drop_stage: bool = False):
-        if not self.has_tip:
-            self.logger.error("No tip attached to remove air_gap!")
+        if not self.has_tip and not self.has_needle:
+            self.logger.error("No tip/needle attached to remove air_gap!")
             return
 
         if at_drop_stage:
@@ -459,9 +473,9 @@ class Pipette:
         self.logger.info(f"Air gap of {self.air_gap_volume} uL removed in {self.MOUNT} pipette.")
         self.air_gap_volume = 0
 
-    def clean_tip(self):
-        if not self.has_tip:
-            self.logger.error("No tip attached to clean tip!")
+    def clean_on_sponge(self):
+        if not self.has_tip and not self.has_needle:
+            self.logger.error("No tip or needle attached to clean on sponge!")
             return
         try:
             sponge = self.CONTAINERS["sponge"]
@@ -477,7 +491,8 @@ class Pipette:
         )
         for i in range(3):
             offset = self.OFFSET.copy()
-            offset["z"] = -3
+            offset["z"] -= 3
+
             self.api.move_to_well(
                 pipette_id=self.PIPETTE_ID,
                 labware_id=sponge.LABWARE_ID,
@@ -492,86 +507,48 @@ class Pipette:
                 offset=self.OFFSET,
                 speed=30,
             )
-        self.logger.info("Pipette tip cleaned on sponge.")
+        self.logger.info("Tip/needle cleaned on sponge.")
         sponge.update_well()
 
-    # def serial_dilution(
-    #     self, row_id: str, solution_name: str, n_dilutions: int, well_volume: float
-    # ):
-    #     # find relevant well id's
-    #     well_id_trash = get_well_id_solution(
-    #         containers=self.CONTAINERS, solution_name="trash"
-    #     )  # well ID liquid waste
-    #     well_id_water = get_well_id_solution(
-    #         containers=self.CONTAINERS, solution_name="water"
-    #     )  # well ID water stock
-    #     well_id_solution = get_well_id_solution(
-    #         containers=self.CONTAINERS, solution_name=solution_name
-    #     )
+    def wash(self):
 
-    #     # log start of serial dilution
-    #     self.protocol_logger.info(
-    #         f"Start of serial dilution of {solution_name} in row {row_id}, with {n_dilutions} dilutions."
-    #     )
+        if not self.has_needle:
+            self.logger.error("No needle attached. Cancelled washing step.")
+            return
 
-    #     # pick up tip if pipette has no tip
-    #     if self.has_tip == False:
-    #         self.pick_up_tip()
+        if self.has_tip:
+            self.logger.error("Tip attached, instead of needle. Cancelled washing step.")
+            return
 
-    #     # adding water to all wells
-    #     for i in range(n_dilutions):
-    #         self.transfer(
-    #             volume=well_volume,
-    #             source=self.CONTAINERS[well_id_water],
-    #             destination=self.CONTAINERS[f"{row_id}{i+1}"],
-    #             touch_tip=True,
-    #             blow_out=True,
-    #         )
-    #     self.drop_tip()
+        try:
+            ipa_well_id = get_well_id_solution(containers=self.CONTAINERS, solution_name="ipa")
+        except:
+            self.logger.error("Could not find well ID for IPA. Cancelled washing step.")
+            return
 
-    #     # adding surfactant to the first well
-    #     self.pick_up_tip()
-    #     self.aspirate(volume=well_volume, source=self.CONTAINERS[well_id_solution])
-    #     self.touch_tip(container=self.CONTAINERS[well_id_solution])
-    #     self.dispense(
-    #         volume=well_volume,
-    #         destination=self.CONTAINERS[f"{row_id}1"],
-    #         mix=("after", well_volume / 2, 5),
-    #     )
-    #     self.blow_out(container=self.CONTAINERS[f"{row_id}1"])
-
-    #     # serial dilution of surfactant
-    #     for i in range(1, n_dilutions):
-    #         self.aspirate(
-    #             volume=well_volume,
-    #             source=self.CONTAINERS[f"{row_id}{i}"],
-    #             touch_tip=True,
-    #         )
-    #         self.dispense(
-    #             volume=well_volume, destination=self.CONTAINERS[f"{row_id}{i+1}"]
-    #         )
-    #         self.mixing(
-    #             container=self.CONTAINERS[f"{row_id}{i+1}"],
-    #             mix=("after", well_volume / 2, 5),
-    #         )
-    #         self.blow_out(container=self.CONTAINERS[f"{row_id}{i+1}"])
-
-    #     # transfering half of the volume of the last well to trash to ensure equal volume in all wells
-    #     self.aspirate(
-    #         volume=well_volume,
-    #         source=self.CONTAINERS[f"{row_id}{n_dilutions}"],
-    #         touch_tip=True,
-    #     )
-    #     self.dispense(
-    #         volume=well_volume,
-    #         destination=self.CONTAINERS[well_id_trash],
-    #         touch_tip=True,
-    #         update_info=False,
-    #     )
-    #     self.drop_tip()
-
-    #     # log end of serial dilution
-    #     self.protocol_logger.info("End of serial dilution.")
+        try:
+            nitrogen_well_id = get_well_id_solution(containers=self.CONTAINERS, solution_name="nitrogen")
+        except:
+            self.logger.error("Could not find well ID for nitrogen flow. Cancelled washing step.")
+        self.logger.info("Starting washing needle.")
+        self.mixing(container=self.CONTAINERS[ipa_well_id], mix=("after", 20, 4))
+        offset = {
+            "x": 0,
+            "y": 0,
+            "z": 10,
+        }
+        self.move_to_well(container=self.CONTAINERS[ipa_well_id], offset=offset)
+        self.logger.info("Drying needle.")
+        for i in range(3):
+            self.blow_out(container=self.CONTAINERS[nitrogen_well_id])
+            offset = {
+                "x": 0,
+                "y": 1,
+                "z": -30,
+            }
+            self.move_to_well(container=self.CONTAINERS[nitrogen_well_id], offset=offset)
+            time.sleep(5)
+        self.logger.info("Done washing needle.")
 
     def __str__(self):
         return f"""
@@ -582,6 +559,7 @@ class Pipette:
         Pipette ID: {self.PIPETTE_ID}
         Tips ID: {self.TIPS_ID} 
         Has tip: {self.has_tip}
+        Has needle: {self.has_needle}
         Current volume: {self.volume} uL
         Current solution: {self.current_solution}
         Clean: {self.clean}

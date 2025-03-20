@@ -27,11 +27,6 @@ class PendantDropAnalysis:
         self.processed_image = None
         self.analysis_image = None
 
-    def init_logger(self):
-        self.logger = Logger(
-            name="analysis",
-            file_path=f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data',
-        )
 
     def select_image(self):
         # Create Tkinter root window
@@ -280,7 +275,6 @@ class PendantDropAnalysis:
         return Hin
 
     def image2st(self, img):
-        self.init_logger()
         self.raw_image = img    
         self.process_image()
         st = self.analyse()
@@ -288,7 +282,6 @@ class PendantDropAnalysis:
 
     def image2scale(self, img):
         # surface_tension = self.density * self.gravity_constant * (de_scaled**2) * Hin
-        self.init_logger()
         self.raw_image = img    
         self.process_image()
         st = self.analyse()

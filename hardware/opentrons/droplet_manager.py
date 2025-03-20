@@ -15,8 +15,8 @@ class DropletManager:
         self.opentrons_api = opentrons_api
         self.plotter = plotter
         self.logger = logger
-        self.max_retries = 3
-        self.incremental_decrease_vol = 0.5
+        self.max_retries = 1
+        self.incremental_decrease_vol = 0
 
     def set_max_retries(self, retries: int):
         self.max_retries = retries
@@ -31,8 +31,11 @@ class DropletManager:
         valid_droplet = False
         initial_volume = drop_parameters["drop_volume"]
         
-        if not self.left_pipette.has_tip:
-            self.left_pipette.pick_up_tip()
+        if self.left_pipette.has_tip:
+            self.left_pipette.drop_tip()
+
+        if not self.left_pipette.has_needle:
+            self.left_pipette.pick_up_needle()
 
         while not valid_droplet and drop_count <= self.max_retries:
 
@@ -44,7 +47,7 @@ class DropletManager:
                 flow_rate=drop_parameters["flow_rate"],
                 drop_count=drop_count,
             )
-            time.sleep(5)
+            # time.sleep(5)
             self.pendant_drop_camera.start_capture()
 
             start_time = time.time()
@@ -92,8 +95,8 @@ class DropletManager:
                 source=source, drop_volume=drop_parameters["drop_volume"]
             )
 
-        # if self.left_pipette.has_tip:
-        #     self.left_pipette.drop_tip()
+        if self.left_pipette.has_tip:
+            self.left_pipette.drop_tip()
 
         # update drop parameters
         drop_parameters["drop_count"] = drop_count
@@ -108,10 +111,10 @@ class DropletManager:
         self, source: Container, drop_volume: float, flow_rate: float, drop_count: int
     ):
 
-        self.left_pipette.mixing(container=source, mix=("before", 15, 3))
+        # self.left_pipette.mixing(container=source, mix=("before", 15, 3))
         self.left_pipette.aspirate(volume=17, source=source, flow_rate=15)
         self.left_pipette.air_gap(air_volume=3)
-        self.left_pipette.clean_tip()
+        self.left_pipette.clean_on_sponge()
         self.left_pipette.remove_air_gap(at_drop_stage=True)
         self.pendant_drop_camera.initialize_measurement(
             well_id=source.WELL_ID, drop_count=drop_count
@@ -134,5 +137,5 @@ class DropletManager:
             update_info=False,
         )  # aspirate drop in tip
         self.logger.info("Re-aspirated the pendant drop into the tip.")
-        self.left_pipette.dispense(volume=15, destination=source, blow_out=True)
+        self.left_pipette.dispense(volume=17, destination=source)
         self.logger.info("Returned volume in tip to source.")
