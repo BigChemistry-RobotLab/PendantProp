@@ -141,7 +141,7 @@ class Pipette:
             well=well,
             offset=offset,
         )
-        self.has_tip = False
+        self.has_needle = False
         self.volume = 0
         self.OFFSET["z"] -= self.DIFFERENCE_NEEDLE_Z
         self.OFFSET["y"] -= self.DIFFERENCE_NEEDLE_Y
@@ -400,13 +400,15 @@ class Pipette:
         )
 
     def blow_out(self, container: Container):
-        self.api.blow_out(
-            pipette_id=self.PIPETTE_ID,
-            labware_id=container.LABWARE_ID,
-            well=container.WELL,
-            offset=self.OFFSET,
-        )
-        self.logger.info(f"blow out done in container {container.WELL_ID}")
+        #TODO error here?!
+        # self.api.blow_out(
+        #     pipette_id=self.PIPETTE_ID,
+        #     labware_id=container.LABWARE_ID,
+        #     well=container.WELL,
+        #     offset=self.OFFSET,
+        # )
+        # self.logger.info(f"blow out done in container {container.WELL_ID}")
+        pass
 
     def air_gap(self, air_volume: float):
         if not self.has_tip and not self.has_needle:
@@ -521,9 +523,9 @@ class Pipette:
             return
 
         try:
-            ipa_well_id = get_well_id_solution(containers=self.CONTAINERS, solution_name="ipa")
+            ipa_well_id = get_well_id_solution(containers=self.CONTAINERS, solution_name="acetone")
         except:
-            self.logger.error("Could not find well ID for IPA. Cancelled washing step.")
+            self.logger.error("Could not find well ID for washing liquid. Cancelled washing step.")
             return
 
         try:
@@ -531,23 +533,36 @@ class Pipette:
         except:
             self.logger.error("Could not find well ID for nitrogen flow. Cancelled washing step.")
         self.logger.info("Starting washing needle.")
-        self.mixing(container=self.CONTAINERS[ipa_well_id], mix=("after", 20, 4))
         offset = {
             "x": 0,
             "y": 0,
             "z": 10,
         }
         self.move_to_well(container=self.CONTAINERS[ipa_well_id], offset=offset)
+        self.mixing(container=self.CONTAINERS[ipa_well_id], mix=("after", 20, 4))
+        self.move_to_well(container=self.CONTAINERS[ipa_well_id], offset=offset)
         self.logger.info("Drying needle.")
-        for i in range(3):
-            self.blow_out(container=self.CONTAINERS[nitrogen_well_id])
-            offset = {
-                "x": 0,
-                "y": 1,
-                "z": -30,
-            }
-            self.move_to_well(container=self.CONTAINERS[nitrogen_well_id], offset=offset)
-            time.sleep(5)
+        # offset = {
+        #     "x": 0,
+        #     "y": 1,
+        #     "z": -30,
+        # }
+        # self.move_to_well(container=self.CONTAINERS[nitrogen_well_id], offset=offset)
+        for i in range(5):
+            self.aspirate(
+                volume=20,
+                source=self.CONTAINERS[nitrogen_well_id],
+                depth_offset=20,
+                update_info=False
+                
+            )
+            self.dispense(
+                volume=20,
+                destination=self.CONTAINERS[nitrogen_well_id],
+                depth_offset=20,
+                update_info=False
+            )
+        time.sleep(10)
         self.logger.info("Done washing needle.")
 
     def __str__(self):

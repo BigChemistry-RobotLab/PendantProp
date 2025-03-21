@@ -219,19 +219,39 @@ class Protocol:
         play_sound("DATA DATA.")
     
     def measure_same_well(self, well_id: str, repeat: int = 3):
-        drop_parameters = {"drop_volume": 11, "max_measure_time": 60, "flow_rate": 1}
+        drop_parameters = {"drop_volume": 6, "max_measure_time": 60, "flow_rate": 1}
         for i in range(repeat):
             dynamic_surface_tension, drop_parameters = (
                 self.droplet_manager.measure_pendant_drop(
                     source=self.containers[well_id], drop_parameters=drop_parameters
                 )
             )
+            # self.left_pipette.wash()
             df = pd.DataFrame(
                 dynamic_surface_tension, columns=["time (s)", "surface tension (mN/m)"]
             )
             df.to_csv(
                 f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension_{i}.csv"
             )
+        if self.left_pipette.has_needle:
+            self.left_pipette.return_needle()
+    
+    def measure_same_well_cali(self, well_id: str, repeat: int = 3):
+        drop_parameters = {"drop_volume": 11, "max_measure_time": 30, "flow_rate": 1}
+        for i in range(repeat):
+            scale = (
+                self.droplet_manager.measure_pendant_drop(
+                    source=self.containers[well_id], drop_parameters=drop_parameters, calibrate=True
+                )
+            )
+            # self.left_pipette.wash()
+            df = pd.DataFrame(
+                scale, columns=["time (s)", "scale"]
+            )
+            df.to_csv(
+                f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/scale{i}.csv"
+            )
+
         if self.left_pipette.has_needle:
             self.left_pipette.return_needle()
 

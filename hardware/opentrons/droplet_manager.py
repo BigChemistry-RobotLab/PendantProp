@@ -16,7 +16,7 @@ class DropletManager:
         self.plotter = plotter
         self.logger = logger
         self.max_retries = 1
-        self.incremental_decrease_vol = 0
+        self.incremental_decrease_vol = 0.5
 
     def set_max_retries(self, retries: int):
         self.max_retries = retries
@@ -119,6 +119,7 @@ class DropletManager:
         self.pendant_drop_camera.initialize_measurement(
             well_id=source.WELL_ID, drop_count=drop_count
         )
+        self.logger.info("Dispensing pendant drop.")
         self.left_pipette.dispense(
             volume=drop_volume,
             destination=self.containers["drop_stage"],
@@ -127,6 +128,7 @@ class DropletManager:
             log=False,
             update_info=False,
         )
+        # time.sleep(30)
 
     def _return_pendant_drop(self, source: Container, drop_volume: float):
         self.left_pipette.aspirate(
