@@ -2,12 +2,9 @@ import pandas as pd
 import os
 from hardware.opentrons.containers import *
 from hardware.opentrons.pipette import Pipette
-from utils.load_save_functions import load_settings, save_instances_to_csv
+from utils.load_save_functions import load_settings
 from utils.logger import Logger
-from hardware.opentrons.http_communications import OpentronsAPI
-
-# TODO no difference between source and destination?
-
+from hardware.opentrons.opentrons_api import OpentronsAPI
 
 class Configuration:
 

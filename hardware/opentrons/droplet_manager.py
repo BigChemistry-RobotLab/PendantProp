@@ -2,7 +2,7 @@ import time
 
 from utils.logger import Logger
 from hardware.cameras import PendantDropCamera
-from hardware.opentrons.http_communications import OpentronsAPI
+from hardware.opentrons.opentrons_api import OpentronsAPI
 from hardware.opentrons.containers import Container
 from hardware.opentrons.pipette import Pipette
 from analysis.plots import Plotter

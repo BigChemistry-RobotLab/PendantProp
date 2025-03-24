@@ -14,7 +14,7 @@ from analysis.plots import Plotter
 from analysis.active_learning import ActiveLearner
 from analysis.models import szyszkowski_model
 from analysis.utils import suggest_volume, volume_for_st
-from hardware.opentrons.http_communications import OpentronsAPI
+from hardware.opentrons.opentrons_api import OpentronsAPI
 from hardware.opentrons.droplet_manager import DropletManager
 from hardware.opentrons.formulater import Formulater
 from hardware.opentrons.configuration import Configuration
@@ -77,7 +77,7 @@ class Protocol:
         )
         self.opentrons_api.home()
         self.logger.info("Initialization finished.")
-        # play_sound("HASTA LA VISTA.")
+        play_sound("HASTA LA VISTA.")
 
     def calibrate(self):
         self.logger.info("Starting calibration...")

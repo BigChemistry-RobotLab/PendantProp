@@ -1,7 +1,7 @@
 from utils.logger import Logger
 from utils.load_save_functions import load_settings
 from hardware.opentrons.containers import *
-from hardware.opentrons.http_communications import OpentronsAPI
+from hardware.opentrons.opentrons_api import OpentronsAPI
 
 class Pipette:
     def __init__(

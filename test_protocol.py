@@ -1,5 +1,5 @@
 from hardware.opentrons.protocol import Protocol
-from hardware.opentrons.http_communications import OpentronsAPI
+from hardware.opentrons.opentrons_api import OpentronsAPI
 from hardware.cameras import PendantDropCamera
 from hardware.sensor.sensor_api import SensorAPI
 

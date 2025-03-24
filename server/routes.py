@@ -22,7 +22,7 @@ from utils.load_save_functions import (
     load_commit_hash,
 )
 from hardware.cameras import OpentronCamera, PendantDropCamera
-from hardware.opentrons.http_communications import OpentronsAPI
+from hardware.opentrons.opentrons_api import OpentronsAPI
 from hardware.sensor.sensor_api import SensorAPI
 from hardware.opentrons.protocol import Protocol
 
