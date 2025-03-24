@@ -16,6 +16,7 @@ class Pipette:
         pipette_id: str,
         tips_info: dict,
         containers: dict,
+        needle_info = None,
     ):
         settings = load_settings()
         self.api = http_api
@@ -26,7 +27,7 @@ class Pipette:
         self.CONTAINERS = containers
         self.DIFFERENCE_NEEDLE_PICK_UP = 6
         self.DIFFERENCE_NEEDLE_Z = 14.65
-        self.DIFFERENCE_NEEDLE_Y = 1 
+        self.DIFFERENCE_NEEDLE_Y = 0.5 
         self.has_tip = False
         self.has_needle = False
         self.volume = 0
@@ -295,17 +296,19 @@ class Pipette:
         touch_tip=False,
         mix=None,
         blow_out=False,
+        update_info = True
     ):
         self.logger.info(
             f"Transferring {volume} uL from {source.WELL_ID} to well {destination.WELL_ID} with {self.MOUNT} pipette."
         )
-        self.aspirate(volume=volume, source=source, touch_tip=touch_tip, mix=mix)
+        self.aspirate(volume=volume, source=source, touch_tip=touch_tip, mix=mix, update_info=update_info)
         self.dispense(
             volume=volume,
             destination=destination,
             touch_tip=touch_tip,
             mix=mix,
             blow_out=blow_out,
+            update_info=update_info
         )
 
     def move_to_well(self, container: Container, offset=None):

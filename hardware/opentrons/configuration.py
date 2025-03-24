@@ -56,7 +56,7 @@ class Configuration:
                 mount="right",
                 pipette_name=self.RIGHT_PIPETTE_NAME,
                 pipette_id=self.RIGHT_PIPETTE_ID,
-                tips_info=self._find_tips_ids("tips P1000"),
+                tips_info=self._find_tips_info("tips P1000"),
                 containers=self.CONTAINERS
             )
 
@@ -68,8 +68,9 @@ class Configuration:
                 mount="left",
                 pipette_name=self.LEFT_PIPETTE_NAME,
                 pipette_id=self.LEFT_PIPETTE_ID,
-                tips_info=self._find_tips_ids("tips P20"),
+                tips_info=self._find_tips_info("tips P20"),
                 containers=self.CONTAINERS,
+                needle_info=self._find_needle_info("needle")
             )
             self.logger.info("Pipettes loaded successfully.")
             return {"right": right_pipette, "left": left_pipette}
@@ -169,19 +170,26 @@ class Configuration:
             )
             return None
 
-    def save_containers(self, containers: list):
-        containers_only = []
-        for key in containers.keys():
-            if key == "drop_stage" or key == "light_holder":
-                pass
-            else:
-                containers_only.append(containers[key])
-        filename = f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data/initial_well_config.csv'
-        save_instances_to_csv(instances=containers_only, filename=filename)
+    # def save_containers(self, containers: list):
+    #     containers_only = []
+    #     for key in containers.keys():
+    #         if key == "drop_stage" or key == "light_holder":
+    #             pass
+    #         else:
+    #             containers_only.append(containers[key])
+    #     filename = f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data/initial_well_config.csv'
+    #     save_instances_to_csv(instances=containers_only, filename=filename)
 
-    def _find_tips_ids(self, key_word: str):
+    def _find_tips_info(self, key_word: str):
         tips_info = {}
         for labware_name in self.LABWARE.keys():
             if key_word in labware_name:
                 tips_info[labware_name] = self.LABWARE[labware_name]
         return tips_info
+    
+    def _find_needle_info(self, key_word: str):
+        for labware_name in self.LABWARE.keys():
+            if key_word in labware_name:
+                return self.LABWARE[labware_name]
+            else:
+                return None

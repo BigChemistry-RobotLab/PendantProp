@@ -201,3 +201,6 @@ class Formulater:
             )
         self.right_pipette.drop_tip()
         self.logger.info("Done filling plate.")
+
+    def wash(self):
+        pass
