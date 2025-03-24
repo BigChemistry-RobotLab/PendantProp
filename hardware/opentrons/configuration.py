@@ -186,10 +186,8 @@ class Configuration:
             if key_word in labware_name:
                 tips_info[labware_name] = self.LABWARE[labware_name]
         return tips_info
-    
+
     def _find_needle_info(self, key_word: str):
         for labware_name in self.LABWARE.keys():
             if key_word in labware_name:
                 return self.LABWARE[labware_name]
-            else:
-                return None

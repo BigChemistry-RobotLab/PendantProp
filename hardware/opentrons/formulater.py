@@ -202,5 +202,42 @@ class Formulater:
         self.right_pipette.drop_tip()
         self.logger.info("Done filling plate.")
 
-    def wash(self):
-        pass
+    def wash(self, repeat = 1):
+
+        well_id_water = get_well_id_solution(containers=self.containers, solution_name="water")
+        well_id_trash = get_well_id_solution(containers=self.containers, solution_name="trash")
+        
+        if self.left_pipette.has_tip:
+            self.left_pipette.drop_tip()
+        
+        if not self.left_pipette.has_needle:
+            self.left_pipette.pick_up_needle()
+
+
+
+        for i in range(repeat):
+            if not self.right_pipette.has_tip:
+                self.right_pipette.pick_up_tip()
+
+            # transfer water to cleaning well
+            self.right_pipette.aspirate(
+                volume=300, source=self.containers[well_id_water], touch_tip=True
+            )
+            self.right_pipette.dispense(volume=300, destination=self.containers["3A1"], touch_tip=True)
+
+            # flush needle with water via mixing
+            self.left_pipette.mixing(container=self.containers["3A1"], mix=("after", 20, 5))
+
+            # transfer water in cleaning well to trash falcon tube
+            self.right_pipette.aspirate(
+                volume=300,
+                source=self.containers["3A1"],
+                touch_tip=True,
+            )
+            self.right_pipette.dispense(
+                volume=300, destination=self.containers[well_id_trash], update_info=False
+            )
+        
+            self.right_pipette.drop_tip()
+        
+        self.left_pipette.clean_on_sponge()

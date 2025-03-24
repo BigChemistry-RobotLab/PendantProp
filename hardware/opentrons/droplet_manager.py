@@ -111,7 +111,7 @@ class DropletManager:
         self, source: Container, drop_volume: float, flow_rate: float, drop_count: int
     ):
 
-        # self.left_pipette.mixing(container=source, mix=("before", 15, 3))
+        self.left_pipette.mixing(container=source, mix=("before", 15, 3))
         self.left_pipette.aspirate(volume=17, source=source, flow_rate=15)
         self.left_pipette.air_gap(air_volume=3)
         self.left_pipette.clean_on_sponge()
