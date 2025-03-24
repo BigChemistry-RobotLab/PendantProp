@@ -6,6 +6,7 @@ from utils.search_containers import (
     get_well_id_solution,
     get_plate_ids,
 )
+from utils.load_save_functions import load_settings
 
 
 class Formulater:
@@ -14,12 +15,15 @@ class Formulater:
         left_pipette: Pipette,
         right_pipette: Pipette,
         containers: dict,
-        logger: Logger,
     ):
         self.left_pipette = left_pipette
         self.right_pipette = right_pipette
         self.containers = containers
-        self.logger = logger
+        settings = load_settings()
+        self.logger = Logger(
+            name="protocol",
+            file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
+        )
 
     def formulate_exploit_point(
         self,
@@ -206,14 +210,12 @@ class Formulater:
 
         well_id_water = get_well_id_solution(containers=self.containers, solution_name="water")
         well_id_trash = get_well_id_solution(containers=self.containers, solution_name="trash")
-        
+
         if self.left_pipette.has_tip:
             self.left_pipette.drop_tip()
-        
+
         if not self.left_pipette.has_needle:
             self.left_pipette.pick_up_needle()
-
-
 
         for i in range(repeat):
             if not self.right_pipette.has_tip:
@@ -237,7 +239,7 @@ class Formulater:
             self.right_pipette.dispense(
                 volume=300, destination=self.containers[well_id_trash], update_info=False
             )
-        
+
             self.right_pipette.drop_tip()
-        
+
         self.left_pipette.clean_on_sponge()

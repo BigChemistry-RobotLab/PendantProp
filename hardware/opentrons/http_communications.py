@@ -178,9 +178,6 @@ class OpentronsAPI:
         self.logger.info("Robot homed.")
 
     def delay(self, seconds: float, minutes=0, message=None, intent="setup", log = False):
-        """
-        delay
-        """
         command_dict = {
             "data": {
                 "commandType": "waitForDuration",
@@ -241,9 +238,6 @@ class OpentronsAPI:
         offset: dict = dict(x=0, y=0, z=0),
         intent="setup",
     ):
-        """
-        drop tip of specified pipette
-        """
         command_dict = {
             "data": {
                 "commandType": "dropTip",
@@ -279,9 +273,6 @@ class OpentronsAPI:
         offset: dict = dict(x=0, y=0, z=0),
         intent="setup",
     ):
-        """
-        aspirate
-        """
         offset_depth = offset.copy()
         offset_depth["z"] = depth + offset["z"]
         command_dict = {
@@ -320,9 +311,6 @@ class OpentronsAPI:
         offset: dict = dict(x=0, y=0, z=0),
         intent="setup",
     ):
-        """
-        dispense
-        """
         offset_depth = offset.copy()
         offset_depth["z"] = depth + offset["z"]
         command_dict = {
@@ -360,7 +348,8 @@ class OpentronsAPI:
         flow_rate=50,
         intent="setup",
     ):
-        offset["z"] = depth + offset["z"]
+        offset_depth = offset.copy()
+        offset_depth["z"] = depth + offset["z"]
         command_dict = {
             "data": {
                 "commandType": "blowout",
@@ -369,7 +358,7 @@ class OpentronsAPI:
                     "wellName": well,
                     "wellLocation": {
                         "origin": "top",
-                        "offset": offset,
+                        "offset": offset_depth,
                     },
                     "flowRate": flow_rate,
                     "pipetteId": pipette_id,
@@ -394,10 +383,6 @@ class OpentronsAPI:
         speed=None,
         intent="setup",
     ):
-        """
-        move to
-        """
-
         command_dict = {
             "data": {
                 "commandType": "moveToWell",

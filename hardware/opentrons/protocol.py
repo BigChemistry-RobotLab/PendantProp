@@ -50,7 +50,7 @@ class Protocol:
         self.opentrons_api.initialise()
         self.sensor_api = sensor_api
         self.pendant_drop_camera = pendant_drop_camera
-        self.config = Configuration(http_api=opentrons_api)
+        self.config = Configuration(opentrons_api=opentrons_api)
         self.labware = self.config.load_labware()
         self.containers = self.config.load_containers()
         pipettes = self.config.load_pipettes()
@@ -61,7 +61,6 @@ class Protocol:
         self.learner = ActiveLearner(
             model=szyszkowski_model,
             parameters=["cmc", "gamma_max", "Kad"],
-            logger=self.logger,
         )
         self.plotter = Plotter()
         self.droplet_manager = DropletManager(
@@ -70,13 +69,11 @@ class Protocol:
             pendant_drop_camera=self.pendant_drop_camera,
             opentrons_api=self.opentrons_api,
             plotter=self.plotter,
-            logger=self.logger,
         )
         self.formulater = Formulater(
             left_pipette=self.left_pipette,
             right_pipette=self.right_pipette,
             containers=self.containers,
-            logger=self.logger
         )
         self.opentrons_api.home()
         self.logger.info("Initialization finished.")
@@ -259,7 +256,7 @@ class Protocol:
         # TODO save results correctly!
         self.logger.info("Starting measure whole plate protocol...")
         self.droplet_manager.set_max_retries = 1
-        print(self.droplet_manager.max_retries)
+        print(self.droplet_manager.MAX_RETRIES)
         self.settings = load_settings()  # update settings
         well_info = load_info(file_name=self.settings["WELL_INFO_FILENAME"])
         wells_ids = well_info["location"].astype(str) + well_info["well"].astype(str)

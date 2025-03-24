@@ -47,7 +47,7 @@ class Configuration:
                 name=self.RIGHT_PIPETTE_NAME, mount="right"
             )
             right_pipette = Pipette(
-                http_api=self.api,
+                opentrons_api=self.api,
                 mount="right",
                 pipette_name=self.RIGHT_PIPETTE_NAME,
                 pipette_id=self.RIGHT_PIPETTE_ID,
@@ -58,7 +58,7 @@ class Configuration:
                 name=self.LEFT_PIPETTE_NAME, mount="left"
             )
             left_pipette = Pipette(
-                http_api=self.api,
+                opentrons_api=self.api,
                 mount="left",
                 pipette_name=self.LEFT_PIPETTE_NAME,
                 pipette_id=self.LEFT_PIPETTE_ID,

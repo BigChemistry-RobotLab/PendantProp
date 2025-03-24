@@ -1,16 +1,12 @@
 from utils.logger import Logger
 from utils.load_save_functions import load_settings
-from utils.search_containers import get_well_id_solution, get_plate_ids
 from hardware.opentrons.containers import *
 from hardware.opentrons.http_communications import OpentronsAPI
-from hardware.cameras import PendantDropCamera
-import time
-
 
 class Pipette:
     def __init__(
         self,
-        http_api: OpentronsAPI,
+        opentrons_api: OpentronsAPI,
         mount: str,
         pipette_name: str,
         pipette_id: str,
@@ -20,7 +16,7 @@ class Pipette:
     ):
         # general
         settings = load_settings()
-        self.api = http_api
+        self.opentrons_api = opentrons_api
 
         # static attributes
         self.MOUNT = mount
@@ -29,24 +25,20 @@ class Pipette:
         self.TIPS_INFO = tips_info
         self.NEEDLE_INFO = needle_info
         self.CONTAINERS = containers
-        self.DIFFERENCE_NEEDLE_PICK_UP = 6
-        self.DIFFERENCE_NEEDLE_Z = 14.65
-        self.DIFFERENCE_NEEDLE_Y = 0.5 
 
         # set max volume and offset pipettes (pipette specific)
         if self.PIPETTE_NAME == "p20_single_gen2":
             self.MAX_VOLUME = 20
-            self.OFFSET = {"x": -1, "y": 1.4, "z": 0}
+            self.OFFSET = settings["LEFT_PIPETTE_OFFSET"]
 
         elif self.PIPETTE_NAME == "p1000_single_gen2":
             self.MAX_VOLUME = 1000
-            self.OFFSET = dict(x=-0.7, y=0.3, z=0.8)
+            self.OFFSET = settings["RIGHT_PIPETTE_OFFSET"]
 
         # dynamic attributes
         self.has_tip = False
         self.has_needle = False
         self.volume = 0
-        self.current_solution = "empty"
         self.well_index = 0
         self.last_source = None
         self.last_destination = None
@@ -78,7 +70,7 @@ class Pipette:
         else:
             tips_id =  self.TIPS_INFO[next(iter(self.TIPS_INFO))]["labware_id"] # takes from the first tip rack
 
-        self.api.pick_up_tip(
+        self.opentrons_api.pick_up_tip(
             pipette_id=self.PIPETTE_ID,
             labware_id=tips_id,
             well=well,
@@ -96,13 +88,12 @@ class Pipette:
         if self.has_needle:
             self.logger.warning("Pipette has needle, which should be returned.")
 
-        self.api.drop_tip(pipette_id=self.PIPETTE_ID)
+        self.opentrons_api.drop_tip(pipette_id=self.PIPETTE_ID)
         self.logger.info(
             f"{self.MOUNT.capitalize()} pipette dropped tip into trash."
         )
         self.has_tip = False
         self.volume = 0
-        self.current_solution = "empty"
 
     def pick_up_needle(self):
         if self.has_tip:
@@ -111,9 +102,9 @@ class Pipette:
 
         # adjust offset to pick the needle up a bit more gently
         offset = self.OFFSET.copy()
-        offset['z'] = 1
+        offset['z'] += 1
 
-        self.api.pick_up_tip(
+        self.opentrons_api.pick_up_tip(
             pipette_id=self.PIPETTE_ID,
             labware_id=self.NEEDLE_INFO["labware_id"],
             well="A1",
@@ -130,9 +121,9 @@ class Pipette:
 
         # bit deeper to plunge the needle in the tip rack
         offset = self.OFFSET.copy()
-        offset['z'] = -20
+        offset['z'] -= 20
 
-        self.api.drop_tip(
+        self.opentrons_api.drop_tip(
             pipette_id=self.PIPETTE_ID,
             labware_id=self.NEEDLE_INFO["labware_id"],
             well="A1",
@@ -191,7 +182,7 @@ class Pipette:
         if mix and (mix_order == "before" or mix_order == "both"):
             self.mixing(container=source, mix=mix)
 
-        self.api.aspirate(
+        self.opentrons_api.aspirate(
             pipette_id=self.PIPETTE_ID,
             labware_id=source.LABWARE_ID,
             well=source.WELL,
@@ -210,7 +201,6 @@ class Pipette:
         if update_info:
             source.aspirate(volume, log=log)
             self.last_source = source
-            self.current_solution = source.solution_name
             self.volume += volume
 
         if log:
@@ -251,7 +241,7 @@ class Pipette:
         if mix and (mix_order == "before" or mix_order == "both"):
             self.mixing(container=destination, mix=mix)
 
-        self.api.dispense(
+        self.opentrons_api.dispense(
             pipette_id=self.PIPETTE_ID,
             labware_id=destination.LABWARE_ID,
             well=destination.WELL,
@@ -308,7 +298,7 @@ class Pipette:
             for key in offset:
                 offset_move[key] += offset[key]
 
-        self.api.move_to_well(
+        self.opentrons_api.move_to_well(
             pipette_id=self.PIPETTE_ID,
             labware_id=container.LABWARE_ID,
             well=container.WELL,
@@ -318,7 +308,7 @@ class Pipette:
     def move_to_tip_calibrate(self, well: str, offset: dict = dict(x=0, y=0, z=0)):
         #! This is used to check offset of pipettes
         tips_id = self.TIPS_INFO[next(iter(self.TIPS_INFO))]["labware_id"]
-        self.api.move_to_well(
+        self.opentrons_api.move_to_well(
             pipette_id=self.PIPETTE_ID,
             labware_id=tips_id,
             well=well,
@@ -327,7 +317,7 @@ class Pipette:
 
     def move_to_well_calibrate(self, container: Container, well: str, offset: dict = dict(x=0, y=0, z=0)):
         #! This is used to check offset of pipettes
-        self.api.move_to_well(
+        self.opentrons_api.move_to_well(
             pipette_id=self.PIPETTE_ID,
             labware_id=container.LABWARE_ID,
             well=well,
@@ -343,7 +333,7 @@ class Pipette:
         )  # little depth to ensure the tip touches the wall of the container
         initial_offset = self.OFFSET.copy()
         initial_offset["z"] -= 0.05 * container.DEPTH
-        self.api.move_to_well(
+        self.opentrons_api.move_to_well(
             pipette_id=self.PIPETTE_ID,
             labware_id=container.LABWARE_ID,
             well=container.WELL,
@@ -365,14 +355,14 @@ class Pipette:
                     offset["y"] -= radius
                 elif i == 3:
                     offset["y"] += radius
-                self.api.move_to_well(
+                self.opentrons_api.move_to_well(
                     pipette_id=self.PIPETTE_ID,
                     labware_id=container.LABWARE_ID,
                     well=container.WELL,
                     offset=offset,
                     speed=30,
                 )
-                self.api.move_to_well(
+                self.opentrons_api.move_to_well(
                     pipette_id=self.PIPETTE_ID,
                     labware_id=container.LABWARE_ID,
                     well=container.WELL,
@@ -477,7 +467,7 @@ class Pipette:
             self.logger.error("No sponge container found!")
             return
 
-        self.api.move_to_well(
+        self.opentrons_api.move_to_well(
             pipette_id=self.PIPETTE_ID,
             labware_id=sponge.LABWARE_ID,
             well=sponge.well,
@@ -487,14 +477,14 @@ class Pipette:
             offset = self.OFFSET.copy()
             offset["z"] -= 3
 
-            self.api.move_to_well(
+            self.opentrons_api.move_to_well(
                 pipette_id=self.PIPETTE_ID,
                 labware_id=sponge.LABWARE_ID,
                 well=sponge.well,
                 offset=offset,
                 speed=30,
             )
-            self.api.move_to_well(
+            self.opentrons_api.move_to_well(
                 pipette_id=self.PIPETTE_ID,
                 labware_id=sponge.LABWARE_ID,
                 well=sponge.well,
@@ -504,28 +494,14 @@ class Pipette:
         self.logger.info("Tip/needle cleaned on sponge.")
         sponge.update_well()
 
-    def wash(self):
-
-        if not self.has_needle:
-            self.logger.error("No needle attached. Cancelled washing step.")
-            return
-
-        if self.has_tip:
-            self.logger.error("Tip attached, instead of needle. Cancelled washing step.")
-            return
-
-        self.logger.info("Starting washing needle.")
-        pass
-
     def __str__(self):
         return f"""
         Pipette object
 
         Mount: {self.MOUNT}
         Pipette name: {self.PIPETTE_NAME}
-        Pipette ID: {self.PIPETTE_ID}
         Has tip: {self.has_tip}
         Has needle: {self.has_needle}
         Current volume: {self.volume} uL
-        Current solution: {self.current_solution}
+        Air gap volume: {self.air_gap_volume} uL
         """

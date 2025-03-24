@@ -7,7 +7,6 @@ import pandas as pd
 from utils.utils import calculate_equillibrium_value
 from hardware.sensor.sensor_api import SensorAPI
 
-
 def save_csv_file(exp_name: str, subdir_name: str, csv_file, app):
     """
     Save csv file in experiment directory
@@ -38,7 +37,6 @@ def load_settings(file_name="settings.json"):
     if os.path.exists(file_path):
         with open(file_path, "r") as file:
             return json.load(file)
-
 
 def save_settings(settings, file_name="settings.json"):
     """

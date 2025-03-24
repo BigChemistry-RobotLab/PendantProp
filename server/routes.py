@@ -81,14 +81,19 @@ def settings():
     ## general settings
     settings["ROBOT_IP"] = request.form.get("ROBOT_IP")
     settings["ROBOT_TYPE"] = request.form.get("ROBOT_TYPE")
+
     ## pendant drop settings
     settings["DROP_VOLUME"] = request.form.get("DROP_VOLUME")
     settings["EQUILIBRATION_TIME"] = request.form.get("EQUILIBRATION_TIME")
     settings["FLOW_RATE"] = request.form.get("FLOW_RATE")
     settings["DENSITY"] = request.form.get("DENSITY")
     settings["SCALE"] = request.form.get("SCALE")
+    settings["DROP_RETRIES"] = request.form.get("DROP_RETRIES")
+    settings["DROP_VOLUME_DECREASE_AFTER_RETRY"] = request.form.get(
+        "DROP_VOLUME_DECREASE_AFTER_RETRY"
+    )
+
     ## characterization settings
-    settings["DILUTION_FACTOR"] = request.form.get("DILUTION_FACTOR")
     settings["EXPLORE_POINTS"] = request.form.get("EXPLORE_POINTS")
     settings["EXPLOIT_POINTS"] = request.form.get("EXPLOIT_POINTS")
     settings["WELL_VOLUME"] = request.form.get("WELL_VOLUME")

@@ -4,7 +4,7 @@ from hardware.opentrons.configuration import Configuration
 # initialize
 api = Opentrons_http_api()
 api.initialise()
-config = Configuration(http_api=api)
+config = Configuration(opentrons_api=api)
 labware = config.load_labware()
 pipettes = config.load_pipettes()
 containers = config.load_containers()

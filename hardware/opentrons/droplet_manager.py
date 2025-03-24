@@ -6,41 +6,52 @@ from hardware.opentrons.http_communications import OpentronsAPI
 from hardware.opentrons.containers import Container
 from hardware.opentrons.pipette import Pipette
 from analysis.plots import Plotter
+from utils.load_save_functions import load_settings
+
 
 class DropletManager:
-    def __init__(self, left_pipette: Pipette, containers: dict, pendant_drop_camera: PendantDropCamera, opentrons_api: OpentronsAPI, plotter: Plotter,logger: Logger):
+    def __init__(
+        self,
+        left_pipette: Pipette,
+        containers: dict,
+        pendant_drop_camera: PendantDropCamera,
+        opentrons_api: OpentronsAPI,
+        plotter: Plotter,
+    ):
+        settings = load_settings()
         self.left_pipette = left_pipette
         self.containers = containers
         self.pendant_drop_camera = pendant_drop_camera
         self.opentrons_api = opentrons_api
         self.plotter = plotter
-        self.logger = logger
-        self.max_retries = 1
-        self.incremental_decrease_vol = 0.5
-
-    def set_max_retries(self, retries: int):
-        self.max_retries = retries
-
-    def set_incremental_decrease_vol(self, delta_vol: float):
-        self.incremental_decrease_vol = delta_vol
+        self.logger = Logger(
+            name="protocol",
+            file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
+        )
+        self.MAX_RETRIES = settings["DROP_RETRIES"]
+        self.DROP_VOLUME_DECREASE_AFTER_RETRY = settings["DROP_VOLUME_DECREASE_AFTER_RETRY"]
 
     def measure_pendant_drop(
         self, source: Container, drop_parameters: dict, calibrate=False
-    ): 
+    ):
         drop_count = 1
         valid_droplet = False
         initial_volume = drop_parameters["drop_volume"]
-        
+
         if self.left_pipette.has_tip:
             self.left_pipette.drop_tip()
 
         if not self.left_pipette.has_needle:
             self.left_pipette.pick_up_needle()
 
-        while not valid_droplet and drop_count <= self.max_retries:
+        while not valid_droplet and drop_count <= self.MAX_RETRIES:
 
-            drop_parameters["drop_volume"] = initial_volume - self.incremental_decrease_vol * (drop_count - 1)
-            self.logger.info(f"Start measurment of pendant drop of {source.WELL_ID} with drop volume {drop_parameters['drop_volume']} uL and drop count {drop_count}.")
+            drop_parameters["drop_volume"] = (
+                initial_volume - self.DROP_VOLUME_DECREASE_AFTER_RETRY * (drop_count - 1)
+            )
+            self.logger.info(
+                f"Start measurment of pendant drop of {source.WELL_ID} with drop volume {drop_parameters['drop_volume']} uL and drop count {drop_count}."
+            )
             self._make_pendant_drop(
                 source=source,
                 drop_volume=drop_parameters["drop_volume"],
@@ -62,7 +73,7 @@ class DropletManager:
                 )
                 if dynamic_surface_tension:
                     last_st = dynamic_surface_tension[-1][1]
-                else: #if no dynamic surface tension is measured, we set last_st to zero
+                else:  # if no dynamic surface tension is measured, we set last_st to zero
                     last_st = 0
 
                 if (
@@ -73,7 +84,7 @@ class DropletManager:
                     self._return_pendant_drop(
                         source=source, drop_volume=drop_parameters["drop_volume"]
                     )
-                    if drop_count < self.max_retries:
+                    if drop_count < self.MAX_RETRIES:
                         self.logger.warning(
                             f"Failed to create valid droplet for {source.WELL_ID} after {drop_count} attempts. Will try again."
                         )
@@ -85,7 +96,7 @@ class DropletManager:
 
         if not valid_droplet:
             self.logger.warning(
-                f"Failed to create valid droplet for {source.WELL_ID} after {self.max_retries} attempts."
+                f"Failed to create valid droplet for {source.WELL_ID} after {self.MAX_RETRIES} attempts."
             )
 
         self.pendant_drop_camera.stop_capture()

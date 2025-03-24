@@ -11,14 +11,14 @@ from hardware.opentrons.http_communications import OpentronsAPI
 
 class Configuration:
 
-    def __init__(self, http_api: OpentronsAPI):
+    def __init__(self, opentrons_api: OpentronsAPI):
         settings = load_settings()
         self.settings = settings
-        self.api = http_api
-        self.LABWARE_DEFINITIONS_FOLDER = self.api.LABWARE_DEFINITIONS_FOLDER
+        self.opentrons_api = opentrons_api
+        self.LABWARE_DEFINITIONS_FOLDER = self.opentrons_api.LABWARE_DEFINITIONS_FOLDER
         self.ROBOT_TYPE = settings["ROBOT_TYPE"]
         self.FILE_PATH_CONFIG = f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data/{settings["CONFIG_FILENAME"]}'
-        self.LAYOUT = self.load_config_file()
+        self.LAYOUT = self._load_config_file()
         self.RIGHT_PIPETTE_NAME = "p1000_single_gen2"
         self.LEFT_PIPETTE_NAME = "p20_single_gen2"
         self.RIGHT_PIPETTE_ID = None
@@ -30,29 +30,15 @@ class Configuration:
             file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
         )
 
-    def load_config_file(self):
-        try:
-            return pd.read_csv(self.FILE_PATH_CONFIG)
-        except FileNotFoundError:
-            self.logger.error(
-                f"Configuration file not found at {self.FILE_PATH_CONFIG}"
-            )
-            return None
 
-    def check_if_custom_labware(self, labware_file: str) -> bool:
-        list_of_custom_labware = os.listdir(self.LABWARE_DEFINITIONS_FOLDER)
-        for custom_labware in list_of_custom_labware:
-            if labware_file == custom_labware[:-5]:
-                return True
-        return False
 
     def load_pipettes(self):
         try:
-            self.RIGHT_PIPETTE_ID = self.api.load_pipette(
+            self.RIGHT_PIPETTE_ID = self.opentrons_api.load_pipette(
                 name=self.RIGHT_PIPETTE_NAME, mount="right"
             )
             right_pipette = Pipette(
-                http_api=self.api,
+                opentrons_api=self.opentrons_api,
                 mount="right",
                 pipette_name=self.RIGHT_PIPETTE_NAME,
                 pipette_id=self.RIGHT_PIPETTE_ID,
@@ -60,11 +46,11 @@ class Configuration:
                 containers=self.CONTAINERS
             )
 
-            self.LEFT_PIPETTE_ID = self.api.load_pipette(
+            self.LEFT_PIPETTE_ID = self.opentrons_api.load_pipette(
                 name=self.LEFT_PIPETTE_NAME, mount="left"
             )
             left_pipette = Pipette(
-                http_api=self.api,
+                opentrons_api=self.opentrons_api,
                 mount="left",
                 pipette_name=self.LEFT_PIPETTE_NAME,
                 pipette_id=self.LEFT_PIPETTE_ID,
@@ -97,9 +83,9 @@ class Configuration:
                 # TODO: how to load trash in Flex?
 
                 # check if labware is custom
-                custom_labware = self.check_if_custom_labware(labware_file)
+                custom_labware = self._check_if_custom_labware(labware_file)
 
-                labware_info = self.api.load_labware(
+                labware_info = self.opentrons_api.load_labware(
                     labware_name=labware_name,
                     labware_file=labware_file,
                     location=position,
@@ -154,6 +140,22 @@ class Configuration:
         except Exception as e:
             self.logger.error(f"Error loading containers: {e}")
             return None
+        
+    def _load_config_file(self):
+        try:
+            return pd.read_csv(self.FILE_PATH_CONFIG)
+        except FileNotFoundError:
+            self.logger.error(
+                f"Configuration file not found at {self.FILE_PATH_CONFIG}"
+            )
+            return None
+
+    def _check_if_custom_labware(self, labware_file: str) -> bool:
+        list_of_custom_labware = os.listdir(self.LABWARE_DEFINITIONS_FOLDER)
+        for custom_labware in list_of_custom_labware:
+            if labware_file == custom_labware[:-5]:
+                return True
+        return False
 
     def _find_type(self, labware_name):
         if "tube rack 15 mL" in labware_name:
