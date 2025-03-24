@@ -7,7 +7,6 @@ legacy/
 settings/
 experiments/**/*.json
 experiments/**/*.log
-settings/*.json
 hardware/sensor/*.txt
 playbook.ipynb
 test_camera.py
