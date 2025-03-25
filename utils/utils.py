@@ -16,10 +16,23 @@ def calculate_equillibrium_value(x: list, n_eq_points: int, column_index: int):
         print(f"less than {n_eq_points} points.")
     return calculate_average_in_column(x=x, column_index=column_index)
 
+def get_well_id_from_index(well_index: int, plate_location: int):
+    """
+    Assumes 96 well plate
+    """
+    list_of_wells = []
+    for letter in ["A", "B", "C", "D", "E", "F", "G", "H"]:
+        for i in range(1, 13):
+            well_id = f"{plate_location}{letter}{i}"
+            list_of_wells.append(well_id)
+    return list_of_wells[well_index]
+
 def play_sound(text: str):
     engine = pyttsx3.init()
     engine.say(text)
     engine.runAndWait()
 
+if __name__ == "__main__":
+    print(get_well_id_from_index(12, 7))
 
 

@@ -86,7 +86,7 @@ class Protocol:
             "max_measure_time": 60,
             "flow_rate": 1,
         }  # standard settings for calibration
-        scale_t = self.droplet_manager.measure_pendant_drop(
+        scale_t, drop_parameters = self.droplet_manager.measure_pendant_drop(
             source=self.containers["7A1"],
             drop_parameters=drop_parameters,
             calibrate=True,
@@ -105,13 +105,14 @@ class Protocol:
             drop_parameters = {
                 "drop_volume": float(well_info["drop volume (uL)"][i]),
                 "max_measure_time": float(self.settings["EQUILIBRATION_TIME"]),
-                "flow_rate": float(well_info["flow rate (uL/s)"][i]),
+                "flow_rate": float(self.settings["FLOW_RATE"]),
             }
             dynamic_surface_tension, drop_parameters = (
                 self.droplet_manager.measure_pendant_drop(
                     source=self.containers[well_id], drop_parameters=drop_parameters
                 )
             )
+            self.formulater.wash(repeat=3)
             self.results = append_results(
                 results=self.results,
                 point_type="None",
@@ -124,29 +125,31 @@ class Protocol:
             )
             self.plotter.plot_results_well_id(df=self.results)
             save_results(results=self.results)
-
+        self.left_pipette.return_needle()
         self.logger.info("Finished measure wells protocol.")
         play_sound("DATA DATA.")
 
     def characterize_surfactant(self):
         self.logger.info("Starting characterization protocol...")
+
+        # general information
         self.settings = load_settings()  # update settings
         characterization_info = load_info(
             file_name=self.settings["CHARACTERIZATION_INFO_FILENAME"]
         )
         explore_points = int(self.settings["EXPLORE_POINTS"])
         exploit_points = int(self.settings["EXPLOIT_POINTS"])
-        # results_placeholder = pd.read_csv("results.csv")  #!
 
         for i, surfactant in enumerate(characterization_info["surfactant"]):
             row_id = characterization_info["row id"][i]
+            measure_time = float(characterization_info["measure time"][i])
             self.formulater.serial_dilution(
                 row_id=row_id,
                 solution_name=surfactant,
                 n_dilutions=explore_points,
                 well_volume=float(self.settings["WELL_VOLUME"]),
             )
-            for i in range(explore_points):
+            for i in reversed(range(explore_points)): #reverse order to go from low to high concentration
                 well_id_explore = f"{row_id}{i+1}"
                 drop_volume_suggestion = suggest_volume(
                     results=self.results,
@@ -155,7 +158,7 @@ class Protocol:
                 )
                 drop_parameters = {
                     "drop_volume": drop_volume_suggestion,
-                    "max_measure_time": float(self.settings["EQUILIBRATION_TIME"]),
+                    "max_measure_time": measure_time,
                     "flow_rate": float(self.settings["FLOW_RATE"]),
                 }
                 dynamic_surface_tension, drop_parameters = (
@@ -177,6 +180,9 @@ class Protocol:
                 self.plotter.plot_results_concentration(
                     df=self.results, solution_name=surfactant
                 )
+            
+            self.formulater.wash(repeat=3, return_needle=True)
+
             for i in range(exploit_points):
                 well_id_exploit = f"{row_id}{explore_points+i+1}"
                 suggest_concentration, st_at_suggestion = self.learner.suggest(results=self.results, solution_name=surfactant)
@@ -211,10 +217,11 @@ class Protocol:
                 self.plotter.plot_results_concentration(
                     df=self.results, solution_name=surfactant
                 )
-
+                self.formulater.wash(repeat=3, return_needle=True)
+        
         self.logger.info("Finished characterization protocol.")
         play_sound("DATA DATA.")
-    
+
     def measure_same_well(self, well_id: str, repeat: int = 3):
         drop_parameters = {"drop_volume": 6, "max_measure_time": 60, "flow_rate": 1}
         for i in range(repeat):
@@ -232,7 +239,7 @@ class Protocol:
             )
         if self.left_pipette.has_needle:
             self.left_pipette.return_needle()
-    
+
     def measure_same_well_cali(self, well_id: str, repeat: int = 3):
         drop_parameters = {"drop_volume": 11, "max_measure_time": 30, "flow_rate": 1}
         for i in range(repeat):

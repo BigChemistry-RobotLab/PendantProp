@@ -7,6 +7,7 @@ from utils.search_containers import (
     get_plate_ids,
 )
 from utils.load_save_functions import load_settings
+from utils.utils import get_well_id_from_index
 
 
 class Formulater:
@@ -24,6 +25,7 @@ class Formulater:
             name="protocol",
             file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
         )
+        self.well_index = 0
 
     def formulate_exploit_point(
         self,
@@ -206,10 +208,11 @@ class Formulater:
         self.right_pipette.drop_tip()
         self.logger.info("Done filling plate.")
 
-    def wash(self, repeat = 1):
+    def wash(self, repeat = 1, return_needle = False):
 
-        well_id_water = get_well_id_solution(containers=self.containers, solution_name="water")
+        well_id_water = get_well_id_solution(containers=self.containers, solution_name="water_wash")
         well_id_trash = get_well_id_solution(containers=self.containers, solution_name="trash")
+        well_id_wash_well = get_well_id_from_index(well_index=self.well_index, plate_location=3)
 
         if self.left_pipette.has_tip:
             self.left_pipette.drop_tip()
@@ -225,16 +228,17 @@ class Formulater:
             self.right_pipette.aspirate(
                 volume=300, source=self.containers[well_id_water], touch_tip=True
             )
-            self.right_pipette.dispense(volume=300, destination=self.containers["3A1"], touch_tip=True)
+            self.right_pipette.dispense(volume=300, destination=self.containers[well_id_wash_well], touch_tip=True, update_info=False)
 
             # flush needle with water via mixing
-            self.left_pipette.mixing(container=self.containers["3A1"], mix=("after", 20, 5))
+            self.left_pipette.mixing(container=self.containers[well_id_wash_well], mix=("after", 20, 5))
 
             # transfer water in cleaning well to trash falcon tube
             self.right_pipette.aspirate(
                 volume=300,
-                source=self.containers["3A1"],
+                source=self.containers[well_id_wash_well],
                 touch_tip=True,
+                update_info=False
             )
             self.right_pipette.dispense(
                 volume=300, destination=self.containers[well_id_trash], update_info=False
@@ -243,3 +247,8 @@ class Formulater:
             self.right_pipette.drop_tip()
 
         self.left_pipette.clean_on_sponge()
+        if return_needle:
+            self.left_pipette.return_needle()
+
+        self.well_index += 1
+

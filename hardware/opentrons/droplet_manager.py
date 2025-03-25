@@ -28,8 +28,8 @@ class DropletManager:
             name="protocol",
             file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
         )
-        self.MAX_RETRIES = settings["DROP_RETRIES"]
-        self.DROP_VOLUME_DECREASE_AFTER_RETRY = settings["DROP_VOLUME_DECREASE_AFTER_RETRY"]
+        self.MAX_RETRIES = int(settings["DROP_RETRIES"])
+        self.DROP_VOLUME_DECREASE_AFTER_RETRY = float(settings["DROP_VOLUME_DECREASE_AFTER_RETRY"])
 
     def measure_pendant_drop(
         self, source: Container, drop_parameters: dict, calibrate=False
@@ -63,8 +63,7 @@ class DropletManager:
 
             start_time = time.time()
             while time.time() - start_time < drop_parameters["max_measure_time"]:
-                self.opentrons_api.delay(seconds=1)
-                time.sleep(1)
+                time.sleep(10)
                 dynamic_surface_tension = self.pendant_drop_camera.st_t
                 self.plotter.plot_dynamic_surface_tension(
                     dynamic_surface_tension=dynamic_surface_tension,
@@ -86,7 +85,7 @@ class DropletManager:
                     )
                     if drop_count < self.MAX_RETRIES:
                         self.logger.warning(
-                            f"Failed to create valid droplet for {source.WELL_ID} after {drop_count} attempts. Will try again."
+                            f"Failed to create valid droplet for {source.WELL_ID} after {drop_count - 1} attempts. Will try again."
                         )
                         break
 
@@ -95,6 +94,7 @@ class DropletManager:
                 valid_droplet = True
 
         if not valid_droplet:
+            # no return?
             self.logger.warning(
                 f"Failed to create valid droplet for {source.WELL_ID} after {self.MAX_RETRIES} attempts."
             )
@@ -105,15 +105,14 @@ class DropletManager:
             self._return_pendant_drop(
                 source=source, drop_volume=drop_parameters["drop_volume"]
             )
-
-        if self.left_pipette.has_tip:
-            self.left_pipette.drop_tip()
+        
 
         # update drop parameters
         drop_parameters["drop_count"] = drop_count
+
         if calibrate:
             self.logger.info("Done with calibration of PendantProp.")
-            return self.pendant_drop_camera.scale_t
+            return self.pendant_drop_camera.scale_t, drop_parameters
         else:
             self.logger.info("Done with pendant drop measurement.")
             return self.pendant_drop_camera.st_t, drop_parameters
