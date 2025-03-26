@@ -121,7 +121,7 @@ class Pipette:
 
         # bit deeper to plunge the needle in the tip rack
         offset = self.OFFSET.copy()
-        offset['z'] -= 20
+        offset['z'] -= 40
 
         self.opentrons_api.drop_tip(
             pipette_id=self.PIPETTE_ID,
