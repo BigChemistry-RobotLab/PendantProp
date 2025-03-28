@@ -21,6 +21,7 @@ class PendantDropAnalysis:
         self.settings = load_settings()
         self.density = float(self.settings["DENSITY"])
         self.needle_diameter_mm = 0.642 #TODO get this from utils function
+        self.needle_diameter_px = None
         # self.scale = float(self.settings["SCALE"])
         self.gravity_constant = 9.80665
         self.file_path = None
@@ -138,8 +139,8 @@ class PendantDropAnalysis:
 
         right_point_needle = contourright[-1][0]
         left_point_needle = contourleft[0][0]
-        needle_diameter_px = right_point_needle[0]-left_point_needle[0]
-
+        self.needle_diameter_px = right_point_needle[0]-left_point_needle[0]
+        self.scale = self.needle_diameter_mm / self.needle_diameter_px
         # Adjust the coordinates of the needle points to the original image
 
         offset_y = 40
@@ -153,10 +154,6 @@ class PendantDropAnalysis:
             left_point_needle[1] + top_left[1] + offset_y,
         )
 
-        # Calculate the needle diameter in pixels
-        needle_diameter_px = right_point_needle[0] - left_point_needle[0]
-        self.scale = self.needle_diameter_mm / needle_diameter_px
-
         # Draw the double-arrow line for the needle diameter on the analysis image
         self._draw_double_arrow_line(
             image=self.analysis_image,
@@ -166,7 +163,7 @@ class PendantDropAnalysis:
             thickness=5,
             tip_length=0.05,
             fontscale=0.5,
-            text=f"Needle D: {needle_diameter_px}px",
+            text=f"Needle D: {self.needle_diameter_px}px",
             thickness_font=2
         )
 
@@ -320,6 +317,30 @@ class PendantDropAnalysis:
                 thickness=thickness_font,
             )
 
+    def _calculate_wortington(self, vol_droplet, st):
+        """
+        taken from https://doi.org/10.1016/j.jcis.2015.05.012.
+        units cancel out if st given in mN/m and needle_diameter in mm and vol droplet in uL
+        """
+        
+        Wo = (self.density*self.gravity_constant* vol_droplet) / (np.pi * st* self.needle_diameter_mm )
+        return Wo
+    
+    def check_wortington(self, vol_droplet, st):
+        Wo = self._calculate_wortington(vol_droplet=vol_droplet, st=st)
+        if Wo > 0.6:
+            return True
+        else:
+            return False
+    
+    def check_diameter(self):
+        if 180 < self.needle_diameter_px < 190:
+            return True
+        else:
+            "too large of diameter, droplet sticking to needle."
+            return False
+
+
     def image2st(self, img):
         self.raw_image = img    
         self.process_image()
@@ -327,6 +348,7 @@ class PendantDropAnalysis:
         return st, self.analysis_image
 
     def image2scale(self, img):
+        "legacy"
         # surface_tension = self.density * self.gravity_constant * (de_scaled**2) * Hin
         self.raw_image = img    
         self.process_image()
