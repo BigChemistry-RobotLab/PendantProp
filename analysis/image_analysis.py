@@ -20,13 +20,13 @@ class PendantDropAnalysis:
     def __init__(self):
         self.settings = load_settings()
         self.density = float(self.settings["DENSITY"])
-        self.scale = float(self.settings["SCALE"])
+        self.needle_diameter_mm = 0.642 #TODO get this from utils function
+        # self.scale = float(self.settings["SCALE"])
         self.gravity_constant = 9.80665
         self.file_path = None
         self.raw_image = None
         self.processed_image = None
         self.analysis_image = None
-
 
     def select_image(self):
         # Create Tkinter root window
@@ -75,11 +75,12 @@ class PendantDropAnalysis:
 
         # Draw the longest contour on the original image
         self.analysis_image = self.raw_image.copy()
+        overlay = self.analysis_image.copy()
         cv2.drawContours(
             image=self.analysis_image,
             contours=[longest_contour],
             contourIdx=-1,
-            color=(252, 3, 103),
+            color=(40, 39, 150),
             thickness=10,
         )
 
@@ -96,29 +97,16 @@ class PendantDropAnalysis:
                 touching_points_left.append(point[0])
         left_pt_de_line = (touching_points_left[0][0], touching_points_left[0][1])
         right_pt_de_line = (touching_points_left[0][0] + w, touching_points_left[0][1])
-        cv2.arrowedLine(
-            img=self.analysis_image,
-            pt1=left_pt_de_line,
-            pt2=right_pt_de_line,
-            color=(255, 127, 14),
+        self._draw_double_arrow_line(
+            image=self.analysis_image,
+            point1=left_pt_de_line,
+            point2=right_pt_de_line,
+            color=(255, 127, 14),  # Orange color
             thickness=10,
+            tip_length=0.05,
+            text=f"de={de:.0f}px",  # Add the text for the line
         )
-        cv2.arrowedLine(
-            img=self.analysis_image,
-            pt1=right_pt_de_line,
-            pt2=left_pt_de_line,
-            color=(255, 127, 14),
-            thickness=10,
-        )
-        cv2.putText(
-            img=self.analysis_image,
-            text=f"de={de:.0f}px",
-            org=(left_pt_de_line[0], left_pt_de_line[1] + text_y_offset),
-            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-            fontScale=2,
-            color=(255, 127, 14),
-            thickness=3,
-        )
+
         # Compute the coordinates of the rectangle corners
         top_left = (x, y)
         top_right = (x + w, y)
@@ -127,12 +115,14 @@ class PendantDropAnalysis:
 
         # Create new blank image to redraw biggest contour and crop above the ds
         cropped_image = np.zeros_like(self.raw_image)
-        cv2.drawContours(cropped_image, [longest_contour], -1, (0, 255, 0), thickness=10)
+        cv2.drawContours(cropped_image, [longest_contour], -1, (0, 255, 0), thickness=2)
         cropped_image = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
+
         cropped_image = cropped_image[
             int(top_left[1]) : int(bottom_left[1] - (de)),
             int(top_left[0]) : int(top_right[0]),
         ]
+
         # find new contours in cropped image
         cnts_2, _ = cv2.findContours(
             cropped_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
@@ -144,6 +134,40 @@ class PendantDropAnalysis:
             key=lambda pair: euclidean(
                 cv2.minEnclosingCircle(pair[0])[0], cv2.minEnclosingCircle(pair[1])[0]
             ),
+        )
+
+        right_point_needle = contourright[-1][0]
+        left_point_needle = contourleft[0][0]
+        needle_diameter_px = right_point_needle[0]-left_point_needle[0]
+
+        # Adjust the coordinates of the needle points to the original image
+
+        offset_y = 40
+
+        right_point_needle_transposed = (
+            right_point_needle[0] + top_left[0],
+            right_point_needle[1] + top_left[1] + offset_y,
+        )
+        left_point_needle_transposed = (
+            left_point_needle[0] + top_left[0],
+            left_point_needle[1] + top_left[1] + offset_y,
+        )
+
+        # Calculate the needle diameter in pixels
+        needle_diameter_px = right_point_needle[0] - left_point_needle[0]
+        self.scale = self.needle_diameter_mm / needle_diameter_px
+
+        # Draw the double-arrow line for the needle diameter on the analysis image
+        self._draw_double_arrow_line(
+            image=self.analysis_image,
+            point1=left_point_needle_transposed,
+            point2=right_point_needle_transposed,
+            color=(44, 160, 44), 
+            thickness=5,
+            tip_length=0.05,
+            fontscale=0.5,
+            text=f"Needle D: {needle_diameter_px}px",
+            thickness_font=2
         )
 
         # Calculate the horizontal distance between the two farthest points of the contours
@@ -162,61 +186,24 @@ class PendantDropAnalysis:
             new_y_left, new_y_right
         )  # Use the lower of the two for drawing
 
-        # # Adjust the drawing of the maximum distance line and text with the new Y-coordinate
-        cv2.arrowedLine(
-            self.analysis_image,
-            (Lx_adjusted, new_y_position),  # Use new Y-coordinate for left contour
-            (
-                Rx_adjusted + Rw,
-                new_y_position,
-            ),  # Use new Y-coordinate for right contour, ensuring line is horizontal
-            (31, 119, 180),  # Color for distinction
-            thickness=10,
-        )
-        cv2.arrowedLine(
-            self.analysis_image,
-            (
-                Rx_adjusted + Rw,
-                new_y_position,
-            ),
-            (Lx_adjusted, new_y_position),  # Use new Y-coordinate for left contour
-            (31, 119, 180),  # Color for distinction
-            thickness=10,
-        )
-
-        # # Adjust the text position to be slightly above or below the line
-        cv2.putText(
-            self.analysis_image,
-            f"ds={ds:.0f}px",
-            (Lx_adjusted, new_y_position + text_y_offset),  # Adjusted for visibility
-            cv2.FONT_HERSHEY_SIMPLEX,
-            fontScale=2,
+        self._draw_double_arrow_line(
+            image=self.analysis_image,
+            point1=(Lx_adjusted, new_y_position),  # Left contour point
+            point2=(Rx_adjusted + Rw, new_y_position),  # Right contour point
             color=(31, 119, 180),  # Color for distinction
-            thickness=3,
+            thickness=10,
+            tip_length=0.05,
+            text=f"ds={ds:.0f}px",  # Add the text for the line
         )
-
-        left_visual = contourleft.copy()
-        left_visual[:, :, 0] += x
-
-        right_visual = contourright.copy()
-        right_visual[:, :, 0] += x
 
         S = ds / de
         Hin = self._calculate_Hin(S)
         self.Hin = Hin
-        de_scaled = de * self.scale # pixels -> mm
+        de_scaled = de * self.scale # mm -> pixels
         surface_tension = self.density * self.gravity_constant * (de_scaled**2) * Hin
 
-        # Draw the surface_tension on the visual_image
-        cv2.putText(
-            self.analysis_image,
-            f"surface_tension: {surface_tension:.2f} mN/m",
-            (10, self.analysis_image.shape[0] - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            2,
-            (0, 0, 0),
-            2,
-        )
+        alpha = 0.5  # Transparency factor (0.0 = fully transparent, 1.0 = fully opaque)
+        cv2.addWeighted(overlay, alpha, self.analysis_image, 1 - alpha, 0, self.analysis_image)
 
         return surface_tension
 
@@ -273,6 +260,65 @@ class PendantDropAnalysis:
                 - (0.20970)
             )
         return Hin
+
+    def _draw_double_arrow_line(self, image, point1, point2, color=(0, 255, 255), thickness=2, tip_length=0.05, text=None, fontscale = 2, thickness_font = 3):
+        """
+        Draws a double-arrow line between two points on the given image.
+
+        Args:
+            image (numpy.ndarray): The image on which to draw the line.
+            point1 (tuple): The starting point of the line (x, y).
+            point2 (tuple): The ending point of the line (x, y).
+            color (tuple): The color of the arrow line in BGR format. Default is yellow.
+            thickness (int): The thickness of the arrow line. Default is 2.
+            tip_length (float): The length of the arrow tip relative to the arrow length. Default is 0.05.
+            text (str): Optional text to display at the midpoint of the line.
+        """
+        # Draw arrow from point1 to point2
+        cv2.arrowedLine(
+            image,
+            tuple(point1),
+            tuple(point2),
+            color,
+            thickness=thickness,
+            tipLength=tip_length,
+        )
+
+        # Draw arrow from point2 to point1
+        cv2.arrowedLine(
+            image,
+            tuple(point2),
+            tuple(point1),
+            color,
+            thickness=thickness,
+            tipLength=tip_length,
+        )
+
+        # Add optional text at the midpoint of the line
+        if text:
+            mid_x = (point1[0] + point2[0]) // 2
+            mid_y = (point1[1] + point2[1]) // 2
+
+            # Get the text size
+            text_size = cv2.getTextSize(
+                text, cv2.FONT_HERSHEY_SIMPLEX, fontScale=fontscale, thickness=1
+            )[0]
+            text_width, text_height = text_size
+
+            # Adjust the text position to center it and move it slightly above the line
+            text_x = mid_x - (text_width // 2)
+            text_y = mid_y - (text_height // 2) - 5  # Move text slightly above the line
+
+            # Draw the text
+            cv2.putText(
+                image,
+                text,
+                (text_x, text_y),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                fontScale=fontscale,
+                color=color,
+                thickness=thickness_font,
+            )
 
     def image2st(self, img):
         self.raw_image = img    

@@ -84,7 +84,7 @@ class PendantDropCamera:
 
         # Initialize attributes
         self.st_t = None  # Will hold time series data for surface tension
-        self.scale_t = None # Will hold time series data for scale readings !for calibration
+        self.scale_t = None # Will hold time series data for scale readings for calibration
         self.current_image = None  # Latest image grabbed from the camera
         self.analysis_image = None  # Latest processed (analyzed) image
         self.thread = None  # For streaming
