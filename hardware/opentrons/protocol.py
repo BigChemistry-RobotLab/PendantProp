@@ -112,7 +112,7 @@ class Protocol:
                     source=self.containers[well_id], drop_parameters=drop_parameters
                 )
             )
-            self.formulater.wash(repeat=3)
+            self.formulater.wash(repeat=1)
             self.results = append_results(
                 results=self.results,
                 point_type="None",
@@ -127,7 +127,7 @@ class Protocol:
             save_results(results=self.results)
         self.left_pipette.return_needle()
         self.logger.info("Finished measure wells protocol.")
-        play_sound("DATA DATA.")
+        play_sound("DATA DATA")  # should be changed to Pas op, ik geef je een knietje
 
     def characterize_surfactant(self):
         self.logger.info("Starting characterization protocol...")
@@ -180,7 +180,7 @@ class Protocol:
                 self.plotter.plot_results_concentration(
                     df=self.results, solution_name=surfactant
                 )
-            
+
             self.formulater.wash(repeat=3, return_needle=True)
 
             for i in range(exploit_points):
@@ -218,7 +218,7 @@ class Protocol:
                     df=self.results, solution_name=surfactant
                 )
                 self.formulater.wash(repeat=3, return_needle=True)
-        
+
         self.logger.info("Finished characterization protocol.")
         play_sound("DATA DATA.")
 

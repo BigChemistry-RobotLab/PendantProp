@@ -74,6 +74,7 @@ class PendantDropCamera:
             self.stop_background_threads = Event()
             self.running = False
             self.streaming = False
+            self.checking = False
         except:
             print(
                 "Camera: Could not find pendant drop camera. Close camera software and check cables."
@@ -87,8 +88,9 @@ class PendantDropCamera:
         self.scale_t = None # Will hold time series data for scale readings for calibration
         self.current_image = None  # Latest image grabbed from the camera
         self.analysis_image = None  # Latest processed (analyzed) image
-        self.thread = None  # For streaming
-        self.process_thread = None  # Combined thread for save, analyze, and plot
+        self.stream_thread = None  # For streaming
+        self.process_thread = None  # Combined thread for save, analyze
+        self.check_thread = None
         self.well_id = None
 
     def initialize_measurement(self, well_id: str, drop_count: int):
@@ -104,13 +106,14 @@ class PendantDropCamera:
         self.drop_count = drop_count
         self.st_t = []  # List to store [time, surface tension] measurements
         self.scale_t = [] # List to store [time, scale reading] measurements
+        self.wortington_numbers = []
         self.start_stream()
-        
+
     def start_stream(self):
         if not self.streaming:
             self.streaming = True
-            self.thread = threading.Thread(target=self._stream, daemon=True)
-            self.thread.start()
+            self.stream_thread = threading.Thread(target=self._stream, daemon=True)
+            self.stream_thread.start()
 
     def start_capture(self):
         if not self.running:
@@ -122,6 +125,25 @@ class PendantDropCamera:
             )
             self.process_thread.start()
             self.logger.info(f"Camera: start measuring {self.well_id}.")
+
+    def start_check(self, vol_droplet):
+        if not self.checking:
+            self.start_time = datetime.now()
+            self.checking = True
+            self.check_thread = threading.Thread(
+                target=self._check, args=(vol_droplet,), daemon=True
+            )
+            self.check_thread.start()
+            self.logger.info(f"Camera: checking started")
+
+    def _check(self, vol_droplet):
+        while self.checking:
+            if self.current_image is not None:
+                wortington_number = self.check_image(
+                    img=self.current_image, vol_droplet=vol_droplet
+                )
+                if wortington_number is not None:
+                    self.wortington_numbers.append(wortington_number)
 
     def _stream(self):
         self.camera.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
@@ -143,7 +165,6 @@ class PendantDropCamera:
         """
         # Use a timer to ensure saving happens roughly once per second
         last_save_time = time.time()
-        window_size = 20  # Window size for smoothing in the plot
 
         while self.running:
             if self.current_image is not None:
@@ -179,6 +200,15 @@ class PendantDropCamera:
             # self.logger.error(f"Camera: error {e}")
             self.analysis_image = None
 
+    def check_image(self, img, vol_droplet):
+        try:
+            wortington_number = self.analyzer.image2check(
+                img=img, vol_droplet=vol_droplet
+            )
+            return wortington_number
+        except Exception as e:
+            pass
+
     def stop_capture(self):
         self.running = False
         if self.process_thread is not None:
@@ -192,12 +222,23 @@ class PendantDropCamera:
         self.stop_stream()
         self.logger.info(f"Camera: stopped measurement")
 
+    def stop_check(self):
+        self.checking = False
+        if self.check_thread is not None:
+            self.stop_background_threads.set()
+            self.check_thread.join()
+        self.check_thread = None
+        self.analysis_image = None
+        self.current_image = None
+        self.stop_stream()
+        self.logger.info("Camera: stopped checking")
+
     def stop_stream(self):
         self.streaming = False
-        if self.thread is not None:
+        if self.stream_thread is not None:
             self.stop_background_threads.set()
-            self.thread.join()
-        self.thread = None
+            self.stream_thread.join()
+        self.stream_thread = None
         self.current_image = None
 
     def generate_frames(self):

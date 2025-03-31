@@ -1,4 +1,5 @@
 import time
+import numpy as np
 
 from utils.logger import Logger
 from hardware.cameras import PendantDropCamera
@@ -151,3 +152,40 @@ class DropletManager:
         self.logger.info("Re-aspirated the pendant drop into the tip.")
         self.left_pipette.dispense(volume=17, destination=source)
         self.logger.info("Returned volume in tip to source.")
+
+    def _initialise_camera(self, source: Container, drop_count: int):
+        self.pendant_drop_camera.initialize_measurement(
+            well_id=source.WELL_ID,
+            drop_count=drop_count
+        )
+    
+    def _prepare_pendant_drop(self, source: Container):
+        self.left_pipette.mixing(container=source, mix=("before", 15, 3))
+        self.left_pipette.aspirate(volume=17, source=source, flow_rate=15)
+        self.left_pipette.air_gap(air_volume=3)
+        self.left_pipette.clean_on_sponge()
+        self.left_pipette.remove_air_gap(at_drop_stage=True)
+
+    def _dispense_pendant_drop(self, flow_rate: float, check_time = 30):
+        volume_resolution = 1
+        wortington_number = 0
+        drop_volume = 0
+        while wortington_number < 0.7:
+            self.left_pipette.dispense(
+                volume = volume_resolution,
+                destination=self.containers["drop_stage"],
+                flow_rate=flow_rate
+            )
+            drop_volume += volume_resolution
+            self.pendant_drop_camera.start_check(vol_droplet=drop_volume)
+            time.sleep(check_time)
+            self.pendant_drop_camera.stop_check()
+            wortington_numbers = self.pendant_drop_camera.wortington_numbers
+
+            if len(wortington_numbers) > 1:
+                wortington_number = np.mean(wortington_numbers)
+
+            else:
+                wortington_number = 0
+            
+            print(wortington_number)
