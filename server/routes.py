@@ -50,7 +50,7 @@ replace_static_images_with_placeholders()
 opentrons_api = OpentronsAPI()
 sensor_api = SensorAPI()
 pendant_drop_camera = PendantDropCamera()
-opentron_camera = OpentronCamera()
+# opentron_camera = OpentronCamera()
 
 # Global variable to store the protocol instance
 protocol = None
@@ -234,10 +234,11 @@ def about():
 
 @app.route("/opentron_video_feed")
 def opentron_video_feed():
-    return Response(
-        opentron_camera.generate_frames(),
-        mimetype="multipart/x-mixed-replace; boundary=frame",
-    )
+    pass
+    # return Response(
+    #     opentron_camera.generate_frames(),
+    #     mimetype="multipart/x-mixed-replace; boundary=frame",
+    # )
 
 
 @app.route("/pendant_drop_video_feed")

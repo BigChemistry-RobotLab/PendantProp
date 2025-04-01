@@ -209,10 +209,9 @@ class Formulater:
         self.logger.info("Done filling plate.")
 
     def wash(self, repeat = 1, return_needle = False):
-
         well_id_water = get_well_id_solution(containers=self.containers, solution_name="water_wash")
         well_id_trash = get_well_id_solution(containers=self.containers, solution_name="trash")
-        well_id_wash_well = get_well_id_from_index(well_index=self.well_index, plate_location=3)
+        well_id_wash_well = get_well_id_from_index(well_index=self.well_index, plate_location=2) #TODO soft code this
 
         if self.left_pipette.has_tip:
             self.left_pipette.drop_tip()

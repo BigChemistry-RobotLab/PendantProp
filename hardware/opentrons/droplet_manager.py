@@ -31,7 +31,7 @@ class DropletManager:
         )
         self.MAX_RETRIES = int(settings["DROP_RETRIES"])
         self.DROP_VOLUME_DECREASE_AFTER_RETRY = float(settings["DROP_VOLUME_DECREASE_AFTER_RETRY"])
-        self.PENDANT_DROP_OFFSET = float(settings["PENDANT_DROP_OFFSET"])
+        self.PENDANT_DROP_DEPTH_OFFSET = float(settings["PENDANT_DROP_DEPTH_OFFSET"])
 
     def measure_pendant_drop(
         self, source: Container, drop_parameters: dict, calibrate=False
@@ -135,7 +135,7 @@ class DropletManager:
         self.left_pipette.dispense(
             volume=drop_volume,
             destination=self.containers["drop_stage"],
-            depth_offset=self.PENDANT_DROP_OFFSET,  # adjust if needed
+            depth_offset=self.PENDANT_DROP_DEPTH_OFFSET,  # adjust if needed
             flow_rate=flow_rate,
             log=False,
             update_info=False,
@@ -146,7 +146,7 @@ class DropletManager:
         self.left_pipette.aspirate(
             volume=drop_volume,
             source=self.containers["drop_stage"],
-            depth_offset=self.PENDANT_DROP_OFFSET,
+            depth_offset=self.PENDANT_DROP_DEPTH_OFFSET,
             log=False,
             update_info=False,
         )  # aspirate drop in tip
