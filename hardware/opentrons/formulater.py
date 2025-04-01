@@ -139,24 +139,25 @@ class Formulater:
 
         # adding water to all wells except the first one
         for i in range(n_dilutions-1):
-            pipette.transfer(
+            pipette.aspirate(
                 volume=well_volume,
                 source=self.containers[well_id_water],
-                destination=self.containers[f"{row_id}{i+2}"],
-                touch_tip=True,
-                blow_out=True,
+                touch_tip=True
             )
+            pipette.dispense(
+                volume=well_volume, destination=self.containers[f"{row_id}{i+2}"], blow_out=True
+            )
+
         pipette.drop_tip()
 
         # adding surfactant to the first well
         pipette.pick_up_tip()
-        pipette.aspirate(volume=well_volume*2, source=self.containers[well_id_solution])
-        pipette.touch_tip(container=self.containers[well_id_solution])
+        pipette.aspirate(volume=well_volume*2, source=self.containers[well_id_solution], touch_tip=True)
         pipette.dispense(
             volume=well_volume*2,
             destination=self.containers[f"{row_id}1"],
+            blow_out=True
         )
-        pipette.blow_out(container=self.containers[f"{row_id}1"])
 
         # serial dilution of surfactant
         for i in range(1, n_dilutions):
@@ -174,7 +175,7 @@ class Formulater:
             )
             pipette.blow_out(container=self.containers[f"{row_id}{i+1}"])
 
-        # transfering half of the volume of the last well to trash to ensure equal volume in all wells
+        # transfering half of the volume of the last well to trash to ensure equal volume in all wells (handy for dye check, not per se for surfactants dilutions)
         pipette.aspirate(
             volume=well_volume,
             source=self.containers[f"{row_id}{n_dilutions}"],
@@ -251,4 +252,3 @@ class Formulater:
             self.left_pipette.return_needle()
 
         self.well_index += 1
-
