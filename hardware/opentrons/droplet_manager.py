@@ -1,5 +1,6 @@
 import time
 import numpy as np
+import pandas as pd
 
 from utils.logger import Logger
 from hardware.cameras import PendantDropCamera
@@ -30,162 +31,165 @@ class DropletManager:
             file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
         )
         self.MAX_RETRIES = int(settings["DROP_RETRIES"])
-        self.DROP_VOLUME_DECREASE_AFTER_RETRY = float(settings["DROP_VOLUME_DECREASE_AFTER_RETRY"])
+        self.DROP_VOLUME_DECREASE_AFTER_RETRY = float(
+            settings["DROP_VOLUME_DECREASE_AFTER_RETRY"]
+        )
+        self.PENDANT_DROP_DEPTH_OFFSET = float(settings["PENDANT_DROP_DEPTH_OFFSET"])
+        self.FLOW_RATE = float(settings["FLOW_RATE"])
 
-    def measure_pendant_drop(
-        self, source: Container, drop_parameters: dict, calibrate=False
-    ):
-        drop_count = 1
-        valid_droplet = False
-        initial_volume = drop_parameters["drop_volume"]
+    def measure_pendant_drop(self, source: Container, max_measure_time=60):
 
+        # set attributes
+        self.drop_count = 1
+        self.source = source
+        self.logger.info(
+            f"Start pendant drop measurement of {source.WELL_ID}, drop count {self.drop_count}."
+        )
+
+        # initialize left pipette
         if self.left_pipette.has_tip:
             self.left_pipette.drop_tip()
 
         if not self.left_pipette.has_needle:
             self.left_pipette.pick_up_needle()
 
-        while not valid_droplet and drop_count <= self.MAX_RETRIES:
-
-            drop_parameters["drop_volume"] = (
-                initial_volume - self.DROP_VOLUME_DECREASE_AFTER_RETRY * (drop_count - 1)
-            )
-            self.logger.info(
-                f"Start measurment of pendant drop of {source.WELL_ID} with drop volume {drop_parameters['drop_volume']} uL and drop count {drop_count}."
-            )
-            self._make_pendant_drop(
-                source=source,
-                drop_volume=drop_parameters["drop_volume"],
-                flow_rate=drop_parameters["flow_rate"],
-                drop_count=drop_count,
-            )
-            # time.sleep(5)
-            self.pendant_drop_camera.start_capture()
-
-            start_time = time.time()
-            while time.time() - start_time < drop_parameters["max_measure_time"]:
-                time.sleep(10)
-                dynamic_surface_tension = self.pendant_drop_camera.st_t
-                self.plotter.plot_dynamic_surface_tension(
-                    dynamic_surface_tension=dynamic_surface_tension,
-                    well_id=source.WELL_ID,
-                    drop_count=drop_count,
-                )
-                if dynamic_surface_tension:
-                    last_st = dynamic_surface_tension[-1][1]
-                else:  # if no dynamic surface tension is measured, we set last_st to zero
-                    last_st = 0
-
-                if (
-                    last_st < 25
-                ):  # check if lower than 10 mN/m (not possible) or that the measure time becomes longer than the last recorded time of the droplet (i.e. no droplet is more found.)
-                    drop_count += 1
-                    self.pendant_drop_camera.stop_capture()
-                    self._return_pendant_drop(
-                        source=source, drop_volume=drop_parameters["drop_volume"]
-                    )
-                    if drop_count < self.MAX_RETRIES:
-                        self.logger.warning(
-                            f"Failed to create valid droplet for {source.WELL_ID} after {drop_count - 1} attempts. Will try again."
-                        )
-                        break
-
-                    break
-            else:
-                valid_droplet = True
-
-        if not valid_droplet:
-            # no return?
-            self.logger.warning(
-                f"Failed to create valid droplet for {source.WELL_ID} after {self.MAX_RETRIES} attempts."
-            )
-
-        self.pendant_drop_camera.stop_capture()
-
+        self._prepare_pendant_drop()
+        self._initialise_camera()
+        valid_droplet, drop_volume = self._dispense_pendant_drop()
         if valid_droplet:
-            self._return_pendant_drop(
-                source=source, drop_volume=drop_parameters["drop_volume"]
+            dynamic_surface_tension, valid_measurement = self._capture(
+                max_measure_time=max_measure_time
             )
-        
-
-        # update drop parameters
-        drop_parameters["drop_count"] = drop_count
-
-        if calibrate:
-            self.logger.info("Done with calibration of PendantProp.")
-            return self.pendant_drop_camera.scale_t, drop_parameters
+            self._return_pendant_drop(drop_volume=drop_volume)
         else:
-            self.logger.info("Done with pendant drop measurement.")
-            return self.pendant_drop_camera.st_t, drop_parameters
+            valid_measurement = False
+            self.logger.warning(
+                f"No valid droplet was created for {self.source.WELL_ID}."
+            )
 
-    def _make_pendant_drop(
-        self, source: Container, drop_volume: float, flow_rate: float, drop_count: int
-    ):
+        # repeat measurement if droplet fell of the needle during first measurement
+        while not valid_measurement and self.drop_count < self.MAX_RETRIES:
+            drop_volume = (
+                drop_volume - self.drop_count * self.DROP_VOLUME_DECREASE_AFTER_RETRY
+            )
+            self.drop_count += 1
+            self._make_pendant_drop(drop_volume=drop_volume)
+            self._initialise_camera()
+            dynamic_surface_tension, valid_measurement = self._capture(
+                max_measure_time=max_measure_time
+            )
+            self._return_pendant_drop(drop_volume=drop_volume)
 
-        self.left_pipette.mixing(container=source, mix=("before", 15, 3))
-        self.left_pipette.aspirate(volume=17, source=source, flow_rate=15)
-        self.left_pipette.air_gap(air_volume=3)
-        self.left_pipette.clean_on_sponge()
-        self.left_pipette.remove_air_gap(at_drop_stage=True)
-        self.pendant_drop_camera.initialize_measurement(
-            well_id=source.WELL_ID, drop_count=drop_count
-        )
-        self.logger.info("Dispensing pendant drop.")
+        if not valid_measurement:
+            self.logger.warning(
+                f"No valid measurement was performed for {self.source.WELL_ID}"
+            )
+
+        return dynamic_surface_tension, drop_volume, self.drop_count
+
+    def _make_pendant_drop(self, drop_volume: float):
+        self._prepare_pendant_drop()
         self.left_pipette.dispense(
             volume=drop_volume,
             destination=self.containers["drop_stage"],
-            depth_offset=-23.4,  # adjust if needed
-            flow_rate=flow_rate,
+            depth_offset=self.PENDANT_DROP_DEPTH_OFFSET,
+            flow_rate=self.FLOW_RATE,
             log=False,
             update_info=False,
         )
-        # time.sleep(30)
+        time.sleep(10)  #!
 
-    def _return_pendant_drop(self, source: Container, drop_volume: float):
-        self.left_pipette.aspirate(
-            volume=drop_volume,
-            source=self.containers["drop_stage"],
-            depth_offset=-23.4,
-            log=False,
-            update_info=False,
-        )  # aspirate drop in tip
-        self.logger.info("Re-aspirated the pendant drop into the tip.")
-        self.left_pipette.dispense(volume=17, destination=source)
-        self.logger.info("Returned volume in tip to source.")
-
-    def _initialise_camera(self, source: Container, drop_count: int):
-        self.pendant_drop_camera.initialize_measurement(
-            well_id=source.WELL_ID,
-            drop_count=drop_count
-        )
-    
-    def _prepare_pendant_drop(self, source: Container):
-        self.left_pipette.mixing(container=source, mix=("before", 15, 3))
-        self.left_pipette.aspirate(volume=17, source=source, flow_rate=15)
+    def _prepare_pendant_drop(self):
+        self.left_pipette.mixing(container=self.source, mix=("before", 15, 3))
+        self.left_pipette.aspirate(volume=17, source=self.source, flow_rate=15)
         self.left_pipette.air_gap(air_volume=3)
         self.left_pipette.clean_on_sponge()
         self.left_pipette.remove_air_gap(at_drop_stage=True)
 
-    def _dispense_pendant_drop(self, flow_rate: float, check_time = 30):
-        volume_resolution = 1
+    def _dispense_pendant_drop(self, check_time=1, volume_resolution=0.25):
         wortington_number = 0
         drop_volume = 0
-        while wortington_number < 0.7:
+        flow_rate = self.FLOW_RATE
+        self.logger.info("Starting dispensing pendant drop while checking Wortington number.")
+        while wortington_number < 0.7 and drop_volume < 17:
             self.left_pipette.dispense(
-                volume = volume_resolution,
+                volume=volume_resolution,
                 destination=self.containers["drop_stage"],
-                flow_rate=flow_rate
+                flow_rate=flow_rate,
+                depth_offset=self.PENDANT_DROP_DEPTH_OFFSET,
+                log=False,
+                update_info=False,
             )
             drop_volume += volume_resolution
             self.pendant_drop_camera.start_check(vol_droplet=drop_volume)
             time.sleep(check_time)
-            self.pendant_drop_camera.stop_check()
             wortington_numbers = self.pendant_drop_camera.wortington_numbers
-
+            self.pendant_drop_camera.stop_check()
             if len(wortington_numbers) > 1:
                 wortington_number = np.mean(wortington_numbers)
-
             else:
                 wortington_number = 0
-            
-            print(wortington_number)
+
+        if wortington_number < 0.7:
+            self.logger.warning(
+                "No valid droplet was created. Wortington number below limit."
+            )
+            valid_droplet = False
+        elif wortington_number > 1:
+            self.logger.warning(
+                "No valid droplet was created. Wortington number above theoritical limit."
+            )
+            valid_droplet = False
+        else:
+            self.logger.info(f"Valid droplet created with drop volume {drop_volume}.")
+            valid_droplet = True
+
+        return valid_droplet, drop_volume
+
+    def _return_pendant_drop(self, drop_volume: float):
+        self.left_pipette.aspirate(
+            volume=drop_volume,
+            source=self.containers["drop_stage"],
+            depth_offset=self.PENDANT_DROP_DEPTH_OFFSET,
+            log=False,
+            update_info=False,
+        )  # aspirate drop in tip
+        self.logger.info("Re-aspirated the pendant drop into the tip.")
+        self.left_pipette.dispense(volume=17, destination=self.source)
+        self.logger.info("Returned volume in tip to source.")
+        self._close_camera()
+
+    def _initialise_camera(self):
+        self.pendant_drop_camera.initialize_measurement(
+            well_id=self.source.WELL_ID, drop_count=self.drop_count
+        )
+
+    def _capture(self, max_measure_time: float):
+        self.pendant_drop_camera.start_capture()
+        start_time = time.time()
+        while time.time() - start_time < max_measure_time:
+            time.sleep(10)
+            dynamic_surface_tension = self.pendant_drop_camera.st_t
+            self.plotter.plot_dynamic_surface_tension(
+                dynamic_surface_tension=dynamic_surface_tension,
+                well_id=self.source.WELL_ID,
+                drop_count=self.drop_count,
+            )
+            if dynamic_surface_tension:
+                last_st = dynamic_surface_tension[-1][1]
+            else:  # if no dynamic surface tension is measured, we set last_st to zero
+                last_st = 0
+
+            if last_st < 25:
+                self.logger.warning("Droplet dropped.")
+                valid_measurement = False
+                self.pendant_drop_camera.stop_capture()
+                return dynamic_surface_tension, valid_measurement
+
+        self.pendant_drop_camera.stop_capture()
+        self.logger.info("Successful pendant drop measurement.")
+        valid_measurement = True
+        return dynamic_surface_tension, valid_measurement
+
+    def _close_camera(self):
+        self.pendant_drop_camera.stop_measurement()

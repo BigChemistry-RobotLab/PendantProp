@@ -149,12 +149,113 @@ class Protocol:
                 n_dilutions=explore_points,
                 well_volume=float(self.settings["WELL_VOLUME"]),
             )
-            for i in reversed(range(explore_points)): #reverse order to go from low to high concentration
+            for i in reversed(
+                range(explore_points)
+            ):  # reverse order to go from low to high concentration
+                well_id_explore = f"{row_id}{i+1}"
+
+                dynamic_surface_tension, drop_volume, drop_count = (
+                    self.droplet_manager.measure_pendant_drop(
+                        source=self.containers[well_id_explore],
+                        max_measure_time=measure_time
+                    )
+                )
+                drop_parameters = {
+                    "drop_volume": drop_volume,
+                    "max_measure_time": measure_time,
+                    "flow_rate": float(self.settings["FLOW_RATE"]),
+                    "drop_count": drop_count #!
+                }
+                self.results = append_results(
+                    results=self.results,
+                    point_type="explore",
+                    dynamic_surface_tension=dynamic_surface_tension,
+                    well_id=well_id_explore,
+                    drop_parameters=drop_parameters,
+                    n_eq_points=self.n_measurement_in_eq,
+                    containers=self.containers,
+                    sensor_api=self.sensor_api,
+                )
+                save_results(self.results)
+                self.plotter.plot_results_concentration(
+                    df=self.results, solution_name=surfactant
+                )
+
+            self.formulater.wash(repeat=3, return_needle=True)
+
+            for i in range(exploit_points):
+                well_id_exploit = f"{row_id}{explore_points+i+1}"
+                suggest_concentration, st_at_suggestion = self.learner.suggest(
+                    results=self.results, solution_name=surfactant
+                )
+                self.formulater.formulate_exploit_point(
+                    suggest_concentration=suggest_concentration,
+                    solution_name=surfactant,
+                    well_volume=float(self.settings["WELL_VOLUME"]),
+                    well_id_exploit=well_id_exploit,
+                )
+
+                dynamic_surface_tension, drop_volume, drop_count = (
+                    self.droplet_manager.measure_pendant_drop(
+                        source=self.containers[well_id_exploit],
+                        max_measure_time=measure_time
+                    )
+                )
+                drop_parameters = {
+                    "drop_volume": drop_volume,
+                    "max_measure_time": measure_time,
+                    "flow_rate": float(self.settings["FLOW_RATE"]),
+                    "drop_count": drop_count,
+                }
+                self.results = append_results(
+                    results=self.results,
+                    point_type="exploit",
+                    dynamic_surface_tension=dynamic_surface_tension,
+                    well_id=well_id_exploit,
+                    drop_parameters=drop_parameters,
+                    n_eq_points=self.n_measurement_in_eq,
+                    containers=self.containers,
+                    sensor_api=self.sensor_api,
+                )
+                save_results(self.results)
+                self.plotter.plot_results_concentration(
+                    df=self.results, solution_name=surfactant
+                )
+                self.formulater.wash(repeat=3, return_needle=True)
+
+        self.logger.info("Finished characterization protocol.")
+        play_sound("DATA DATA.")
+
+    def characterize_surfactant_old(self):
+        self.logger.info("Starting characterization protocol...")
+
+        # general information
+        self.settings = load_settings()  # update settings
+        characterization_info = load_info(
+            file_name=self.settings["CHARACTERIZATION_INFO_FILENAME"]
+        )
+        explore_points = int(self.settings["EXPLORE_POINTS"])
+        exploit_points = int(self.settings["EXPLOIT_POINTS"])
+
+        for i, surfactant in enumerate(characterization_info["surfactant"]):
+            row_id = characterization_info["row id"][i]
+            measure_time = float(characterization_info["measure time"][i])
+            self.formulater.serial_dilution(
+                row_id=row_id,
+                solution_name=surfactant,
+                n_dilutions=explore_points,
+                well_volume=float(self.settings["WELL_VOLUME"]),
+            )
+            for i in reversed(
+                range(explore_points)
+            ):  # reverse order to go from low to high concentration
                 well_id_explore = f"{row_id}{i+1}"
                 drop_volume_suggestion = suggest_volume(
                     results=self.results,
-                    next_concentration=float(self.containers[well_id_explore].concentration),
-                    solution_name=surfactant
+                    next_concentration=float(
+                        self.containers[well_id_explore].concentration
+                    ),
+                    solution_name=surfactant,
                 )
                 drop_parameters = {
                     "drop_volume": drop_volume_suggestion,
@@ -163,7 +264,8 @@ class Protocol:
                 }
                 dynamic_surface_tension, drop_parameters = (
                     self.droplet_manager.measure_pendant_drop(
-                        source=self.containers[well_id_explore], drop_parameters=drop_parameters
+                        source=self.containers[well_id_explore],
+                        drop_parameters=drop_parameters,
                     )
                 )
                 self.results = append_results(
@@ -185,7 +287,9 @@ class Protocol:
 
             for i in range(exploit_points):
                 well_id_exploit = f"{row_id}{explore_points+i+1}"
-                suggest_concentration, st_at_suggestion = self.learner.suggest(results=self.results, solution_name=surfactant)
+                suggest_concentration, st_at_suggestion = self.learner.suggest(
+                    results=self.results, solution_name=surfactant
+                )
                 drop_volume_suggestion = volume_for_st(st_at_suggestion)
                 self.formulater.formulate_exploit_point(
                     suggest_concentration=suggest_concentration,
@@ -200,7 +304,8 @@ class Protocol:
                 }
                 dynamic_surface_tension, drop_parameters = (
                     self.droplet_manager.measure_pendant_drop(
-                        source=self.containers[well_id_exploit], drop_parameters=drop_parameters
+                        source=self.containers[well_id_exploit],
+                        drop_parameters=drop_parameters,
                     )
                 )
                 self.results = append_results(

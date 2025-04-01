@@ -382,15 +382,13 @@ class Pipette:
         )
 
     def blow_out(self, container: Container):
-        # TODO error here?!
-        # self.api.blow_out(
-        #     pipette_id=self.PIPETTE_ID,
-        #     labware_id=container.LABWARE_ID,
-        #     well=container.WELL,
-        #     offset=self.OFFSET,
-        # )
+        self.opentrons_api.blow_out(
+            pipette_id=self.PIPETTE_ID,
+            labware_id=container.LABWARE_ID,
+            well=container.WELL,
+            offset=self.OFFSET,
+        )
         # self.logger.info(f"blow out done in container {container.WELL_ID}")
-        pass
 
     def air_gap(self, air_volume: float):
         if not self.has_tip and not self.has_needle:
