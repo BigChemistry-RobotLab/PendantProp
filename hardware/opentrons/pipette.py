@@ -315,12 +315,12 @@ class Pipette:
             offset=offset,
         )
 
-    def move_to_well_calibrate(self, container: Container, well: str, offset: dict = dict(x=0, y=0, z=0)):
+    def move_to_well_calibrate(self, container: Container, offset: dict = dict(x=0, y=0, z=0)):
         #! This is used to check offset of pipettes
         self.opentrons_api.move_to_well(
             pipette_id=self.PIPETTE_ID,
             labware_id=container.LABWARE_ID,
-            well=well,
+            well=container.WELL,
             offset=offset,
         )
 
