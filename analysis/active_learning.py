@@ -8,10 +8,10 @@ import pandas as pd
 
 from utils.logger import Logger
 from utils.data_processing import smooth
-
+from utils.load_save_functions import load_settings
 
 class ActiveLearner:
-    def __init__(self, model, parameters: list, logger: Logger, resolution: int = 1000):
+    def __init__(self, model, parameters: list, resolution: int = 1000):
 
         self.key = random.PRNGKey(42)
         self.model = model
@@ -23,7 +23,11 @@ class ActiveLearner:
         self.obs = None
         self.post_pred = None
         self.x_new = None
-        self.logger = logger        
+        settings = load_settings()
+        self.logger = Logger(
+            name="protocol",
+            file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
+        )    
 
         # plot settings
         # plt.rc("text", usetex=True)

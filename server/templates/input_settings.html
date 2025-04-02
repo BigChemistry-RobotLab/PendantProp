@@ -21,9 +21,6 @@
         <br>
         
         <h2>Pendant Drop Analysis</h2>
-        <label for="DROP_VOLUME">Drop volume (µL):</label>
-        <input type="float" id="DROP_VOLUME" name="DROP_VOLUME" value="{{ settings.DROP_VOLUME }}" required>
-        <br>
         <label for="EQUILIBRATION_TIME">Equilibration time (s):</label>
         <input type="float" id="EQUILIBRATION_TIME" name="EQUILIBRATION_TIME" value="{{ settings.EQUILIBRATION_TIME }}" required>
         <br>
@@ -33,14 +30,14 @@
         <label for="DENSITY">Density (g/mL):</label>
         <input type="float" id="DENSITY" name="DENSITY" value="{{ settings.DENSITY }}" required>
         <br>
-        <label for="SCALE">Scale (mm/pixel):</label>
-        <input type="float" id="SCALE" name="SCALE" value="{{ settings.SCALE }}" required>
+        <label for="DROP_RETRIES">Drop retries:</label>
+        <input type="int" id="SCALE" name="DROP_RETRIES" value="{{ settings.DROP_RETRIES }}" required>
+        <br>
+        <label for="DROP_VOLUME_DECREASE_AFTER_RETRY">Drop volume decrease after retry:</label>
+        <input type="float" id="DROP_VOLUME_DECREASE_AFTER_RETRY" name="DROP_VOLUME_DECREASE_AFTER_RETRY" value="{{ settings.DROP_VOLUME_DECREASE_AFTER_RETRY }}" required>
         <br>
 
         <h2>Characterization</h2>
-        <label for="DILUTION_FACTOR">Dilution factor:</label>
-        <input type="float" id="DILUTION_FACTOR" name="DILUTION_FACTOR" value="{{ settings.DILUTION_FACTOR }}" required>
-        <br>
         <label for="EXPLORE_POINTS">Explore points:</label>
         <input type="number" id="EXPLORE_POINTS" name="EXPLORE_POINTS" value="{{ settings.EXPLORE_POINTS }}" required>
         <br>

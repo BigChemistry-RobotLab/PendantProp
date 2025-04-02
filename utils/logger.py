@@ -1,14 +1,11 @@
 import logging
-from utils.load_save_functions import load_settings
 import os
-
 
 class Logger:
     def __init__(self, name: str, file_path: str):
         os.environ["NUMEXPR_MAX_THREADS"] = (
             "8"  # set the number of threads for numexpr (avoid logger warning)
         )
-        self.settings = load_settings()
         self.name = name
         self.file_path = file_path
         self.logger = logging.getLogger(name)
