@@ -1,61 +1,112 @@
 import pandas as pd
 import numpy as np
+# jax imports
+import jax.numpy as jnp
+from jax.scipy.special import erf
+from jax.numpy import sqrt, pi
+from jax import random
 
-def predict_surface_tension(results: pd.DataFrame, next_concentration: float):
-    if results.empty:
-        predicted_surface_tension = 72
-    else:
-        concentrations = results["concentration"].to_numpy()
-        surface_tensions = results["surface tension eq. (mN/m)"].to_numpy()
-        if len(surface_tensions) == 0:
-            predicted_surface_tension = 72
-        elif len(surface_tensions) == 1:
-            predicted_surface_tension = surface_tensions[0]
-        elif len(surface_tensions) > 1:
-            dif_st = surface_tensions[-1]-surface_tensions[-2]
-            dif_conc = concentrations[-1]-concentrations[-2]
-            gradient = dif_st / dif_conc
-            dif_conc_sugg = next_concentration-concentrations[-1]
-            predicted_surface_tension = gradient*dif_conc_sugg+surface_tensions[-1]
-        else:
-            print("error in predicted surface tension.")
-    
-    # no surfactant concentration with larger st than pure water
+# numpyro imports
+import numpyro as npy
+import numpyro.distributions as dist
+from numpyro import infer
 
-    if predicted_surface_tension > 72:
-        predicted_surface_tension = 72
-    return predicted_surface_tension
+def fit_model(
+    obs,
+    model,
+    parameters,
+    outlier_check=False,
+    l_x_new=1000,
+    key=random.PRNGKey(0),
+):
+    """
+    Fitting model function using bayesian inference.
 
-def volume_for_st(st: float):
-    # could be more fancy but suffice for now
-    max_drop_72 = 11
-    max_drop_37 = 6.5
-    volume = max_drop_37 + (max_drop_72 - max_drop_37) / (72 - 37) * (st - 37)
+    Input:
+        - obs (tuple): tuple of x_obs and y_obs
+        - model (function): model function
+        - parameters (list): list of parameters
+        - l_x_new (int): number of points for the mutual information calculation
+        - key (jax.random.PRNGKey): random key
 
-    if volume < max_drop_37:
-        volume = max_drop_37
-    elif volume > max_drop_72:
-        volume = max_drop_72
+    Output:
+        - post_pred (dict): dictionary of posterior predictive samples, including the parameters and observables.
+        - x_new (np.array): new x values for the plot
 
-    return volume
 
-def suggest_volume(results: pd.DataFrame, next_concentration: float, solution_name: str):
-    results_solution = results.loc[results["solution"] == solution_name]
-    predicted_st = predict_surface_tension(results=results_solution, next_concentration=next_concentration)
-    suggested_volume = volume_for_st(st=predicted_st)
-    return suggested_volume
+    """
+    key, key_ = random.split(key)
+    kernel = infer.NUTS(model, step_size=0.2)
+    mcmc = infer.MCMC(kernel, num_warmup=500, num_samples=1000)
 
-def gauge2mm(gauge_no: int) -> float:
-    df = pd.read_csv("analysis/gauge_table.csv")
-    df_gauge = df[df["Gauge No"] == gauge_no]
-    od = df_gauge["Needle Nominal O.D. (mm)"].values[0]
-    return od
+    key, key_ = random.split(key)
 
-if __name__ == "__main__":
-    # results = pd.DataFrame()
-    # results["concentration"] = [1, 2, 4, 8]
-    # results["surface tension eq. (mN/m)"] = [70, 69.5, 68, 55]
-    # predicted_st = predict_surface_tension(results=results, next_concentration=16)
-    # print(predicted_st)
-    od = gauge2mm(gauge_no=23)
-    print(od)
+    x_obs, y_obs = obs
+    x_obs = jnp.array(x_obs)
+    y_obs = jnp.array(y_obs)
+    mcmc.run(key_, x_obs=x_obs, y_obs=y_obs)
+    mcmc.print_summary()
+    posterior_samples = mcmc.get_samples()
+
+    observables = ["obs"]
+
+    key, key_ = random.split(key)
+
+    x_new = jnp.logspace(
+        jnp.log10(jnp.min(x_obs) / 4),
+        jnp.log10(jnp.max(x_obs)),
+        l_x_new,
+    )
+
+    post_predictive = infer.Predictive(
+        model,
+        posterior_samples=posterior_samples,
+        return_sites=parameters + observables,
+    )
+    post_pred = post_predictive(key_, x_new)
+
+    if outlier_check:
+
+        for i in range(x_obs.shape[0]):
+            st_mu = post_pred["obs"].mean(axis=0)
+            st_std = post_pred["obs"].std(axis=0)
+            differences = jnp.array([])
+            for i, x in enumerate(x_obs):
+                idx = jnp.argmin(jnp.abs(x_new - x))
+                difference = jnp.abs(st_mu[idx] - y_obs[i])
+                differences = jnp.append(differences, difference)
+
+            idx_max_difference = jnp.argmax(differences)
+            if differences[idx_max_difference] > 4 * st_std[idx_max_difference]:
+                print(
+                    f"outlier detected at {x_obs[idx_max_difference]}, datapoint {idx_max_difference}"
+                )
+                x_obs = jnp.delete(x_obs, idx_max_difference)
+                y_obs = jnp.delete(y_obs, idx_max_difference)
+
+                x_new = jnp.logspace(
+                    jnp.log10(jnp.min(x_obs) / 4),
+                    jnp.log10(jnp.max(x_obs)),
+                    l_x_new,
+                )
+
+                print("refitting model...")
+                mcmc.run(key_, x_obs=x_obs, y_obs=y_obs)
+                mcmc.print_summary()
+                posterior_samples = mcmc.get_samples()
+                post_predictive = infer.Predictive(
+                    model,
+                    posterior_samples=posterior_samples,
+                    return_sites=parameters + observables,
+                )
+                post_pred = post_predictive(key_, x_new)
+    return post_pred, x_new
+
+
+def calc_st_at_cmc(x_new, post_pred):
+    x_new = x_new / 1000  # convert to M
+    cmc = post_pred["cmc"].mean(axis=0)
+    st_at_cmc = post_pred["obs"][:, np.argmin(np.abs(x_new - cmc))].mean()
+    st_at_cmc_std = post_pred["obs"][:, np.argmin(np.abs(x_new - cmc))].std()
+    st_at_cmc_relative_err = st_at_cmc_std / st_at_cmc * 100
+    return st_at_cmc, st_at_cmc_std, st_at_cmc_relative_err
