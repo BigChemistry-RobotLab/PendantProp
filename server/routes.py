@@ -3,6 +3,10 @@ import glob
 import threading
 import shutil
 import logging
+import numpy as np
+import cv2
+import time
+
 from flask import (
     Flask,
     render_template,
@@ -50,7 +54,10 @@ replace_static_images_with_placeholders()
 opentrons_api = OpentronsAPI()
 sensor_api = SensorAPI()
 pendant_drop_camera = PendantDropCamera()
-opentron_camera = OpentronCamera()
+settings = load_settings()
+has_opentrons_camera = settings["HAS_OPENTRONS_CAMERA"] == "True"
+if has_opentrons_camera:
+    opentron_camera = OpentronCamera()
 
 # Global variable to store the protocol instance
 protocol = None
@@ -83,11 +90,9 @@ def settings():
     settings["ROBOT_TYPE"] = request.form.get("ROBOT_TYPE")
 
     ## pendant drop settings
-    settings["DROP_VOLUME"] = request.form.get("DROP_VOLUME")
     settings["EQUILIBRATION_TIME"] = request.form.get("EQUILIBRATION_TIME")
     settings["FLOW_RATE"] = request.form.get("FLOW_RATE")
     settings["DENSITY"] = request.form.get("DENSITY")
-    settings["SCALE"] = request.form.get("SCALE")
     settings["DROP_RETRIES"] = request.form.get("DROP_RETRIES")
     settings["DROP_VOLUME_DECREASE_AFTER_RETRY"] = request.form.get(
         "DROP_VOLUME_DECREASE_AFTER_RETRY"
@@ -147,24 +152,6 @@ def initialisation():
     thread.start()
 
     session["last_action"] = "Initialisation"
-    return redirect(url_for("index"))
-
-
-@app.route("/input_calibration", methods=["POST"])
-def input_calibration():
-    return render_template("input_calibration.html")
-
-
-@app.route("/calibrate", methods=["POST"])
-def calibrate():
-    global protocol
-    if protocol is None:
-        session["last_action"] = "Protocol not initialized"
-        return redirect(url_for("index"))
-    thread = threading.Thread(target=protocol.calibrate)
-    thread.daemon = True
-    thread.start()
-    session["last_action"] = "Calibration"
     return redirect(url_for("index"))
 
 
@@ -234,10 +221,31 @@ def about():
 
 @app.route("/opentron_video_feed")
 def opentron_video_feed():
-    return Response(
-        opentron_camera.generate_frames(),
-        mimetype="multipart/x-mixed-replace; boundary=frame",
-    )
+    if has_opentrons_camera:
+        return Response(
+            opentron_camera.generate_frames(),
+            mimetype="multipart/x-mixed-replace; boundary=frame",
+        )
+    else:
+        # Generate a black screen as the video feed
+        def generate_black_frames():
+            black_frame = np.zeros(
+                (480, 640, 3), dtype=np.uint8
+            )  # Black frame (480p resolution)
+            while True:
+                ret, buffer = cv2.imencode(".jpg", black_frame)
+                if ret:
+                    frame = buffer.tobytes()
+                    yield (
+                        b"--frame\r\n"
+                        b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
+                    )
+                time.sleep(0.05)  # Add a small delay to simulate frame rate
+
+        return Response(
+            generate_black_frames(),
+            mimetype="multipart/x-mixed-replace; boundary=frame",
+        )
 
 
 @app.route("/pendant_drop_video_feed")
