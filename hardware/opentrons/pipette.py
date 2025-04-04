@@ -1,7 +1,9 @@
 from utils.logger import Logger
 from utils.load_save_functions import load_settings
 from hardware.opentrons.containers import *
-from hardware.opentrons.opentrons_api import OpentronsAPI
+from hardware.opentrons.http_communications import OpentronsAPI
+from hardware.cameras import PendantDropCamera
+import numpy as np
 
 class Pipette:
     def __init__(
@@ -342,20 +344,33 @@ class Pipette:
         radius = container.WELL_DIAMETER / 2
         radius = radius * 0.9  # safety TODO fix
         for n in range(repeat):
-            for i in range(4):
+            for i in range(8):
                 offset = (
                     self.OFFSET.copy()
                 )  # Create a copy of the offset to avoid modifying the original
                 offset["z"] -= depth
+                quarters = np.sqrt(2)/2
                 if i == 0:
-                    offset["x"] -= radius
+                    offset["x"] -= quarters*radius
+                    offset["y"] -= quarters*radius
                 elif i == 1:
-                    offset["x"] += radius
+                    offset["x"] += quarters*radius
+                    offset["y"] += quarters*radius
                 elif i == 2:
-                    offset["y"] -= radius
+                    offset["x"] -= quarters*radius
+                    offset["y"] += quarters*radius
                 elif i == 3:
+                    offset["x"] += quarters*radius
+                    offset["y"] -= quarters*radius
+                elif i == 4:
+                    offset["x"] -= radius
+                elif i == 5:
+                    offset["x"] += radius
+                elif i == 6:
                     offset["y"] += radius
-                self.opentrons_api.move_to_well(
+                elif i == 7:
+                    offset["y"] -= radius
+                self.api.move_to_well(
                     pipette_id=self.PIPETTE_ID,
                     labware_id=container.LABWARE_ID,
                     well=container.WELL,

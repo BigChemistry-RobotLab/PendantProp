@@ -32,6 +32,9 @@ class DropletManager:
         self.MAX_RETRIES = int(settings["DROP_RETRIES"])
         self.DROP_VOLUME_DECREASE_AFTER_RETRY = float(settings["DROP_VOLUME_DECREASE_AFTER_RETRY"])
         self.PENDANT_DROP_DEPTH_OFFSET = float(settings["PENDANT_DROP_DEPTH_OFFSET"])
+        self.max_retries = 6
+        self.incremental_decrease_vol = 0.5
+        # TODO needed? self.depth_offset = -22
 
     def measure_pendant_drop(
         self, source: Container, drop_parameters: dict, calibrate=False

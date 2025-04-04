@@ -50,7 +50,7 @@
     <div class="image-grid">
         <div class="grid-item">
             <h3>Webcam Opentron</h3>
-            <iframe src="{{ url_for('opentron_video_feed') }}" width="640" height="480" frameborder="0" allowfullscreen></iframe>
+            <img id="results-plot" src="{{ url_for('static', filename=file_path_results_plot) }}" alt="No equillibrium surface tension data available.">
         </div>
         <div class="grid-item">
             <h3>Camera Pendant Drop</h3>

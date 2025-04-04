@@ -153,7 +153,7 @@ class OpentronsAPI:
         labware_path = self.LABWARE_DEFINITIONS_FOLDER
         with open(f"{labware_path}\{labware_definition}", "rb") as file:
             command_payload = json.dumps({"data": json.load(file)})
-        response = requests.post(
+        response = requests.post(   #TODO
             url=f"http://{self.ROBOT_IP_ADDRESS}:31950/runs/{self.RUN_ID}/labware_definitions",
             headers=self.HEADERS,
             data=command_payload,

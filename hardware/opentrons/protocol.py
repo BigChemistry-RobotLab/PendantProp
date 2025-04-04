@@ -77,7 +77,7 @@ class Protocol:
         )
         self.opentrons_api.home()
         self.logger.info("Initialization finished.")
-        play_sound("HASTA LA VISTA.")
+        play_sound("Ready to measure.")
 
     def calibrate(self):
         self.logger.info("Starting calibration...")
@@ -127,7 +127,7 @@ class Protocol:
             save_results(results=self.results)
         self.left_pipette.return_needle()
         self.logger.info("Finished measure wells protocol.")
-        play_sound("DATA DATA")  # should be changed to Pas op, ik geef je een knietje
+        play_sound("Moar measurement.")
 
     def characterize_surfactant(self):
         self.logger.info("Starting characterization protocol...")

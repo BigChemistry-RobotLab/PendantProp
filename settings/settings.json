@@ -1,0 +1,29 @@
+{
+    "ROBOT_IP": "169.254.164.30",
+    "ROBOT_TYPE": "OT2",
+    "EXPERIMENT_NAME": "AULAB_PSP0069",
+    "LEFT_PIPETTE_OFFSET": {
+        "x": -0.6,
+        "y": 1.3,
+        "z": 0.6
+    },
+    "RIGHT_PIPETTE_OFFSET":{
+        "x": 0,
+        "y": 0.4,
+        "z": 0
+        },
+    "PENDANT_DROP_DEPTH_OFFSET": -24,
+    "EQUILIBRATION_TIME": 60,
+    "FLOW_RATE": 0.5,
+    "DENSITY": 0.99776,
+    "EXPLORE_POINTS": 8,
+    "EXPLOIT_POINTS": 4,
+    "WELL_VOLUME": 150,
+    "DROP_RETRIES": 10,
+    "DROP_VOLUME_DECREASE_AFTER_RETRY": 0.25,
+    "CONFIG_FILENAME": "layout - Copy.csv",
+    "WELL_INFO_FILENAME": "wells - Copy.csv",
+    "CHARACTERIZATION_INFO_FILENAME": "characterization_info.csv",
+    "GIT_COMMIT_HASH": "f2bb6c2cf674f59b8b6ef0098737588c2985c135",
+    "HAS_OPENTRONS_CAMERA": "True"
+}

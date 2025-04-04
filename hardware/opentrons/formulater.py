@@ -75,6 +75,7 @@ class Formulater:
             source=self.containers[well_id_water],
             destination=self.containers[well_id_exploit],
             mix=("after", well_volume / 1.2, 12),
+            mix=("after", well_volume / 1.2, 12),
         )
         self.logger.info("Finished formulating exploit point.")
 
@@ -117,7 +118,7 @@ class Formulater:
         self, row_id: str, solution_name: str, n_dilutions: int, well_volume: float
     ):
         pipette = self.right_pipette
-        # find relevant well id's
+        # find relevant well ID's
         well_id_trash = get_well_id_solution(
             containers=self.containers, solution_name="trash"
         )  # well ID liquid waste
@@ -172,18 +173,18 @@ class Formulater:
                 container=self.containers[f"{row_id}{i+1}"],
                 mix=("after", well_volume / 1.2, 12),
             )
-            pipette.blow_out(container=self.containers[f"{row_id}{i+1}"])
+            # pipette.blow_out(container=self.containers[f"{row_id}{i+1}"])
 
         # transfering half of the volume of the last well to trash to ensure equal volume in all wells
         pipette.aspirate(
             volume=well_volume,
             source=self.containers[f"{row_id}{n_dilutions}"],
-            touch_tip=True,
+            # touch_tip=True,
         )
         pipette.dispense(
             volume=well_volume,
             destination=self.containers[well_id_trash],
-            touch_tip=True,
+            # touch_tip=True,
             update_info=False,
         )
         pipette.drop_tip()
@@ -251,3 +252,95 @@ class Formulater:
 
         self.well_index += 1
 
+
+    def symm_seeding_dilution(self, row_id: list, column: int, total_well_volume: float, solution_name1: str, solution_name2: str):
+        pipette = self.right_pipette
+        well_id_solution1 = get_well_id_solution(
+            containers=self.containers, solution_name=solution_name1)
+        well_id_solution2 = get_well_id_solution(
+            containers=self.containers, solution_name=solution_name2)
+
+        if pipette.has_tip == False:
+            pipette.pick_up_tip()
+
+        length = len(row_id)
+        volume_step = total_well_volume / length
+
+        # log start of serial dilution
+        self.logger.info(
+            f"Start of seeding in row(s) {', '.join(row_id)}, with varying amounts of {solution_name1} and {solution_name2}."
+        )
+        for row in range(length):  # Loop through rows, but stop before the last one
+            pipette.transfer(
+                270-(volume_step*row), 
+                source=self.containers[well_id_solution1], 
+                destination=self.containers[f"{row_id[row]}{column}"], 
+                mix=("after", total_well_volume / 1.2, 12), 
+                blow_out=True, 
+                touch_tip=True)
+        pipette.drop_tip()
+        
+        inverted_row_id = list(reversed(row_id))
+        pipette.pick_up_tip()
+        for row in range(len(inverted_row_id)):  # Loop through rows, but stop before the last one
+            pipette.transfer(
+                270-(60*row), 
+                source=self.containers[well_id_solution2], 
+                destination=self.containers[f"{inverted_row_id[row]}{column}"], 
+                mix=("after", total_well_volume / 1.2, 12), 
+                blow_out=True, 
+                touch_tip=True)
+        pipette.drop_tip()
+        
+
+    def seeded_serial_dilution(
+        self, row_id: list, n_dilutions: int, well_volume: float
+    ):
+        pipette = self.right_pipette
+        # find relevant well ID's
+        well_id_water = get_well_id_solution(
+            containers=self.containers, solution_name="water"
+        )  # well ID water stock
+
+        # log start of serial dilution
+        self.logger.info(
+            f"Start of serial dilution in row(s) {row_id}, with {n_dilutions} dilution steps."
+        )
+
+        # pick up tip if pipette has no tip
+        if pipette.has_tip == False:
+            pipette.pick_up_tip()
+
+        # adding water to all wells except the first one
+        for row in range(len(row_id)):
+            for i in range(n_dilutions-1):
+                pipette.transfer(
+                    volume=well_volume,
+                    source=self.containers[well_id_water],
+                    destination=self.containers[f"{row_id[row]}{i+2}"],
+                    touch_tip=True,
+                    blow_out=True,
+                )
+        pipette.drop_tip()
+
+        # serial dilution of surfactant
+        for row in range(len(row_id)):
+            pipette.pick_up_tip()
+            for i in range(1, n_dilutions):
+                pipette.aspirate(
+                    volume=well_volume,
+                    source=self.containers[f"{row_id[row]}{i}"],
+                    touch_tip=True,
+                )
+                pipette.dispense(
+                    volume=well_volume, destination=self.containers[f"{row_id[row]}{i+1}"]
+                )
+                pipette.mixing(
+                    container=self.containers[f"{row_id[row]}{i+1}"],
+                    mix=("after", well_volume / 1.2, 12),
+                )
+            pipette.drop_tip()
+                # pipette.blow_out(container=self.containers[f"{row_id}{i+1}"])
+
+        # log end of serial dilution
+        self.logger.info("End of serial dilution.")
