@@ -1,7 +1,7 @@
 from utils.logger import Logger
 from utils.load_save_functions import load_settings
 from hardware.opentrons.containers import *
-from hardware.opentrons.http_communications import OpentronsAPI
+from hardware.opentrons.opentrons_api import OpentronsAPI
 from hardware.cameras import PendantDropCamera
 import numpy as np
 
@@ -370,7 +370,7 @@ class Pipette:
                     offset["y"] += radius
                 elif i == 7:
                     offset["y"] -= radius
-                self.api.move_to_well(
+                self.opentrons_api.move_to_well(
                     pipette_id=self.PIPETTE_ID,
                     labware_id=container.LABWARE_ID,
                     well=container.WELL,

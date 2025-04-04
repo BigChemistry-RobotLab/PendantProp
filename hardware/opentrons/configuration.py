@@ -27,8 +27,6 @@ class Configuration:
             file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
         )
 
-
-
     def load_pipettes(self):
         try:
             self.RIGHT_PIPETTE_ID = self.opentrons_api.load_pipette(
