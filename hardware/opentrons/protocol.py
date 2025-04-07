@@ -211,9 +211,9 @@ class Protocol:
         self.logger.info("Finished characterization protocol.")
         play_sound("DATA DATA.")
 
-        # legacy
+### legacy ###
 
-        # def calibrate(self):
+    # def calibrate(self):
         # self.logger.info("Starting calibration...")
         # drop_parameters = {
         # "drop_volume": 12,
@@ -369,36 +369,36 @@ class Protocol:
         #         self.left_pipette.return_needle()
 
         # def measure_plate(self, well_volume: float, solution_name: str, plate_location: int):
-        # TODO save results correctly!
-        self.logger.info("Starting measure whole plate protocol...")
-        self.droplet_manager.set_max_retries = 1
-        print(self.droplet_manager.MAX_RETRIES)
-        self.settings = load_settings()  # update settings
-        well_info = load_info(file_name=self.settings["WELL_INFO_FILENAME"])
-        wells_ids = well_info["location"].astype(str) + well_info["well"].astype(str)
-        # self.formulater.fill_plate(well_volume=well_volume, solution_name=solution_name, plate_location=plate_location)
+        # # TODO save results correctly!
+        # self.logger.info("Starting measure whole plate protocol...")
+        # self.droplet_manager.set_max_retries = 1
+        # print(self.droplet_manager.MAX_RETRIES)
+        # self.settings = load_settings()  # update settings
+        # well_info = load_info(file_name=self.settings["WELL_INFO_FILENAME"])
+        # wells_ids = well_info["location"].astype(str) + well_info["well"].astype(str)
+        # # self.formulater.fill_plate(well_volume=well_volume, solution_name=solution_name, plate_location=plate_location)
 
-        for i, well_id in enumerate(wells_ids):
-            drop_parameters = {
-                "drop_volume": float(well_info["drop volume (uL)"][i]),
-                "max_measure_time": float(self.settings["EQUILIBRATION_TIME"]),
-                "flow_rate": float(well_info["flow rate (uL/s)"][i]),
-            }
-            dynamic_surface_tension, drop_parameters = self.droplet_manager.measure_pendant_drop(
-                source=self.containers[well_id], drop_parameters=drop_parameters
-            )
-            self.results = append_results(
-                results=self.results,
-                point_type="None",
-                dynamic_surface_tension=dynamic_surface_tension,
-                well_id=well_id,
-                drop_parameters=drop_parameters,
-                n_eq_points=self.n_measurement_in_eq,
-                containers=self.containers,
-                sensor_api=self.sensor_api,
-            )
-            save_results(self.results)
-            self.plotter.plot_results_well_id(df=self.results)
+        # for i, well_id in enumerate(wells_ids):
+        #     drop_parameters = {
+        #         "drop_volume": float(well_info["drop volume (uL)"][i]),
+        #         "max_measure_time": float(self.settings["EQUILIBRATION_TIME"]),
+        #         "flow_rate": float(well_info["flow rate (uL/s)"][i]),
+        #     }
+        #     dynamic_surface_tension, drop_parameters = self.droplet_manager.measure_pendant_drop(
+        #         source=self.containers[well_id], drop_parameters=drop_parameters
+        #     )
+        #     self.results = append_results(
+        #         results=self.results,
+        #         point_type="None",
+        #         dynamic_surface_tension=dynamic_surface_tension,
+        #         well_id=well_id,
+        #         drop_parameters=drop_parameters,
+        #         n_eq_points=self.n_measurement_in_eq,
+        #         containers=self.containers,
+        #         sensor_api=self.sensor_api,
+        #     )
+        #     save_results(self.results)
+        #     self.plotter.plot_results_well_id(df=self.results)
 
-        self.logger.info("Done measuring plate.")
-        play_sound("DATA DATA.")
+        # self.logger.info("Done measuring plate.")
+        # play_sound("DATA DATA.")

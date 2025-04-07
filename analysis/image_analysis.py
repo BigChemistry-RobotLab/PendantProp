@@ -20,7 +20,7 @@ class PendantDropAnalysis:
     def __init__(self):
         self.settings = load_settings()
         self.density = float(self.settings["DENSITY"])
-        self.needle_diameter_mm = 0.642 #TODO get this from utils function
+        self.needle_diameter_mm = self.settings["DIAMETER_NEEDLE_MM"] 
         self.needle_diameter_px = None
         # self.scale = float(self.settings["SCALE"])
         self.gravity_constant = 9.80665
@@ -328,7 +328,8 @@ class PendantDropAnalysis:
 
     
     def check_diameter(self):
-        if 240 < self.needle_diameter_px < 260:
+        diameter_needle_px_given = self.settings["NEEDLE_DIAMETER_PX"]
+        if 0.95*diameter_needle_px_given < self.needle_diameter_px < 1.05*diameter_needle_px_given:
             return True
         else:
             print(f"too large of diameter ({self.needle_diameter_px} px), droplet probably sticking to needle.")

@@ -29,7 +29,7 @@ class Plotter:
                 ax.set_xlabel("Well ID", fontsize=self.fontsize_labels)
                 ax.set_ylabel("Surface Tension Eq. (mN/m)", fontsize=self.fontsize_labels)
                 ax.set_title(
-                    f"Results experiment {self.settings['EXPERIMENT_NAME']}",
+                    f"{self.settings['EXPERIMENT_NAME']}",
                     fontsize=self.fontsize_labels,
                 )
                 ax.tick_params(axis="x", rotation=90)
@@ -113,7 +113,7 @@ class Plotter:
                 ax.set_xlabel("Concentration", fontsize=self.fontsize_labels)
                 ax.set_ylabel("Surface Tension Eq. (mN/m)", fontsize=self.fontsize_labels)
                 ax.set_title(
-                    f"Results experiment {self.settings['EXPERIMENT_NAME']}, solution: {solution_name}",
+                    f"{self.settings['EXPERIMENT_NAME']}, solution: {solution_name}",
                     fontsize=self.fontsize_labels,
                 )
                 ax.legend()

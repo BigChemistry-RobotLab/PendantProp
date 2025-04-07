@@ -66,6 +66,9 @@ class DropletManager:
             self.logger.warning(
                 f"No valid droplet was created for {self.source.WELL_ID}."
             )
+            self._return_pendant_drop(drop_volume=drop_volume)
+            dynamic_surface_tension = [] # failed measurement
+            return dynamic_surface_tension, drop_volume, self.drop_count
 
         # repeat measurement if droplet fell of the needle during first measurement
         while not valid_measurement and self.drop_count < self.MAX_RETRIES:
