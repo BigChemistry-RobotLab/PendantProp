@@ -2,6 +2,7 @@
 *.jpg
 *.csv
 *.png
+!prep/*.csv
 legacy/ot2_ssh_key
 legacy/
 settings/
