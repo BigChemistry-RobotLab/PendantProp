@@ -36,6 +36,9 @@ class DropletManager:
         )
         self.PENDANT_DROP_DEPTH_OFFSET = float(settings["PENDANT_DROP_DEPTH_OFFSET"])
         self.FLOW_RATE = float(settings["FLOW_RATE"])
+        self.CHECK_TIME = settings["CHECK_TIME"]
+        self.DROP_VOLUME_INCREASE_RESOLUTION = settings["DROP_VOLUME_INCREASE_RESOLUTION"]
+        self.INITIAL_DROP_VOLUME = settings["INITIAL_DROP_VOLUME"]
 
     def measure_pendant_drop(self, source: Container, max_measure_time=60):
 
@@ -109,29 +112,39 @@ class DropletManager:
         self.left_pipette.clean_on_sponge()
         self.left_pipette.remove_air_gap(at_drop_stage=True)
 
-    def _dispense_pendant_drop(self, check_time=1, volume_resolution=0.25):
+    def _dispense_pendant_drop(self):
         wortington_number = 0
-        drop_volume = 0
-        flow_rate = self.FLOW_RATE
+        self.left_pipette.dispense(
+            volume=self.INITIAL_DROP_VOLUME,
+            destination=self.containers["drop_stage"],
+            depth_offset=self.PENDANT_DROP_DEPTH_OFFSET,
+            flow_rate=self.FLOW_RATE,
+            log=False,
+            update_info=False,
+        )
+
+        drop_volume = self.INITIAL_DROP_VOLUME
+
         self.logger.info("Starting dispensing pendant drop while checking Wortington number.")
-        while wortington_number < 0.7 and drop_volume < 17:
+        while wortington_number < 0.7 and drop_volume < 14:
             self.left_pipette.dispense(
-                volume=volume_resolution,
+                volume=self.DROP_VOLUME_INCREASE_RESOLUTION,
                 destination=self.containers["drop_stage"],
-                flow_rate=flow_rate,
+                flow_rate=self.FLOW_RATE,
                 depth_offset=self.PENDANT_DROP_DEPTH_OFFSET,
                 log=False,
                 update_info=False,
             )
-            drop_volume += volume_resolution
+            drop_volume += self.DROP_VOLUME_INCREASE_RESOLUTION
             self.pendant_drop_camera.start_check(vol_droplet=drop_volume)
-            time.sleep(check_time)
+            time.sleep(self.CHECK_TIME)
             wortington_numbers = self.pendant_drop_camera.wortington_numbers
             self.pendant_drop_camera.stop_check()
             if len(wortington_numbers) > 1:
                 wortington_number = np.mean(wortington_numbers)
             else:
                 wortington_number = 0
+            print(f"Wortington number: {wortington_number}")
 
         if wortington_number < 0.7:
             self.logger.warning(

@@ -27,7 +27,7 @@ class Formulater:
             name="protocol",
             file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
         )
-        self.well_index = 0
+        self.wash_index = settings["WASH_INDEX"]
 
     def formulate_exploit_point(
         self,
@@ -216,7 +216,7 @@ class Formulater:
         well_id_water = get_well_id_solution(containers=self.containers, solution_name="water_wash")
         well_id_trash = get_well_id_solution(containers=self.containers, solution_name="trash")
         well_id_wash_well = get_well_id_from_index(
-            well_index=self.well_index, plate_location=self.labware["plate wash"]["location"]
+            well_index=self.wash_index, plate_location=self.labware["plate wash"]["location"]
         )
 
         if self.left_pipette.has_tip:
@@ -255,4 +255,4 @@ class Formulater:
         if return_needle:
             self.left_pipette.return_needle()
 
-        self.well_index += 1
+        self.wash_index += 1
