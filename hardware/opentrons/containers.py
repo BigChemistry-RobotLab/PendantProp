@@ -25,7 +25,7 @@ class Container:
         inner_diameter_mm: float = None,
     ):
         # Settings
-        settings = load_settings()
+        self.settings = load_settings()
 
         # Constant attributes
         self.WELL = well
@@ -50,18 +50,18 @@ class Container:
         self.concentration = concentration 
 
         # Create logger (container & protocol)
-        os.makedirs(f"experiments/{settings['EXPERIMENT_NAME']}/data", exist_ok=True)
+        os.makedirs(f"experiments/{self.settings['EXPERIMENT_NAME']}/data", exist_ok=True)
         os.makedirs(
-            f"experiments/{settings['EXPERIMENT_NAME']}/data/{self.WELL_ID}",
+            f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{self.WELL_ID}",
             exist_ok=True,
         )
         self.container_logger = Logger(
             name=self.WELL_ID,
-            file_path=f"experiments/{settings['EXPERIMENT_NAME']}/data/{self.WELL_ID}",
+            file_path=f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{self.WELL_ID}",
         )
         self.protocol_logger = Logger(
             name="protocol",
-            file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
+            file_path=f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data',
         )
 
     def aspirate(self, volume: float, log = True):
@@ -246,13 +246,12 @@ class PlateWell(Container):
 
     def update_liquid_height(self, volume_mL):
         # self.height_mm = 1e3 * (volume_mL) / (np.pi * (self.INNER_DIAMETER_MM / 2) ** 2)
-        self.height_mm = 0.5 # static height for now
+        self.height_mm = self.settings["WELL_DEPTH_MM"] # static height for now
         return self.height_mm
 
 
 class DropStage:
     def __init__(self, labware_info):
-        settings = load_settings()
         self.LABWARE_ID = labware_info["labware_id"]
         self.LABWARE_NAME = labware_info["labware_name"]
         self.LOCATION = labware_info["location"]
@@ -285,7 +284,6 @@ class DropStage:
 
 class LightHolder:
     def __init__(self, labware_info):
-        settings = load_settings()
         self.LABWARE_ID = labware_info["labware_id"]
         self.LABWARE_NAME = labware_info["labware_name"]
         self.LOCATION = labware_info["location"]
@@ -319,7 +317,6 @@ class LightHolder:
 
 class Sponge:
     def __init__(self, labware_info):
-        settings = load_settings()
         self.LABWARE_ID = labware_info["labware_id"]
         self.LABWARE_NAME = labware_info["labware_name"]
         self.LOCATION = labware_info["location"]
