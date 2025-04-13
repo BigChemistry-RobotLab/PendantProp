@@ -199,7 +199,7 @@ class PendantDropAnalysis:
         de_scaled = de * self.scale # mm -> pixels
         surface_tension = self.density * self.gravity_constant * (de_scaled**2) * Hin
 
-        alpha = 0.5  # Transparency factor (0.0 = fully transparent, 1.0 = fully opaque)
+        alpha = 0  # Transparency factor (0.0 = fully transparent, 1.0 = fully opaque)
         cv2.addWeighted(overlay, alpha, self.analysis_image, 1 - alpha, 0, self.analysis_image)
 
         return surface_tension
@@ -332,7 +332,7 @@ class PendantDropAnalysis:
         if 0.95*diameter_needle_px_given < self.needle_diameter_px < 1.05*diameter_needle_px_given:
             return True
         else:
-            print(f"too large of diameter ({self.needle_diameter_px} px), droplet probably sticking to needle.")
+            # print(f"too large of diameter ({self.needle_diameter_px} px), droplet probably sticking to needle.")
             return False
     
     def image2wortington(self, img, vol_droplet):

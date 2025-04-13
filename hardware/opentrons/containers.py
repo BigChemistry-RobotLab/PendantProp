@@ -167,6 +167,7 @@ class FalconTube15(Container):
             * 1e3
             / (np.pi * (self.INNER_DIAMETER_MM / 2) ** 2)
         ) + dispense_bottom_out_mm
+        self.height_mm -= 3.0  # TODO: check if this is correct
         return self.height_mm
 
 

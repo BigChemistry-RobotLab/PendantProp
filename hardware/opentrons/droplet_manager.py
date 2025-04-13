@@ -39,6 +39,7 @@ class DropletManager:
         self.CHECK_TIME = settings["CHECK_TIME"]
         self.DROP_VOLUME_INCREASE_RESOLUTION = settings["DROP_VOLUME_INCREASE_RESOLUTION"]
         self.INITIAL_DROP_VOLUME = settings["INITIAL_DROP_VOLUME"]
+        self.WORTINGTON_NUMBER_LIMIT = settings["WORTINGTON_NUMBER_LIMIT"]
 
     def measure_pendant_drop(self, source: Container, max_measure_time=60):
 
@@ -95,6 +96,8 @@ class DropletManager:
 
     def _make_pendant_drop(self, drop_volume: float):
         self._prepare_pendant_drop()
+        self.logger.info(
+            f"Making pendant drop with volume {drop_volume}.")
         self.left_pipette.dispense(
             volume=drop_volume,
             destination=self.containers["drop_stage"],
@@ -103,9 +106,10 @@ class DropletManager:
             log=False,
             update_info=False,
         )
-        time.sleep(10)  #!
+        time.sleep(30)  #!
 
     def _prepare_pendant_drop(self):
+        self.logger.info("Preparing pendant drop.")
         self.left_pipette.mixing(container=self.source, mix=("before", 15, 3))
         self.left_pipette.aspirate(volume=17, source=self.source, flow_rate=15)
         self.left_pipette.air_gap(air_volume=3)
@@ -122,11 +126,15 @@ class DropletManager:
             log=False,
             update_info=False,
         )
+        self.logger.info(f"Dispensed initial pendant drop volume of {self.INITIAL_DROP_VOLUME}.")
 
         drop_volume = self.INITIAL_DROP_VOLUME
 
         self.logger.info("Starting dispensing pendant drop while checking Wortington number.")
-        while wortington_number < 0.7 and drop_volume < 14:
+        while (
+            not (self.WORTINGTON_NUMBER_LIMIT <= wortington_number <= 1)
+            and drop_volume < 14
+        ):
             self.left_pipette.dispense(
                 volume=self.DROP_VOLUME_INCREASE_RESOLUTION,
                 destination=self.containers["drop_stage"],
@@ -144,9 +152,8 @@ class DropletManager:
                 wortington_number = np.mean(wortington_numbers)
             else:
                 wortington_number = 0
-            print(f"Wortington number: {wortington_number}")
 
-        if wortington_number < 0.7:
+        if wortington_number < self.WORTINGTON_NUMBER_LIMIT:
             self.logger.warning(
                 "No valid droplet was created. Wortington number below limit."
             )
@@ -172,7 +179,7 @@ class DropletManager:
         )  # aspirate drop in tip
         self.logger.info("Re-aspirated the pendant drop into the tip.")
         self.left_pipette.dispense(volume=17, destination=self.source)
-        self.logger.info("Returned volume in tip to source.")
+        self.logger.info("Returned volume in needle to source.")
         self._close_camera()
 
     def _initialise_camera(self):

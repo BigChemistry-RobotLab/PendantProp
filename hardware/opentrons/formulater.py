@@ -2,7 +2,7 @@ from hardware.opentrons.pipette import Pipette
 from hardware.opentrons.containers import Container
 from utils.logger import Logger
 from utils.search_containers import (
-    get_well_id_concentration,
+    get_list_of_well_ids_concentration,
     get_well_id_solution,
     get_plate_ids,
 )
@@ -29,6 +29,7 @@ class Formulater:
         )
         self.wash_index = settings["WASH_INDEX"]
 
+
     def formulate_exploit_point(
         self,
         suggest_concentration: float,
@@ -39,36 +40,53 @@ class Formulater:
         self.logger.info(
             f"Formulating exploit point with concentration {suggest_concentration} mM, at well ID {well_id_exploit}."
         )
-        well_id_source = get_well_id_concentration(
-            containers=self.containers,
-            solution=solution_name,
-            requested_concentration=suggest_concentration,
-        )
 
-        volume_source, volume_water = self._calculate_volumes_exploit(
-            suggest_concentration=suggest_concentration,
-            well_id_source=well_id_source,
-            well_volume=well_volume,
-        )
-
-        if volume_source > self.containers[well_id_source].volume_mL * 1000:
-            # TODO take one concentration lower instead of stock
-            well_id_source = get_well_id_solution(
-                containers=self.containers, solution_name=solution_name
+        # Find relevant well IDs
+        try:
+            well_ids_source = get_list_of_well_ids_concentration(
+                containers=self.containers,
+                solution=solution_name,
+                requested_concentration=suggest_concentration,
             )
-            # recalculate if aspiration volume was too big for the container
-            volume_source, volume_water = self._calculate_volumes_exploit(
+        except ValueError as e:
+            self.logger.error(f"Error finding source wells: {e}")
+            return
+        print(well_ids_source)
+        # Initialize variables
+        volume_from_source = None
+        volume_water = None
+        well_id_source = None
+
+        # Validate source wells and calculate volumes
+        for well_id in well_ids_source:
+            volume_in_source = self.containers[well_id].volume_mL * 1000
+            volume_from_source, volume_water = self._calculate_volumes_from_ratios(
                 suggest_concentration=suggest_concentration,
-                well_id_source=well_id_source,
+                well_concentration=self.containers[well_id].concentration,
                 well_volume=well_volume,
             )
+            if volume_from_source / volume_in_source < 0.6:
+                well_id_source = well_id
+                break
 
+        if not well_id_source:
+            self.logger.error(
+                "None of the sources have enough volume to formulate the exploit point."
+            )
+            return
+
+        self.logger.info(
+            f"Calculated volumes for exploit point: {volume_from_source} uL source from {well_id_source}, {volume_water} uL water."
+        )
+
+        # Transfer source to exploit point
         self._transfer(
-            volume=volume_source,
+            volume=volume_from_source,
             source=self.containers[well_id_source],
             destination=self.containers[well_id_exploit],
         )
 
+        # Transfer water to exploit point
         well_id_water = get_well_id_solution(
             containers=self.containers, solution_name="water"
         )
@@ -78,13 +96,13 @@ class Formulater:
             destination=self.containers[well_id_exploit],
             mix=("after", well_volume / 1.2, 12),
         )
+
         self.logger.info("Finished formulating exploit point.")
 
-    def _calculate_volumes_exploit(
-        self, suggest_concentration: float, well_id_source: str, well_volume: float
+    def _calculate_volumes_from_ratios(self, suggest_concentration: float, well_concentration: float, well_volume: float
     ):
         ratio = suggest_concentration / float(
-            self.containers[well_id_source].concentration
+            well_concentration
         )
         volume_source = ratio * well_volume
         volume_water = well_volume - volume_source
@@ -212,7 +230,7 @@ class Formulater:
         self.logger.info("Done filling plate.")
 
     def wash(self, repeat = 3, return_needle = False):
-
+        self.logger.info("Start washing needle.")
         well_id_water = get_well_id_solution(containers=self.containers, solution_name="water_wash")
         well_id_trash = get_well_id_solution(containers=self.containers, solution_name="trash")
         well_id_wash_well = get_well_id_from_index(

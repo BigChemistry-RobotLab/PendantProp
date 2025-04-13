@@ -38,6 +38,39 @@ def get_well_id_concentration(containers: dict, solution: str, requested_concent
         )
 
 
+def get_list_of_well_ids_concentration(
+    containers: dict, solution: str, requested_concentration: float
+) -> str:
+    differences = []
+    well_ids = []
+
+    # Collect differences and well IDs
+    for key, container in containers.items():
+        if "tube" in container.CONTAINER_TYPE or "Plate" in container.CONTAINER_TYPE:
+            if container.solution_name == solution:
+                differences.append(
+                    float(container.concentration) - requested_concentration
+                )
+                well_ids.append(key)
+    if well_ids == []:
+        raise ValueError(f"No container found with the requested solution {solution}.")
+
+    # Convert differences to a NumPy array and find positive differences
+    differences_array = np.array(differences)
+    positive_indices = np.where(differences_array > 0)[0]
+    well_ids = np.array(well_ids)
+    # sort well_ids based on the differences
+    sorted_indices = np.argsort(differences_array[positive_indices])
+    positive_indices = positive_indices[sorted_indices]
+    if positive_indices.size > 0:
+        well_ids = well_ids[positive_indices]
+        return well_ids
+    else:
+        raise ValueError(
+            f"No container found with a higher concentration than the requested {requested_concentration} mM."
+        )
+
+
 def get_plate_ids(location: int):
     letters = ["A", "B", "C", "D", "E", "F", "G", "H"]
     # letters = ["A", "B"]
