@@ -65,10 +65,10 @@ class Formulater:
                 well_concentration=self.containers[well_id].concentration,
                 well_volume=well_volume,
             )
-            if volume_from_source / volume_in_source < 0.6:
+            if volume_from_source / volume_in_source < 0.5:
                 well_id_source = well_id
                 break
-
+        
         if not well_id_source:
             self.logger.error(
                 "None of the sources have enough volume to formulate the exploit point."
@@ -125,7 +125,6 @@ class Formulater:
             volume=volume,
             source=source,
             destination=destination,
-            touch_tip=True,
             blow_out=True,
         )
         if mix:

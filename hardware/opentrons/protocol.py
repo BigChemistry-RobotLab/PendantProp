@@ -77,7 +77,7 @@ class Protocol:
         )
         self.opentrons_api.home()
         self.logger.info("Initialization finished.\n\n\n")
-        play_sound("Lets go.")
+        # play_sound("Lets go.")
 
     def measure_wells(self) -> None:
         """
@@ -233,6 +233,7 @@ class Protocol:
             self.logger.info(
                 f"Start pendant drop measurement of {well_id_exploit}, containing {self.containers[well_id_exploit].concentration} mM {surfactant}.\n"
             )
+            self.left_pipette.mixing(container=self.containers[well_id_exploit], mix=("before", 20, 5))
             dynamic_surface_tension, drop_volume, drop_count = (
                 self.droplet_manager.measure_pendant_drop(
                     source=self.containers[well_id_exploit],
@@ -292,7 +293,7 @@ class Protocol:
         save_results(self.results)
         if plot_type == "wells":
             self.plotter.plot_results_well_id(
-                df=self.results, solution_name=solution_name
+                df=self.results
             )
         elif plot_type == "concentrations":
             self.plotter.plot_results_concentration(
