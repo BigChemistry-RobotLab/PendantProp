@@ -38,3 +38,4 @@ if __name__ == "__main__":
     transfer_data(source_folder=source_folder, destination_folder=processed_data_folder, exclude_extensions=[".png"])
     print(f"transfering data from {source_folder} to {raw_data_folder}")
     transfer_data(source_folder=source_folder, destination_folder=raw_data_folder)
+    print(f"Data transfer completed. You can savely delete {source_folder} now.")
