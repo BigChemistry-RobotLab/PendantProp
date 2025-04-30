@@ -5,22 +5,15 @@ import itertools
 from tkinter import Tk
 from scipy.spatial.distance import euclidean
 from tkinter.filedialog import askopenfilename
-import numpy as np
-from scipy.spatial import KDTree
-import cv2
-import itertools
-from scipy.spatial.distance import euclidean
-import os
 
 from utils.load_save_functions import load_settings
-from utils.logger import Logger
 
 
 class PendantDropAnalysis:
     def __init__(self):
         self.settings = load_settings()
         self.density = float(self.settings["DENSITY"])
-        self.needle_diameter_mm = self.settings["DIAMETER_NEEDLE_MM"] 
+        self.needle_diameter_mm = self.settings["DIAMETER_NEEDLE_MM"]
         self.needle_diameter_px = None
         # self.scale = float(self.settings["SCALE"])
         self.gravity_constant = 9.80665
@@ -48,17 +41,12 @@ class PendantDropAnalysis:
         self.raw_image = cv2.imread(self.file_path)
 
     def process_image(self):
-
         blur = cv2.GaussianBlur(self.raw_image, (9, 9), 0)
         canny = cv2.Canny(blur, 10, 10)
         edged = cv2.dilate(canny, None, iterations=1)
         self.processed_image = cv2.erode(edged, None, iterations=1)
 
     def analyse(self):
-
-        # some constants
-        text_y_offset = 100
-
         # Find contours on processed image
         contours = imutils.grab_contours(
             cv2.findContours(
@@ -111,7 +99,6 @@ class PendantDropAnalysis:
         # Compute the coordinates of the rectangle corners
         top_left = (x, y)
         top_right = (x + w, y)
-        bottom_right = (x + w, y + h)
         bottom_left = (x, y + h)
 
         # Create new blank image to redraw biggest contour and crop above the ds
@@ -139,7 +126,7 @@ class PendantDropAnalysis:
 
         right_point_needle = contourright[-1][0]
         left_point_needle = contourleft[0][0]
-        self.needle_diameter_px = right_point_needle[0]-left_point_needle[0]
+        self.needle_diameter_px = right_point_needle[0] - left_point_needle[0]
         self.scale = self.needle_diameter_mm / self.needle_diameter_px
         # Adjust the coordinates of the needle points to the original image
 
@@ -159,12 +146,12 @@ class PendantDropAnalysis:
             image=self.analysis_image,
             point1=left_point_needle_transposed,
             point2=right_point_needle_transposed,
-            color=(44, 160, 44), 
+            color=(44, 160, 44),
             thickness=5,
             tip_length=0.05,
             fontscale=0.5,
             text=f"Needle D: {self.needle_diameter_px}px",
-            thickness_font=2
+            thickness_font=2,
         )
 
         # Calculate the horizontal distance between the two farthest points of the contours
@@ -173,8 +160,8 @@ class PendantDropAnalysis:
         ds = Rx + Rw - Lx  # This assumes the contours are ordered left to right
 
         # Draw the line for the maximum distance
-        Lx_adjusted, Ly_adjusted = Lx + top_left[0], Ly + top_left[1]
-        Rx_adjusted, Ry_adjusted = Rx + top_left[0], Ry + top_left[1]
+        Lx_adjusted, _ = Lx + top_left[0], Ly + top_left[1]
+        Rx_adjusted, _ = Rx + top_left[0], Ry + top_left[1]
 
         # Calculate a new Y-coordinate for drawing the max_distance line and text
         new_y_left = Ly + Lh  # Bottom of the left contour
@@ -196,11 +183,13 @@ class PendantDropAnalysis:
         S = ds / de
         Hin = self._calculate_Hin(S)
         self.Hin = Hin
-        de_scaled = de * self.scale # mm -> pixels
+        de_scaled = de * self.scale  # mm -> pixels
         surface_tension = self.density * self.gravity_constant * (de_scaled**2) * Hin
 
         alpha = 0  # Transparency factor (0.0 = fully transparent, 1.0 = fully opaque)
-        cv2.addWeighted(overlay, alpha, self.analysis_image, 1 - alpha, 0, self.analysis_image)
+        cv2.addWeighted(
+            overlay, alpha, self.analysis_image, 1 - alpha, 0, self.analysis_image
+        )
 
         return surface_tension
 
@@ -258,7 +247,18 @@ class PendantDropAnalysis:
             )
         return Hin
 
-    def _draw_double_arrow_line(self, image, point1, point2, color=(0, 255, 255), thickness=2, tip_length=0.05, text=None, fontscale = 2, thickness_font = 3):
+    def _draw_double_arrow_line(
+        self,
+        image,
+        point1,
+        point2,
+        color=(0, 255, 255),
+        thickness=2,
+        tip_length=0.05,
+        text=None,
+        fontscale=2,
+        thickness_font=3,
+    ):
         """
         Draws a double-arrow line between two points on the given image.
 
@@ -322,21 +322,26 @@ class PendantDropAnalysis:
         taken from https://doi.org/10.1016/j.jcis.2015.05.012.
         units cancel out if st given in mN/m and needle_diameter in mm and vol droplet in uL
         """
-        
-        Wo = (self.density*self.gravity_constant* vol_droplet) / (np.pi * st* self.needle_diameter_mm )
+
+        Wo = (self.density * self.gravity_constant * vol_droplet) / (
+            np.pi * st * self.needle_diameter_mm
+        )
         return Wo
 
-    
     def check_diameter(self):
         diameter_needle_px_given = self.settings["NEEDLE_DIAMETER_PX"]
-        if 0.95*diameter_needle_px_given < self.needle_diameter_px < 1.05*diameter_needle_px_given:
+        if (
+            0.95 * diameter_needle_px_given
+            < self.needle_diameter_px
+            < 1.05 * diameter_needle_px_given
+        ):
             return True
         else:
             # print(f"too large of diameter ({self.needle_diameter_px} px), droplet probably sticking to needle.")
             return False
-    
+
     def image2wortington(self, img, vol_droplet):
-        self.raw_image = img    
+        self.raw_image = img
         self.process_image()
         st = self.analyse()
         if st > 20:
@@ -348,7 +353,7 @@ class PendantDropAnalysis:
             return 0
 
     def image2st(self, img):
-        self.raw_image = img    
+        self.raw_image = img
         self.process_image()
         st = self.analyse()
         return st, self.analysis_image
@@ -356,13 +361,15 @@ class PendantDropAnalysis:
     def image2scale(self, img):
         "legacy"
         # surface_tension = self.density * self.gravity_constant * (de_scaled**2) * Hin
-        self.raw_image = img    
+        self.raw_image = img
         self.process_image()
-        st = self.analyse()
+        _ = self.analyse()
         st_water = (
             72.37  # mN/m, 22.5 degrees C, see https://srd.nist.gov/JPCRD/jpcrd231.pdf
         )
-        de_scaled = np.sqrt(st_water / (self.density * self.gravity_constant * self.Hin))
+        de_scaled = np.sqrt(
+            st_water / (self.density * self.gravity_constant * self.Hin)
+        )
         scale = de_scaled / self.de
         return scale
 
@@ -381,7 +388,9 @@ class PendantDropAnalysis:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-    def save_analysis_image(self, file_path = None):
-        if file_path == None:
-            file_path = f"experiments/{self.settings['EXPERIMENT_NAME']}/data/analysis.jpg"
+    def save_analysis_image(self, file_path=None):
+        if file_path is None:
+            file_path = (
+                f"experiments/{self.settings['EXPERIMENT_NAME']}/data/analysis.jpg"
+            )
         cv2.imwrite(file_path, self.analysis_image)

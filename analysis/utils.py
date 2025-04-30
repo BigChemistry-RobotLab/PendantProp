@@ -1,15 +1,12 @@
-import pandas as pd
 import numpy as np
+
 # jax imports
 import jax.numpy as jnp
-from jax.scipy.special import erf
-from jax.numpy import sqrt, pi
 from jax import random
 
 # numpyro imports
-import numpyro as npy
-import numpyro.distributions as dist
 from numpyro import infer
+
 
 def fit_model(
     obs,
@@ -66,7 +63,6 @@ def fit_model(
     post_pred = post_predictive(key_, x_new)
 
     if outlier_check:
-
         for i in range(x_obs.shape[0]):
             st_mu = post_pred["obs"].mean(axis=0)
             st_std = post_pred["obs"].std(axis=0)
