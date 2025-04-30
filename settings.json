@@ -1,5 +1,19 @@
 {
     "ROBOT_IP": "",
     "HAS_OPENTRONS_CAMERA": "True",
-    "EXPERIMENT_NAME": "EXAMPLE"
+    "EXPERIMENT_NAME": "EXAMPLE",
+    "ROBOT_IP": 1234,
+    "ROBOT_TYPE": "opentrons",
+    "EQUILIBRATION_TIME": 10.0,
+    "FLOW_RATE": 10.0,
+    "DENSITY": 1.2,
+    "DROP_RETRIES": 3,
+    "DROP_VOLUME_DECREASE_AFTER_RETRY": 0.1,
+    "EXPLORE_POINTS": 10,
+    "EXPLOIT_POINTS": 4,
+    "WELL_VOLUME": 100,
+    "GIT_COMMIT_HASH": "3fnsdfk",
+    "CONFIG_FILENAME": "?",
+    "WELL_INFO_FILENAME": "well_info.csv",
+    "CHARACTERIZATION_INFO_FILENAME": "characterisation_info.csv"
 }
