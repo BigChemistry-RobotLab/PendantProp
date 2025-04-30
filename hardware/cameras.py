@@ -8,9 +8,6 @@ from datetime import datetime
 import matplotlib
 
 matplotlib.use("Agg")  # Use the Agg backend for non-GUI rendering
-import matplotlib.pyplot as plt
-import numpy as np
-from io import BytesIO
 
 from utils.load_save_functions import load_settings
 from utils.logger import Logger
@@ -50,9 +47,7 @@ class OpentronCamera:
                 frame = buffer.tobytes()
 
                 # Yield the frame in byte format
-                yield (
-                    b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
-                )
+                yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
 
     def stop(self):
         self.stop_background_threads.set()
@@ -74,7 +69,7 @@ class PendantDropCamera:
             self.converter = pylon.ImageFormatConverter()
             self.converter.OutputPixelFormat = pylon.PixelType_BGR8packed
             self.converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
-        except Exception as e:
+        except Exception:
             print(
                 "Camera: Could not find pendant drop camera. Close camera software and check cables."
             )
@@ -216,7 +211,7 @@ class PendantDropCamera:
             self.st_t.append([relative_time, st])
             self.analysis_image = analysis_image
 
-        except Exception as e:
+        except Exception:
             self.analysis_image = None
 
     def _check_image(self, img, vol_droplet):
@@ -238,8 +233,7 @@ class PendantDropCamera:
                 if ret:
                     frame = buffer.tobytes()
                     yield (
-                        b"--frame\r\n"
-                        b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
+                        b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
                     )
             else:
                 time.sleep(0.05)
@@ -251,6 +245,7 @@ class PendantDropCamera:
         self.stop_stream()
         self.st_t = []
         self.wortington_numbers = []
+
 
 if __name__ == "__main__":
     pass

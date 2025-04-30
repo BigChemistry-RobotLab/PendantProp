@@ -1,10 +1,9 @@
-import os
 import pandas as pd
 
 
 class SensorAPI:
     def __init__(self):
-        self.sensor_name = "OT712 T, P, humidity sensor" 
+        self.sensor_name = "OT712 T, P, humidity sensor"
 
     def capture_sensor_data(self):
         file_path = "hardware/sensor/sensor_data.txt"
@@ -27,7 +26,7 @@ class SensorAPI:
         last_sensor_data = df.iloc[-2]
 
         return last_sensor_data
-    
+
     def __str__(self):
         f"""
         Sensor instance.
@@ -35,4 +34,3 @@ class SensorAPI:
         sensor name: {self.sensor_name}
         last sensor data: {self.capture_sensor_data()}
         """
-
