@@ -12,3 +12,4 @@ hardware/sensor/*.txt
 playbook.ipynb
 test_camera.py
 test_protocol.py
+.ipynb_checkpoints/
