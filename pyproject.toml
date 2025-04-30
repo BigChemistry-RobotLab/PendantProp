@@ -14,20 +14,20 @@ maintainers = [
   { name = "P Laceholder", email = "email@email.com" },
 ]
 dependencies = [
-    "matplotlib",
+    "flask",
+    "imutils"
     "jax",
+    "matplotlib",
     "numpy",
     "numpyro",
-    "scikit-learn",
-    "flask",
     "opencv-python",
-    "pypylon",
     "pandas",
-    "imutils"
+    "pypylon",
+    "scikit-learn",
 ]
 
 [project.optional-dependencies]
-dev = ["ruff", "notebook"]
+dev = ["notebook", "ruff"]
 
 [project.urls]
 "Source" = "https://github.com/BigChemistry-RobotLab/PendantProp"
