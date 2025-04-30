@@ -1,7 +1,7 @@
-from utils.logger import Logger
-from utils.load_save_functions import load_settings
-from hardware.opentrons.containers import Container
-from hardware.opentrons.opentrons_api import OpentronsAPI
+from PendantProp.utils.logger import Logger
+from PendantProp.utils.load_save_functions import load_settings
+from PendantProp.hardware.opentrons.containers import Container
+from PendantProp.hardware.opentrons.opentrons_api import OpentronsAPI
 
 
 class Pipette:

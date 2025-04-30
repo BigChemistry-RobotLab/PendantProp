@@ -1,9 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from utils.load_save_functions import load_settings
-from utils.logger import Logger
-from utils.utils import smooth_list
+from PendantProp.utils.load_save_functions import load_settings
+from PendantProp.utils.logger import Logger
+from PendantProp.utils.utils import smooth_list
 
 
 class Plotter:

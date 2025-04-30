@@ -6,7 +6,7 @@ from tkinter import Tk
 from scipy.spatial.distance import euclidean
 from tkinter.filedialog import askopenfilename
 
-from utils.load_save_functions import load_settings
+from PendantProp.utils.load_save_functions import load_settings
 
 
 class PendantDropAnalysis:

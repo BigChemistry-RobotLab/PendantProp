@@ -1,0 +1,13 @@
+matplotlib
+jax
+numpy
+numpyro
+scikit-learn
+flask
+opencv-python
+pypylon
+pandas
+imutils
+
+[dev]
+ruff

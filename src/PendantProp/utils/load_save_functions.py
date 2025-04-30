@@ -4,8 +4,8 @@ import csv
 import subprocess
 import pandas as pd
 
-from utils.utils import calculate_equillibrium_value
-from hardware.sensor.sensor_api import SensorAPI
+from PendantProp.utils.utils import calculate_equillibrium_value
+from PendantProp.hardware.sensor.sensor_api import SensorAPI
 
 
 def save_csv_file(exp_name: str, subdir_name: str, csv_file, app):

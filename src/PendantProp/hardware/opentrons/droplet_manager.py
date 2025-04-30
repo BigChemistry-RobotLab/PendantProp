@@ -1,13 +1,13 @@
 import time
 import numpy as np
 
-from utils.logger import Logger
-from hardware.cameras import PendantDropCamera
-from hardware.opentrons.opentrons_api import OpentronsAPI
-from hardware.opentrons.containers import Container
-from hardware.opentrons.pipette import Pipette
-from analysis.plots import Plotter
-from utils.load_save_functions import load_settings
+from PendantProp.utils.logger import Logger
+from PendantProp.hardware.cameras import PendantDropCamera
+from PendantProp.hardware.opentrons.opentrons_api import OpentronsAPI
+from PendantProp.hardware.opentrons.containers import Container
+from PendantProp.hardware.opentrons.pipette import Pipette
+from PendantProp.analysis.plots import Plotter
+from PendantProp.utils.load_save_functions import load_settings
 
 
 class DropletManager:

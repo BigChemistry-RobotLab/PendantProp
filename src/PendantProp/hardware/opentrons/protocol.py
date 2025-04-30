@@ -1,22 +1,22 @@
 import warnings
 
-from analysis.plots import Plotter
-from analysis.active_learning import ActiveLearner
-from analysis.models import szyszkowski_model
-from hardware.opentrons.opentrons_api import OpentronsAPI
-from hardware.opentrons.droplet_manager import DropletManager
-from hardware.opentrons.formulater import Formulater
-from hardware.opentrons.configuration import Configuration
-from hardware.cameras import PendantDropCamera
-from hardware.sensor.sensor_api import SensorAPI
-from utils.load_save_functions import (
+from PendantProp.analysis.plots import Plotter
+from PendantProp.analysis.active_learning import ActiveLearner
+from PendantProp.analysis.models import szyszkowski_model
+from PendantProp.hardware.opentrons.opentrons_api import OpentronsAPI
+from PendantProp.hardware.opentrons.droplet_manager import DropletManager
+from PendantProp.hardware.opentrons.formulater import Formulater
+from PendantProp.hardware.opentrons.configuration import Configuration
+from PendantProp.hardware.cameras import PendantDropCamera
+from PendantProp.hardware.sensor.sensor_api import SensorAPI
+from PendantProp.utils.load_save_functions import (
     load_settings,
     initialize_results,
     load_info,
     append_results,
     save_results,
 )
-from utils.logger import Logger
+from PendantProp.utils.logger import Logger
 
 # Suppress the specific FutureWarning of Pandas
 warnings.filterwarnings(

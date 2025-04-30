@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 import pandas as pd
 
-from utils.logger import Logger
-from utils.data_processing import smooth
-from utils.load_save_functions import load_settings
+from PendantProp.utils.logger import Logger
+from PendantProp.utils.data_processing import smooth
+from PendantProp.utils.load_save_functions import load_settings
 
 
 class ActiveLearner:

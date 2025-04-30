@@ -18,17 +18,17 @@ from flask import (
     jsonify,
 )
 
-from utils.load_save_functions import (
+from PendantProp.utils.load_save_functions import (
     save_csv_file,
     load_settings,
     save_settings,
     save_settings_meta_data,
     load_commit_hash,
 )
-from hardware.cameras import OpentronCamera, PendantDropCamera
-from hardware.opentrons.opentrons_api import OpentronsAPI
-from hardware.sensor.sensor_api import SensorAPI
-from hardware.opentrons.protocol import Protocol
+from PendantProp.hardware.cameras import OpentronCamera, PendantDropCamera
+from PendantProp.hardware.opentrons.opentrons_api import OpentronsAPI
+from PendantProp.hardware.sensor.sensor_api import SensorAPI
+from PendantProp.hardware.opentrons.protocol import Protocol
 
 # initialize the Flask app
 app = Flask(__name__)
@@ -48,6 +48,15 @@ def replace_static_images_with_placeholders():
         placeholder_file = os.path.join(placeholder_dir, os.path.basename(file))
         if os.path.exists(placeholder_file):
             shutil.copy(placeholder_file, "server/static/plots_cache")
+
+
+def initialize_protocol():
+    global protocol
+    protocol = Protocol(
+        opentrons_api=opentrons_api,
+        sensor_api=sensor_api,
+        pendant_drop_camera=pendant_drop_camera,
+    )
 
 
 replace_static_images_with_placeholders()
@@ -122,15 +131,6 @@ def reset_settings():
 @app.route("/input_initialisation", methods=["POST"])
 def input_initialisation():
     return render_template("input_initialisation.html")
-
-
-def initialize_protocol():
-    global protocol
-    protocol = Protocol(
-        opentrons_api=opentrons_api,
-        sensor_api=sensor_api,
-        pendant_drop_camera=pendant_drop_camera,
-    )
 
 
 @app.route("/initialisation", methods=["POST"])

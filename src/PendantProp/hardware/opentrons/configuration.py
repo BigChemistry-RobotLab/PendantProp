@@ -1,6 +1,7 @@
 import pandas as pd
 import os
-from hardware.opentrons.containers import (
+
+from PendantProp.hardware.opentrons.containers import (
     PlateWell,
     DropStage,
     LightHolder,
@@ -9,10 +10,10 @@ from hardware.opentrons.containers import (
     Sponge,
     GlassVial,
 )
-from hardware.opentrons.pipette import Pipette
-from utils.load_save_functions import load_settings
-from utils.logger import Logger
-from hardware.opentrons.opentrons_api import OpentronsAPI
+from PendantProp.hardware.opentrons.pipette import Pipette
+from PendantProp.hardware.opentrons.opentrons_api import OpentronsAPI
+from PendantProp.utils.load_save_functions import load_settings
+from PendantProp.utils.logger import Logger
 
 
 class Configuration:

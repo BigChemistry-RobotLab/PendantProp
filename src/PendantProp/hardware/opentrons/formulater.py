@@ -1,13 +1,13 @@
-from hardware.opentrons.pipette import Pipette
-from hardware.opentrons.containers import Container
-from utils.logger import Logger
-from utils.search_containers import (
+from PendantProp.hardware.opentrons.pipette import Pipette
+from PendantProp.hardware.opentrons.containers import Container
+from PendantProp.utils.logger import Logger
+from PendantProp.utils.search_containers import (
     get_list_of_well_ids_concentration,
     get_well_id_solution,
     get_plate_ids,
 )
-from utils.load_save_functions import load_settings
-from utils.utils import get_well_id_from_index
+from PendantProp.utils.load_save_functions import load_settings
+from PendantProp.utils.utils import get_well_id_from_index
 
 
 class Formulater:

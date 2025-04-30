@@ -9,9 +9,9 @@ import matplotlib
 
 matplotlib.use("Agg")  # Use the Agg backend for non-GUI rendering
 
-from utils.load_save_functions import load_settings
-from utils.logger import Logger
-from analysis.image_analysis import PendantDropAnalysis
+from PendantProp.utils.load_save_functions import load_settings
+from PendantProp.utils.logger import Logger
+from PendantProp.analysis.image_analysis import PendantDropAnalysis
 
 
 class OpentronCamera:
