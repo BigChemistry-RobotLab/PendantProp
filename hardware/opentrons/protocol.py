@@ -29,7 +29,7 @@ from utils.load_save_functions import (
     save_results,
 )
 from utils.logger import Logger
-from utils.utils import play_sound, calculate_average_in_column
+from utils.utils import calculate_average_in_column
 
 
 class Protocol:
@@ -77,7 +77,6 @@ class Protocol:
         )
         self.opentrons_api.home()
         self.logger.info("Initialization finished.\n\n\n")
-        # play_sound("Lets go.")
 
     def measure_wells(self) -> None:
         """
@@ -93,7 +92,6 @@ class Protocol:
 
         self.left_pipette.return_needle()
         self.logger.info("Finished measure wells protocol.\n\n\n")
-        play_sound("Knietje?") 
 
     def _measure_single_well(self, well_id: str) -> None:
         """
@@ -169,7 +167,6 @@ class Protocol:
             )
 
         self.logger.info("Finished characterization protocol.\n\n\n")
-        play_sound("DATA DATA.")
 
     def _perform_explore_phase(
         self, surfactant: str, row_id: str, explore_points: int, measure_time: float
@@ -318,7 +315,6 @@ class Protocol:
 # save_calibration_data(scale_t)
 # average_scale = calculate_average_in_column(x=scale_t, column_index=1)
 # self.logger.info(f"Finished calibration, average scale is: {average_scale}")
-# play_sound("Calibration done.")
 
 # def characterize_surfactant_old(self):
 #     self.logger.info("Starting characterization protocol...")
@@ -419,7 +415,6 @@ class Protocol:
 #             self.formulater.wash(repeat=3, return_needle=True)
 
 #     self.logger.info("Finished characterization protocol.")
-#     play_sound("DATA DATA.")
 
 # def measure_same_well(self, well_id: str, repeat: int = 3):
 #     drop_parameters = {"drop_volume": 6, "max_measure_time": 60, "flow_rate": 1}
@@ -491,4 +486,3 @@ class Protocol:
 #     self.plotter.plot_results_well_id(df=self.results)
 
 # self.logger.info("Done measuring plate.")
-# play_sound("DATA DATA.")
