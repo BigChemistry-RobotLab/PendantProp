@@ -1,6 +1,7 @@
 import logging
 import os
 
+
 class Logger:
     def __init__(self, name: str, file_path: str):
         os.environ["NUMEXPR_MAX_THREADS"] = (

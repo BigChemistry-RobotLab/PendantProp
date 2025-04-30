@@ -1,5 +1,6 @@
 import jax.numpy as jnp
 
+
 def smooth(data, window_size):
     """Smooth the data using a moving average filter."""
     # Create the moving average filter

@@ -1,12 +1,15 @@
 import numpy as np
 
+
 def smooth_list(x: list, window_size):
     x_smooth = np.convolve(x, np.ones(window_size), "valid") / window_size
     return x_smooth
 
+
 def calculate_average_in_column(x: list, column_index: int):
-        x_column = [item[column_index] for item in x]
-        return np.mean(x_column)
+    x_column = [item[column_index] for item in x]
+    return np.mean(x_column)
+
 
 def calculate_equillibrium_value(x: list, n_eq_points: int, column_index: int):
     if len(x) > n_eq_points:
@@ -14,6 +17,7 @@ def calculate_equillibrium_value(x: list, n_eq_points: int, column_index: int):
     else:
         print(f"less than {n_eq_points} points.")
     return calculate_average_in_column(x=x, column_index=column_index)
+
 
 def get_well_id_from_index(well_index: int, plate_location: int):
     """
@@ -26,7 +30,6 @@ def get_well_id_from_index(well_index: int, plate_location: int):
             list_of_wells.append(well_id)
     return list_of_wells[well_index]
 
+
 if __name__ == "__main__":
     print(get_well_id_from_index(12, 7))
-
-

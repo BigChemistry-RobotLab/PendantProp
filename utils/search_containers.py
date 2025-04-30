@@ -34,7 +34,7 @@ def get_well_id_concentration(containers: dict, solution: str, requested_concent
         return well_id
     else:
         raise ValueError(
-            f"No container found with a higher concentration than requested."
+            "No container found with a higher concentration than requested."
         )
 
 
