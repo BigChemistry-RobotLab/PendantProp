@@ -1,7 +1,8 @@
 from utils.logger import Logger
 from utils.load_save_functions import load_settings
-from hardware.opentrons.containers import *
+from hardware.opentrons.containers import Container
 from hardware.opentrons.opentrons_api import OpentronsAPI
+
 
 class Pipette:
     def __init__(
@@ -12,7 +13,7 @@ class Pipette:
         pipette_id: str,
         tips_info: dict,
         containers: dict,
-        needle_info = None,
+        needle_info=None,
     ):
         # general
         settings = load_settings()
@@ -47,7 +48,7 @@ class Pipette:
         # intialize logger
         self.logger = Logger(
             name="protocol",
-            file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
+            file_path=f"experiments/{settings['EXPERIMENT_NAME']}/meta_data",
         )
 
     def pick_up_tip(self, well=None):
@@ -63,12 +64,14 @@ class Pipette:
             )
             return
 
-        if well == None:
+        if well is None:
             tips_id, well = self._find_well_and_tips_id()
-            if tips_id == None:
+            if tips_id is None:
                 self.logger.error("Well index is out of bounds.")
         else:
-            tips_id =  self.TIPS_INFO[next(iter(self.TIPS_INFO))]["labware_id"] # takes from the first tip rack
+            tips_id = self.TIPS_INFO[next(iter(self.TIPS_INFO))][
+                "labware_id"
+            ]  # takes from the first tip rack
 
         self.opentrons_api.pick_up_tip(
             pipette_id=self.PIPETTE_ID,
@@ -89,9 +92,7 @@ class Pipette:
             self.logger.warning("Pipette has needle, which should be returned.")
 
         self.opentrons_api.drop_tip(pipette_id=self.PIPETTE_ID)
-        self.logger.info(
-            f"{self.MOUNT.capitalize()} pipette dropped tip into trash."
-        )
+        self.logger.info(f"{self.MOUNT.capitalize()} pipette dropped tip into trash.")
         self.has_tip = False
         self.volume = 0
 
@@ -102,7 +103,7 @@ class Pipette:
 
         # adjust offset to pick the needle up a bit more gently
         offset = self.OFFSET.copy()
-        offset['z'] += 1
+        offset["z"] += 1
 
         self.opentrons_api.pick_up_tip(
             pipette_id=self.PIPETTE_ID,
@@ -121,7 +122,7 @@ class Pipette:
 
         # bit deeper to plunge the needle in the tip rack
         offset = self.OFFSET.copy()
-        offset['z'] -= 40
+        offset["z"] -= 40
 
         self.opentrons_api.drop_tip(
             pipette_id=self.PIPETTE_ID,
@@ -139,9 +140,7 @@ class Pipette:
         for tip_name in self.TIPS_INFO.keys():
             tips_ids.append(self.TIPS_INFO[tip_name]["labware_id"])
             tips_orderings.append(self.TIPS_INFO[tip_name]["ordering"])
-        total_wells = len(
-            tips_orderings[0]
-        ) 
+        total_wells = len(tips_orderings[0])
         for i, tips_id in enumerate(tips_ids):
             if self.well_index < (i + 1) * total_wells:
                 tips_id = tips_ids[i]
@@ -159,7 +158,6 @@ class Pipette:
         log=True,
         update_info=True,
     ):
-
         # check if pipette has tip
         if not self.has_tip and not self.has_needle:
             self.logger.error(
@@ -189,7 +187,7 @@ class Pipette:
             volume=volume,
             depth=source.height_mm - source.DEPTH + depth_offset,
             offset=self.OFFSET,
-            flow_rate=flow_rate
+            flow_rate=flow_rate,
         )
         if mix and (mix_order == "after" or mix_order == "both"):
             self.mixing(container=source, mix=mix)
@@ -275,23 +273,29 @@ class Pipette:
         touch_tip=False,
         mix=None,
         blow_out=False,
-        update_info = True
+        update_info=True,
     ):
         self.logger.info(
             f"Transferring {volume} uL from {source.WELL_ID} to well {destination.WELL_ID} with {self.MOUNT} pipette."
         )
-        self.aspirate(volume=volume, source=source, touch_tip=touch_tip, mix=mix, update_info=update_info)
+        self.aspirate(
+            volume=volume,
+            source=source,
+            touch_tip=touch_tip,
+            mix=mix,
+            update_info=update_info,
+        )
         self.dispense(
             volume=volume,
             destination=destination,
             touch_tip=touch_tip,
             mix=mix,
             blow_out=blow_out,
-            update_info=update_info
+            update_info=update_info,
         )
 
     def move_to_well(self, container: Container, offset=None):
-        if offset == None:
+        if offset is None:
             offset_move = self.OFFSET.copy()
         else:
             offset_move = self.OFFSET.copy()
@@ -315,7 +319,9 @@ class Pipette:
             offset=offset,
         )
 
-    def move_to_well_calibrate(self, container: Container, offset: dict = dict(x=0, y=0, z=0)):
+    def move_to_well_calibrate(
+        self, container: Container, offset: dict = dict(x=0, y=0, z=0)
+    ):
         #! This is used to check offset of pipettes
         self.opentrons_api.move_to_well(
             pipette_id=self.PIPETTE_ID,
@@ -375,8 +381,12 @@ class Pipette:
     def mixing(self, container: Container, mix: any):
         mix_order, volume_mix, repeat_mix = mix
         for n in range(repeat_mix):
-            self.aspirate(volume=volume_mix, source=container, log=False, update_info=False)
-            self.dispense(volume=volume_mix, destination=container, log=False, update_info=False)
+            self.aspirate(
+                volume=volume_mix, source=container, log=False, update_info=False
+            )
+            self.dispense(
+                volume=volume_mix, destination=container, log=False, update_info=False
+            )
         self.logger.info(
             f"Done with mixing in {container.WELL_ID} with order {mix_order}, with volume {volume_mix} uL, repeated {repeat_mix} times"
         )
@@ -399,15 +409,17 @@ class Pipette:
             self.logger.warning("Air gap exceeds pipette capacity!")
             # return
 
-        if self.last_source == None:
-            self.logger.error(
-                "No source location found, needed to perform air gap!"
-            )
+        if self.last_source is None:
+            self.logger.error("No source location found, needed to perform air gap!")
             return
         height_percentage = 0.05
         if self.last_source.CONTAINER_TYPE == "Plate well":
-            height_percentage = 1 # needed as plate height is standard 2 mm at the moment #TODO change?
-        depth_offset = height_percentage * self.last_source.DEPTH + self.last_source.height_mm
+            height_percentage = (
+                1  # needed as plate height is standard 2 mm at the moment #TODO change?
+            )
+        depth_offset = (
+            height_percentage * self.last_source.DEPTH + self.last_source.height_mm
+        )
         flow_rate = air_volume / 3
         self.aspirate(
             volume=air_volume,
@@ -452,7 +464,9 @@ class Pipette:
             log=False,
             update_info=False,
         )
-        self.logger.info(f"Air gap of {self.air_gap_volume} uL removed in {self.MOUNT} pipette.")
+        self.logger.info(
+            f"Air gap of {self.air_gap_volume} uL removed in {self.MOUNT} pipette."
+        )
         self.air_gap_volume = 0
 
     def clean_on_sponge(self):

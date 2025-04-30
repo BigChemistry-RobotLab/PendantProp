@@ -1,6 +1,5 @@
 import time
 import numpy as np
-import pandas as pd
 
 from utils.logger import Logger
 from hardware.cameras import PendantDropCamera
@@ -28,7 +27,7 @@ class DropletManager:
         self.plotter = plotter
         self.logger = Logger(
             name="protocol",
-            file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
+            file_path=f"experiments/{settings['EXPERIMENT_NAME']}/meta_data",
         )
         self.MAX_RETRIES = int(settings["DROP_RETRIES"])
         self.DROP_VOLUME_DECREASE_AFTER_RETRY = float(
@@ -74,12 +73,16 @@ class DropletManager:
 
             # reduce drop volume if retry
             if self.drop_count > 1:
-                drop_volume_decrease = (self.drop_count-1) * self.DROP_VOLUME_DECREASE_AFTER_RETRY
+                drop_volume_decrease = (
+                    self.drop_count - 1
+                ) * self.DROP_VOLUME_DECREASE_AFTER_RETRY
                 self._reduce_pendant_drop_volume(
                     drop_volume_decrease=drop_volume_decrease
                 )
                 drop_volume -= drop_volume_decrease
-                self.logger.info(f"Waiting {drop_time:2f}s for droplet to reach lower surface tension, in order to achieve a pendant drop.")
+                self.logger.info(
+                    f"Waiting {drop_time:2f}s for droplet to reach lower surface tension, in order to achieve a pendant drop."
+                )
                 time.sleep(drop_time)
 
             # capture pendant drop measurement
@@ -89,10 +92,14 @@ class DropletManager:
             self._return_pendant_drop(drop_volume=drop_volume)
 
             if valid_measurement:
-                self.logger.info(f"Successful measurement for {self.source.WELL_ID} on attempt {self.drop_count}.")
+                self.logger.info(
+                    f"Successful measurement for {self.source.WELL_ID} on attempt {self.drop_count}."
+                )
                 break
             else:
-                self.logger.warning(f"Measurement failed for {self.source.WELL_ID}. Retrying...")
+                self.logger.warning(
+                    f"Measurement failed for {self.source.WELL_ID}. Retrying..."
+                )
                 drop_volume_decrease += self.DROP_VOLUME_DECREASE_AFTER_RETRY
 
         # Log final result if all retries fail
@@ -104,7 +111,6 @@ class DropletManager:
         return dynamic_surface_tension, drop_volume, self.drop_count
 
     def _prepare_pendant_drop(self):
-
         self.logger.info("Preparing pendant drop.")
         # initialize left pipette
         if self.left_pipette.has_tip:
@@ -120,9 +126,7 @@ class DropletManager:
         self.left_pipette.remove_air_gap(at_drop_stage=True)
 
     def _reduce_pendant_drop_volume(self, drop_volume_decrease: float):
-        self.logger.info(
-            f"Reducing pendant drop volume by {drop_volume_decrease}."
-        )
+        self.logger.info(f"Reducing pendant drop volume by {drop_volume_decrease}.")
         self.left_pipette.aspirate(
             volume=drop_volume_decrease,
             source=self.containers["drop_stage"],
@@ -187,7 +191,9 @@ class DropletManager:
             )
             valid_droplet = False
         else:
-            self.logger.info(f"Valid droplet created with drop volume {drop_volume:2f}.")
+            self.logger.info(
+                f"Valid droplet created with drop volume {drop_volume:2f}."
+            )
             valid_droplet = True
 
         return valid_droplet, drop_volume
@@ -229,12 +235,15 @@ class DropletManager:
 
             if prev_len_st == len(dynamic_surface_tension):
                 self.logger.warning(
-                    f"No new data was captured. length {len(dynamic_surface_tension)}.")
+                    f"No new data was captured. length {len(dynamic_surface_tension)}."
+                )
 
             prev_len_st = len(dynamic_surface_tension)
             if last_st < 25:
                 drop_time = time.time() - start_time
-                self.logger.warning(f"Droplet dropped. Drop time: {drop_time:2f} seconds.")
+                self.logger.warning(
+                    f"Droplet dropped. Drop time: {drop_time:2f} seconds."
+                )
                 valid_measurement = False
                 self.pendant_drop_camera.stop_capture()
                 return dynamic_surface_tension, valid_measurement, drop_time

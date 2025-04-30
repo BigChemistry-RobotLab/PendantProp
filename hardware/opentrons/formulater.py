@@ -16,7 +16,7 @@ class Formulater:
         left_pipette: Pipette,
         right_pipette: Pipette,
         containers: dict,
-        labware: dict
+        labware: dict,
     ):
         self.left_pipette = left_pipette
         self.right_pipette = right_pipette
@@ -25,10 +25,9 @@ class Formulater:
         settings = load_settings()
         self.logger = Logger(
             name="protocol",
-            file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
+            file_path=f"experiments/{settings['EXPERIMENT_NAME']}/meta_data",
         )
         self.wash_index = settings["WASH_INDEX"]
-
 
     def formulate_exploit_point(
         self,
@@ -68,7 +67,7 @@ class Formulater:
             if volume_from_source / volume_in_source < 0.5:
                 well_id_source = well_id
                 break
-        
+
         if not well_id_source:
             self.logger.error(
                 "None of the sources have enough volume to formulate the exploit point."
@@ -99,17 +98,24 @@ class Formulater:
 
         self.logger.info("Finished formulating exploit point.")
 
-    def _calculate_volumes_from_ratios(self, suggest_concentration: float, well_concentration: float, well_volume: float
+    def _calculate_volumes_from_ratios(
+        self,
+        suggest_concentration: float,
+        well_concentration: float,
+        well_volume: float,
     ):
-        ratio = suggest_concentration / float(
-            well_concentration
-        )
+        ratio = suggest_concentration / float(well_concentration)
         volume_source = ratio * well_volume
         volume_water = well_volume - volume_source
         return volume_source, volume_water
 
     def _transfer(
-        self, volume: float, source: Container, destination: Container, mix=None, drop_tip = True
+        self,
+        volume: float,
+        source: Container,
+        destination: Container,
+        mix=None,
+        drop_tip=True,
     ):
         if volume < 20:
             pipette = self.left_pipette
@@ -153,29 +159,35 @@ class Formulater:
         )
 
         # pick up tip if pipette has no tip
-        if pipette.has_tip == False:
+        if not pipette.has_tip:
             pipette.pick_up_tip()
 
         # adding water to all wells except the first one
-        for i in range(n_dilutions-1):
+        for i in range(n_dilutions - 1):
             pipette.aspirate(
                 volume=well_volume,
                 source=self.containers[well_id_water],
-                touch_tip=True
+                touch_tip=True,
             )
             pipette.dispense(
-                volume=well_volume, destination=self.containers[f"{row_id}{i+2}"], blow_out=True
+                volume=well_volume,
+                destination=self.containers[f"{row_id}{i + 2}"],
+                blow_out=True,
             )
 
         pipette.drop_tip()
 
         # adding surfactant to the first well
         pipette.pick_up_tip()
-        pipette.aspirate(volume=well_volume*2, source=self.containers[well_id_solution], touch_tip=True)
+        pipette.aspirate(
+            volume=well_volume * 2,
+            source=self.containers[well_id_solution],
+            touch_tip=True,
+        )
         pipette.dispense(
-            volume=well_volume*2,
+            volume=well_volume * 2,
             destination=self.containers[f"{row_id}1"],
-            blow_out=True
+            blow_out=True,
         )
 
         # serial dilution of surfactant
@@ -186,13 +198,13 @@ class Formulater:
                 touch_tip=True,
             )
             pipette.dispense(
-                volume=well_volume, destination=self.containers[f"{row_id}{i+1}"]
+                volume=well_volume, destination=self.containers[f"{row_id}{i + 1}"]
             )
             pipette.mixing(
-                container=self.containers[f"{row_id}{i+1}"],
+                container=self.containers[f"{row_id}{i + 1}"],
                 mix=("after", well_volume / 1.2, 12),
             )
-            pipette.blow_out(container=self.containers[f"{row_id}{i+1}"])
+            pipette.blow_out(container=self.containers[f"{row_id}{i + 1}"])
 
         # transfering half of the volume of the last well to trash to ensure equal volume in all wells (handy for dye check, not per se for surfactants dilutions)
         pipette.aspirate(
@@ -223,17 +235,22 @@ class Formulater:
                 volume=well_volume,
                 source=self.containers[well_id_stock],
                 destination=self.containers[well_id],
-                drop_tip=False
+                drop_tip=False,
             )
         self.right_pipette.drop_tip()
         self.logger.info("Done filling plate.")
 
-    def wash(self, repeat = 3, return_needle = False):
+    def wash(self, repeat=3, return_needle=False):
         self.logger.info("Start washing needle.")
-        well_id_water = get_well_id_solution(containers=self.containers, solution_name="water_wash")
-        well_id_trash = get_well_id_solution(containers=self.containers, solution_name="trash")
+        well_id_water = get_well_id_solution(
+            containers=self.containers, solution_name="water_wash"
+        )
+        well_id_trash = get_well_id_solution(
+            containers=self.containers, solution_name="trash"
+        )
         well_id_wash_well = get_well_id_from_index(
-            well_index=self.wash_index, plate_location=self.labware["plate wash"]["location"]
+            well_index=self.wash_index,
+            plate_location=self.labware["plate wash"]["location"],
         )
 
         if self.left_pipette.has_tip:
@@ -250,20 +267,29 @@ class Formulater:
             self.right_pipette.aspirate(
                 volume=300, source=self.containers[well_id_water], touch_tip=True
             )
-            self.right_pipette.dispense(volume=300, destination=self.containers[well_id_wash_well], touch_tip=True, update_info=False)
+            self.right_pipette.dispense(
+                volume=300,
+                destination=self.containers[well_id_wash_well],
+                touch_tip=True,
+                update_info=False,
+            )
 
             # flush needle with water via mixing
-            self.left_pipette.mixing(container=self.containers[well_id_wash_well], mix=("after", 20, 5))
+            self.left_pipette.mixing(
+                container=self.containers[well_id_wash_well], mix=("after", 20, 5)
+            )
 
             # transfer water in cleaning well to trash falcon tube
             self.right_pipette.aspirate(
                 volume=300,
                 source=self.containers[well_id_wash_well],
                 touch_tip=True,
-                update_info=False
+                update_info=False,
             )
             self.right_pipette.dispense(
-                volume=300, destination=self.containers[well_id_trash], update_info=False
+                volume=300,
+                destination=self.containers[well_id_trash],
+                update_info=False,
             )
 
             self.right_pipette.drop_tip()

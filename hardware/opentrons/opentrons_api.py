@@ -97,7 +97,7 @@ class OpentronsAPI:
         """
         loads labware for a current run.
         """
-        if custom_labware == True:
+        if custom_labware:
             namespace = "custom_beta"
         else:
             namespace = "opentrons"
@@ -153,7 +153,7 @@ class OpentronsAPI:
         labware_path = self.LABWARE_DEFINITIONS_FOLDER
         with open(f"{labware_path}\{labware_definition}", "rb") as file:
             command_payload = json.dumps({"data": json.load(file)})
-        response = requests.post(
+        _ = requests.post(
             url=f"http://{self.ROBOT_IP_ADDRESS}:31950/runs/{self.RUN_ID}/labware_definitions",
             headers=self.HEADERS,
             data=command_payload,
@@ -167,17 +167,17 @@ class OpentronsAPI:
                 self.add_labware_definition(labware_definition)
             self.logger.info("All custom labware definitions added.")
         except:
-            self.logger.error(f"Failed to add labware definitions.")
+            self.logger.error("Failed to add labware definitions.")
 
     ####### executable functions #######
     def home(self):
         url = f"http://{self.ROBOT_IP_ADDRESS}:31950/robot/home"
         command_dict = {"target": "robot"}
         command_payload = json.dumps(command_dict)
-        response = requests.post(url=url, headers=self.HEADERS, data=command_payload)
+        _ = requests.post(url=url, headers=self.HEADERS, data=command_payload)
         self.logger.info("Robot homed.")
 
-    def delay(self, seconds: float, minutes=0, message=None, intent="setup", log = False):
+    def delay(self, seconds: float, minutes=0, message=None, intent="setup", log=False):
         command_dict = {
             "data": {
                 "commandType": "waitForDuration",
@@ -188,7 +188,7 @@ class OpentronsAPI:
 
         command_payload = json.dumps(command_dict)
 
-        response = requests.post(
+        _ = requests.post(
             url=self.COMMANDS_URL,
             headers=self.HEADERS,
             data=command_payload,
@@ -223,7 +223,7 @@ class OpentronsAPI:
             }
         }
         command_payload = json.dumps(command_dict)
-        response = requests.post(
+        _ = requests.post(
             url=self.COMMANDS_URL,
             headers=self.HEADERS,
             data=command_payload,
@@ -255,7 +255,7 @@ class OpentronsAPI:
             }
         }
         command_payload = json.dumps(command_dict)
-        response = requests.post(
+        _ = requests.post(
             url=self.COMMANDS_URL,
             headers=self.HEADERS,
             data=command_payload,
@@ -293,7 +293,7 @@ class OpentronsAPI:
             }
         }
         command_payload = json.dumps(command_dict)
-        response = requests.post(
+        _ = requests.post(
             url=self.COMMANDS_URL,
             headers=self.HEADERS,
             data=command_payload,
@@ -331,7 +331,7 @@ class OpentronsAPI:
             }
         }
         command_payload = json.dumps(command_dict)
-        response = requests.post(
+        _ = requests.post(
             url=self.COMMANDS_URL,
             headers=self.HEADERS,
             data=command_payload,
@@ -367,7 +367,7 @@ class OpentronsAPI:
             }
         }
         command_payload = json.dumps(command_dict)
-        response = requests.post(
+        _ = requests.post(
             url=self.COMMANDS_URL,
             headers=self.HEADERS,
             data=command_payload,
@@ -398,7 +398,7 @@ class OpentronsAPI:
         if speed is not None:
             command_dict["data"]["params"]["speed"] = speed
         command_payload = json.dumps(command_dict)
-        response = requests.post(
+        _ = requests.post(
             url=self.COMMANDS_URL,
             headers=self.HEADERS,
             data=command_payload,
@@ -410,7 +410,7 @@ class OpentronsAPI:
         settings = load_settings()
         self.logger = Logger(
             name="protocol",
-            file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
+            file_path=f"experiments/{settings['EXPERIMENT_NAME']}/meta_data",
         )
 
     def initialise(self):

@@ -1,14 +1,4 @@
 import warnings
-import pandas as pd
-import numpy as np
-
-# Suppress the specific FutureWarning of Pandas
-warnings.filterwarnings(
-    "ignore",
-    category=FutureWarning,
-    message="The behavior of DataFrame concatenation with empty or all-NA entries is deprecated",
-)
-
 
 from analysis.plots import Plotter
 from analysis.active_learning import ActiveLearner
@@ -17,19 +7,23 @@ from hardware.opentrons.opentrons_api import OpentronsAPI
 from hardware.opentrons.droplet_manager import DropletManager
 from hardware.opentrons.formulater import Formulater
 from hardware.opentrons.configuration import Configuration
-from hardware.opentrons.containers import Container
 from hardware.cameras import PendantDropCamera
 from hardware.sensor.sensor_api import SensorAPI
 from utils.load_save_functions import (
     load_settings,
-    save_calibration_data,
     initialize_results,
     load_info,
     append_results,
     save_results,
 )
 from utils.logger import Logger
-from utils.utils import calculate_average_in_column
+
+# Suppress the specific FutureWarning of Pandas
+warnings.filterwarnings(
+    "ignore",
+    category=FutureWarning,
+    message="The behavior of DataFrame concatenation with empty or all-NA entries is deprecated",
+)
 
 
 class Protocol:
@@ -42,7 +36,7 @@ class Protocol:
         self.settings = load_settings()
         self.logger = Logger(
             name="protocol",
-            file_path=f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data',
+            file_path=f"experiments/{self.settings['EXPERIMENT_NAME']}/meta_data",
         )
         self.logger.info("Initialization starting...")
         self.opentrons_api = opentrons_api
@@ -178,7 +172,7 @@ class Protocol:
         for i in reversed(
             range(explore_points)
         ):  # Reverse order for low to high concentration
-            well_id_explore = f"{row_id}{i+1}"
+            well_id_explore = f"{row_id}{i + 1}"
             source_well = self.containers[well_id_explore]
             self.logger.info(
                 f"Start pendant drop measurement of {source_well.WELL_ID}, containing {source_well.concentration} mM {source_well.solution_name}.\n"
@@ -215,7 +209,7 @@ class Protocol:
         """
         self.logger.info(f"Start exploit phase for surfactant {surfactant}.\n")
         for i in range(exploit_points):
-            well_id_exploit = f"{row_id}{explore_points+i+1}"
+            well_id_exploit = f"{row_id}{explore_points + i + 1}"
 
             suggest_concentration, st_at_suggestion = self.learner.suggest(
                 results=self.results, solution_name=surfactant
@@ -230,7 +224,9 @@ class Protocol:
             self.logger.info(
                 f"Start pendant drop measurement of {well_id_exploit}, containing {self.containers[well_id_exploit].concentration} mM {surfactant}.\n"
             )
-            self.left_pipette.mixing(container=self.containers[well_id_exploit], mix=("before", 20, 5))
+            self.left_pipette.mixing(
+                container=self.containers[well_id_exploit], mix=("before", 20, 5)
+            )
             dynamic_surface_tension, drop_volume, drop_count = (
                 self.droplet_manager.measure_pendant_drop(
                     source=self.containers[well_id_exploit],
@@ -272,7 +268,7 @@ class Protocol:
         well_id: str,
         drop_parameters: dict,
         solution_name: str,
-        plot_type: str
+        plot_type: str,
     ) -> None:
         """
         Append results, save them, and plot the results. Plots based on the specified plot type (either well or concentration)
@@ -289,9 +285,7 @@ class Protocol:
         )
         save_results(self.results)
         if plot_type == "wells":
-            self.plotter.plot_results_well_id(
-                df=self.results
-            )
+            self.plotter.plot_results_well_id(df=self.results)
         elif plot_type == "concentrations":
             self.plotter.plot_results_concentration(
                 df=self.results, solution_name=solution_name
