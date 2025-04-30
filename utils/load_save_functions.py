@@ -73,10 +73,10 @@ def save_instances_to_csv(instances, filename):
             writer.writerow(vars(instance))
 
 
-def save_calibration_data(scale_t: list):
+def save_calibration_data(scale_t: list, experiment_dir="experiments"):
     settings = load_settings()
     df = pd.DataFrame(scale_t, columns=["time (s)", "scale"])
-    df.to_csv(f"experiments/{settings['EXPERIMENT_NAME']}/calibration.csv")
+    df.to_csv(f"{experiment_dir}/{settings['EXPERIMENT_NAME']}/calibration.csv")
 
 
 def initialize_results():
@@ -99,9 +99,9 @@ def initialize_results():
     )
 
 
-def load_info(file_name: str):
+def load_info(file_name: str, experiment_dir="experiments"):
     settings = load_settings()
-    file_path = f"experiments/{settings['EXPERIMENT_NAME']}/meta_data"
+    file_path = f"{experiment_dir}/{settings['EXPERIMENT_NAME']}/meta_data"
     return pd.read_csv(f"{file_path}/{file_name}")
 
 
@@ -136,13 +136,15 @@ def append_results(
     return results
 
 
-def save_dynamic_surface_tension(dynamic_surface_tension, well_id):
+def save_dynamic_surface_tension(
+    dynamic_surface_tension, well_id, experiment_dir="experiments"
+):
     settings = load_settings()
     df = pd.DataFrame(
         dynamic_surface_tension, columns=["time (s)", "surface tension (mN/m)"]
     )
     df.to_csv(
-        f"experiments/{settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension.csv"
+        f"{experiment_dir}/{settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension.csv"
     )
 
 
@@ -177,9 +179,9 @@ def add_data_to_results(
     return results
 
 
-def save_results(results: pd.DataFrame):
+def save_results(results: pd.DataFrame, experiments_dir="experiments"):
     settings = load_settings()
-    file_name_results = f"experiments/{settings['EXPERIMENT_NAME']}/results.csv"
+    file_name_results = f"{experiments_dir}/{settings['EXPERIMENT_NAME']}/results.csv"
     results.to_csv(file_name_results, index=False)
 
 

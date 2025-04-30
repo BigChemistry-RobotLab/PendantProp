@@ -388,9 +388,9 @@ class PendantDropAnalysis:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-    def save_analysis_image(self, file_path=None):
+    def save_analysis_image(self, file_path=None, experiment_dir="experiments"):
         if file_path is None:
             file_path = (
-                f"experiments/{self.settings['EXPERIMENT_NAME']}/data/analysis.jpg"
+                f"{experiment_dir}/{self.settings['EXPERIMENT_NAME']}/data/analysis.jpg"
             )
         cv2.imwrite(file_path, self.analysis_image)

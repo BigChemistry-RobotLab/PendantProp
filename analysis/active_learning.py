@@ -12,7 +12,13 @@ from utils.load_save_functions import load_settings
 
 
 class ActiveLearner:
-    def __init__(self, model, parameters: list, resolution: int = 1000):
+    def __init__(
+        self,
+        model,
+        parameters: list,
+        resolution: int = 1000,
+        experiments_dir="experiments",
+    ):
         self.key = random.PRNGKey(42)
         self.model = model
         self.parameters = parameters
@@ -26,7 +32,7 @@ class ActiveLearner:
         settings = load_settings()
         self.logger = Logger(
             name="protocol",
-            file_path=f"experiments/{settings['EXPERIMENT_NAME']}/meta_data",
+            file_path=f"{experiments_dir}/{settings['EXPERIMENT_NAME']}/meta_data",
         )
 
         # plot settings

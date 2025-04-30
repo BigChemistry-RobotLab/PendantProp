@@ -32,11 +32,12 @@ class Protocol:
         opentrons_api: OpentronsAPI,
         sensor_api: SensorAPI,
         pendant_drop_camera: PendantDropCamera,
+        experiments_dir="experiments",
     ):
         self.settings = load_settings()
         self.logger = Logger(
             name="protocol",
-            file_path=f"experiments/{self.settings['EXPERIMENT_NAME']}/meta_data",
+            file_path=f"{experiments_dir}/{self.settings['EXPERIMENT_NAME']}/meta_data",
         )
         self.logger.info("Initialization starting...")
         self.opentrons_api = opentrons_api
@@ -423,7 +424,7 @@ class Protocol:
 #             dynamic_surface_tension, columns=["time (s)", "surface tension (mN/m)"]
 #         )
 #         df.to_csv(
-#             f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension_{i}.csv"
+#             f"{experiments_dir}/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension_{i}.csv"
 #         )
 #     if self.left_pipette.has_needle:
 #         self.left_pipette.return_needle()
@@ -441,7 +442,7 @@ class Protocol:
 #             scale, columns=["time (s)", "scale"]
 #         )
 #         df.to_csv(
-#             f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/scale{i}.csv"
+#             f"{experiments_dir}/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/scale{i}.csv"
 #         )
 
 #     if self.left_pipette.has_needle:

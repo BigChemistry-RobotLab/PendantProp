@@ -7,16 +7,16 @@ from utils.utils import smooth_list
 
 
 class Plotter:
-    def __init__(self):
+    def __init__(self, experiments_dir="experiments"):
         self.settings = load_settings()
         self.fontsize_labels = 15
         self.window_size = 20
         self.logger = Logger(
             name="protocol",
-            file_path=f"experiments/{self.settings['EXPERIMENT_NAME']}/meta_data",
+            file_path=f"{experiments_dir}/{self.settings['EXPERIMENT_NAME']}/meta_data",
         )
 
-    def plot_results_well_id(self, df: pd.DataFrame):
+    def plot_results_well_id(self, df: pd.DataFrame, experiments_dir="experiments"):
         try:
             if not df.empty:
                 wells_ids = df["well id"]
@@ -37,7 +37,7 @@ class Plotter:
 
                 # save in experiment folder and plots cache for web interface
                 plt.savefig(
-                    f"experiments/{self.settings['EXPERIMENT_NAME']}/results_plot.png"
+                    f"{experiments_dir}/{self.settings['EXPERIMENT_NAME']}/results_plot.png"
                 )
                 plt.savefig("server/static/plots_cache/results_plot.png")
                 plt.close(fig)
@@ -48,7 +48,11 @@ class Plotter:
             self._create_empty_plot("results_plot")
 
     def plot_dynamic_surface_tension(
-        self, dynamic_surface_tension: list, well_id: str, drop_count: int
+        self,
+        dynamic_surface_tension: list,
+        well_id: str,
+        drop_count: int,
+        experiments_dir="experiments",
     ):
         try:
             if dynamic_surface_tension:
@@ -83,7 +87,7 @@ class Plotter:
                 ax.grid(axis="y")
 
                 plt.savefig(
-                    f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension_plot_{drop_count}.png"
+                    f"{experiments_dir}/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension_plot_{drop_count}.png"
                 )
                 plt.savefig(
                     "server/static/plots_cache/dynamic_surface_tension_plot.png"
@@ -95,7 +99,9 @@ class Plotter:
             )
             self._create_empty_plot(f"dynamic_surface_tension_plot_{drop_count}")
 
-    def plot_results_concentration(self, df: pd.DataFrame, solution_name: str):
+    def plot_results_concentration(
+        self, df: pd.DataFrame, solution_name: str, experiments_dir="experiments"
+    ):
         try:
             if not df.empty:
                 df_solution = df.loc[df["solution"] == solution_name]
@@ -138,7 +144,7 @@ class Plotter:
 
                 # save in experiment folder and plots cache for web interface
                 plt.savefig(
-                    f"experiments/{self.settings['EXPERIMENT_NAME']}/results_plot_{solution_name}.png"
+                    f"{experiments_dir}/{self.settings['EXPERIMENT_NAME']}/results_plot_{solution_name}.png"
                 )
                 plt.savefig("server/static/plots_cache/results_plot.png")
                 plt.close(fig)
@@ -148,9 +154,11 @@ class Plotter:
             )
             self._create_empty_plot(f"results_plot_{solution_name}")
 
-    def _create_empty_plot(self, plot_name: str):
+    def _create_empty_plot(self, plot_name: str, experiments_dir="experiments"):
         fig, ax = plt.subplots()
         ax.set_title("Empty Plot")
-        plt.savefig(f"experiments/{self.settings['EXPERIMENT_NAME']}/{plot_name}.png")
+        plt.savefig(
+            f"{experiments_dir}/{self.settings['EXPERIMENT_NAME']}/{plot_name}.png"
+        )
         plt.savefig(f"server/static/plots_cache/{plot_name}.png")
         plt.close(fig)

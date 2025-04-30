@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def get_well_id_solution(containers: dict, solution_name: str) -> str:
     for key, container in containers.items():
         if "tube" in container.CONTAINER_TYPE:
@@ -10,7 +11,9 @@ def get_well_id_solution(containers: dict, solution_name: str) -> str:
     )
 
 
-def get_well_id_concentration(containers: dict, solution: str, requested_concentration: float) -> str:
+def get_well_id_concentration(
+    containers: dict, solution: str, requested_concentration: float
+) -> str:
     differences = []
     well_ids = []
 
@@ -18,7 +21,9 @@ def get_well_id_concentration(containers: dict, solution: str, requested_concent
     for key, container in containers.items():
         if "tube" in container.CONTAINER_TYPE or "Plate" in container.CONTAINER_TYPE:
             if container.solution_name == solution:
-                differences.append(float(container.concentration) - requested_concentration)
+                differences.append(
+                    float(container.concentration) - requested_concentration
+                )
                 well_ids.append(key)
 
     # Convert differences to a NumPy array and find positive differences

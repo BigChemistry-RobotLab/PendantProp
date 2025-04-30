@@ -21,6 +21,7 @@ class Container:
         solution_name: str = "empty",
         concentration: any = "pure",
         inner_diameter_mm: float = None,
+        experiments_dir="experiments",
     ):
         # Settings
         self.settings = load_settings()
@@ -49,19 +50,19 @@ class Container:
 
         # Create logger (container & protocol)
         os.makedirs(
-            f"experiments/{self.settings['EXPERIMENT_NAME']}/data", exist_ok=True
+            f"{experiments_dir}/{self.settings['EXPERIMENT_NAME']}/data", exist_ok=True
         )
         os.makedirs(
-            f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{self.WELL_ID}",
+            f"{experiments_dir}/{self.settings['EXPERIMENT_NAME']}/data/{self.WELL_ID}",
             exist_ok=True,
         )
         self.container_logger = Logger(
             name=self.WELL_ID,
-            file_path=f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{self.WELL_ID}",
+            file_path=f"{experiments_dir}/{self.settings['EXPERIMENT_NAME']}/data/{self.WELL_ID}",
         )
         self.protocol_logger = Logger(
             name="protocol",
-            file_path=f"experiments/{self.settings['EXPERIMENT_NAME']}/meta_data",
+            file_path=f"{experiments_dir}/{self.settings['EXPERIMENT_NAME']}/meta_data",
         )
 
     def aspirate(self, volume: float, log=True):

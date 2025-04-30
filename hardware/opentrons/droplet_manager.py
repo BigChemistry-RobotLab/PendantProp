@@ -18,6 +18,7 @@ class DropletManager:
         pendant_drop_camera: PendantDropCamera,
         opentrons_api: OpentronsAPI,
         plotter: Plotter,
+        experiments_dir="experiments",
     ):
         settings = load_settings()
         self.left_pipette = left_pipette
@@ -27,7 +28,7 @@ class DropletManager:
         self.plotter = plotter
         self.logger = Logger(
             name="protocol",
-            file_path=f"experiments/{settings['EXPERIMENT_NAME']}/meta_data",
+            file_path=f"{experiments_dir}/{settings['EXPERIMENT_NAME']}/meta_data",
         )
         self.MAX_RETRIES = int(settings["DROP_RETRIES"])
         self.DROP_VOLUME_DECREASE_AFTER_RETRY = float(

@@ -14,6 +14,7 @@ class Pipette:
         tips_info: dict,
         containers: dict,
         needle_info=None,
+        experiments_dir="experiments",
     ):
         # general
         settings = load_settings()
@@ -48,7 +49,7 @@ class Pipette:
         # intialize logger
         self.logger = Logger(
             name="protocol",
-            file_path=f"experiments/{settings['EXPERIMENT_NAME']}/meta_data",
+            file_path=f"{experiments_dir}/{settings['EXPERIMENT_NAME']}/meta_data",
         )
 
     def pick_up_tip(self, well=None):

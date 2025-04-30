@@ -16,13 +16,13 @@ from hardware.opentrons.opentrons_api import OpentronsAPI
 
 
 class Configuration:
-    def __init__(self, opentrons_api: OpentronsAPI):
+    def __init__(self, opentrons_api: OpentronsAPI, experiments_dir="experiments"):
         settings = load_settings()
         self.settings = settings
         self.opentrons_api = opentrons_api
         self.LABWARE_DEFINITIONS_FOLDER = self.opentrons_api.LABWARE_DEFINITIONS_FOLDER
         self.ROBOT_TYPE = settings["ROBOT_TYPE"]
-        self.FILE_PATH_CONFIG = f"experiments/{settings['EXPERIMENT_NAME']}/meta_data/{settings['CONFIG_FILENAME']}"
+        self.FILE_PATH_CONFIG = f"{experiments_dir}/{settings['EXPERIMENT_NAME']}/meta_data/{settings['CONFIG_FILENAME']}"
         self.LAYOUT = self._load_config_file()
         self.RIGHT_PIPETTE_NAME = "p1000_single_gen2"
         self.LEFT_PIPETTE_NAME = "p20_single_gen2"
@@ -32,7 +32,7 @@ class Configuration:
         self.CONTAINERS = None
         self.logger = Logger(
             name="protocol",
-            file_path=f"experiments/{settings['EXPERIMENT_NAME']}/meta_data",
+            file_path=f"{experiments_dir}/{settings['EXPERIMENT_NAME']}/meta_data",
         )
 
     def load_pipettes(self):
@@ -182,7 +182,7 @@ class Configuration:
     #             pass
     #         else:
     #             containers_only.append(containers[key])
-    #     filename = f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data/initial_well_config.csv'
+    #     filename = f'{experiments_dir}/{self.settings["EXPERIMENT_NAME"]}/meta_data/initial_well_config.csv'
     #     save_instances_to_csv(instances=containers_only, filename=filename)
 
     def _find_tips_info(self, key_word: str):

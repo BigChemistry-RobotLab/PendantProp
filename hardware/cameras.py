@@ -89,14 +89,16 @@ class PendantDropCamera:
         self.st_t = []  # Surface tension measurements
         self.wortington_numbers = []  # Wortington numbers
 
-    def initialize_measurement(self, well_id: str, drop_count: int):
+    def initialize_measurement(
+        self, well_id: str, drop_count: int, experiments_dir="experiments"
+    ):
         self.settings = load_settings()
         self.experiment_name = self.settings["EXPERIMENT_NAME"]
-        self.save_dir = f"experiments/{self.experiment_name}/data"
+        self.save_dir = f"{experiments_dir}/{self.experiment_name}/data"
         self.analyzer = PendantDropAnalysis()
         self.logger = Logger(
             name="protocol",
-            file_path=f"experiments/{self.experiment_name}/meta_data",
+            file_path=f"{experiments_dir}/{self.experiment_name}/meta_data",
         )
         self.well_id = well_id
         self.drop_count = drop_count

@@ -406,11 +406,11 @@ class OpentronsAPI:
         )
 
     ####### utils #######
-    def _initialize_logger(self):
+    def _initialize_logger(self, experiments_dir="experiments"):
         settings = load_settings()
         self.logger = Logger(
             name="protocol",
-            file_path=f"experiments/{settings['EXPERIMENT_NAME']}/meta_data",
+            file_path=f"{experiments_dir}/{settings['EXPERIMENT_NAME']}/meta_data",
         )
 
     def initialise(self):

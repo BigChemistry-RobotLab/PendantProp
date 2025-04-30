@@ -17,6 +17,7 @@ class Formulater:
         right_pipette: Pipette,
         containers: dict,
         labware: dict,
+        experiments_dir="experiments",
     ):
         self.left_pipette = left_pipette
         self.right_pipette = right_pipette
@@ -25,7 +26,7 @@ class Formulater:
         settings = load_settings()
         self.logger = Logger(
             name="protocol",
-            file_path=f"experiments/{settings['EXPERIMENT_NAME']}/meta_data",
+            file_path=f"{experiments_dir}/{settings['EXPERIMENT_NAME']}/meta_data",
         )
         self.wash_index = settings["WASH_INDEX"]
 
