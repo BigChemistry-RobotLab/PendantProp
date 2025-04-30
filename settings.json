@@ -1,0 +1,5 @@
+{
+    "ROBOT_IP": "",
+    "HAS_OPENTRONS_CAMERA": "True",
+    "EXPERIMENT_NAME": "EXAMPLE"
+}

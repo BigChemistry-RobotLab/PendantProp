@@ -11,8 +11,8 @@ from utils.logger import Logger
 
 
 class OpentronsAPI:
-    def __init__(self):
-        settings = load_settings()
+    def __init__(self, settings_file="settings.json"):
+        settings = load_settings(file_name=settings_file)
         self.ROBOT_IP_ADDRESS = settings["ROBOT_IP"]
         self.LABWARE_DEFINITIONS_FOLDER = "labware\definitions"
         self.HEADERS = {"opentrons-version": "3"}

@@ -110,7 +110,7 @@ def settings():
 
 @app.route("/reset_settings", methods=["POST"])
 def reset_settings():
-    settings = load_settings(file_name="default_settings.json")
+    settings = load_settings(file_name="settings.json")
     save_settings(settings)
     session["last_action"] = "Settings reset"
     return redirect(url_for("index"))

@@ -33,9 +33,8 @@ def load_settings(file_name="settings.json"):
 
     :param file_name: File name to load settings from
     """
-    file_path = f"settings/{file_name}"
-    if os.path.exists(file_path):
-        with open(file_path, "r") as file:
+    if os.path.exists(file_name):
+        with open(file_name, "r") as file:
             return json.load(file)
 
 def save_settings(settings, file_name="settings.json"):
@@ -45,13 +44,12 @@ def save_settings(settings, file_name="settings.json"):
     :param settings: Settings to save
     :param file_name: File name to save settings to
     """
-    file_path = f"settings/{file_name}"
-    with open(file_path, "w") as file:
+    with open(file_name, "w") as file:
         json.dump(settings, file, indent=4)
 
 
-def save_settings_meta_data(settings: dict):
-    file_path = f"experiments/{settings['EXPERIMENT_NAME']}/meta_data/settings.json"
+def save_settings_meta_data(settings: dict, experiment_dir="experiments"):
+    file_path = f"{experiment_dir}/{settings['EXPERIMENT_NAME']}/meta_data/settings.json"
     with open(file_path, "w") as file:
         json.dump(settings, file, indent=4)
 
