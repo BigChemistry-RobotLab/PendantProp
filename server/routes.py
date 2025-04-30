@@ -38,6 +38,7 @@ app.config["UPLOAD_FOLDER"] = "experiments"
 log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
 
+
 # Function to replace images in the static directory with placeholders
 def replace_static_images_with_placeholders():
     image_files = glob.glob("server/static/plots_cache/*.png")
@@ -47,6 +48,7 @@ def replace_static_images_with_placeholders():
         placeholder_file = os.path.join(placeholder_dir, os.path.basename(file))
         if os.path.exists(placeholder_file):
             shutil.copy(placeholder_file, "server/static/plots_cache")
+
 
 replace_static_images_with_placeholders()
 
@@ -61,6 +63,7 @@ if has_opentrons_camera:
 
 # Global variable to store the protocol instance
 protocol = None
+
 
 @app.route("/")
 def index():
@@ -237,8 +240,7 @@ def opentron_video_feed():
                 if ret:
                     frame = buffer.tobytes()
                     yield (
-                        b"--frame\r\n"
-                        b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
+                        b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
                     )
                 time.sleep(0.05)  # Add a small delay to simulate frame rate
 
