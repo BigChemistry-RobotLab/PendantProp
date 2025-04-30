@@ -27,7 +27,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["ruff"]
+dev = ["ruff", "notebook"]
 
 [project.urls]
 "Source" = "https://github.com/BigChemistry-RobotLab/PendantProp"
