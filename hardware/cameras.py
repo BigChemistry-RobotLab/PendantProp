@@ -20,16 +20,15 @@ class OpentronCamera:
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         self.camera.set(cv2.CAP_PROP_FPS, fps)
-
-        if not self.camera.isOpened():
-            raise Exception("Error: Could not open camera.")
-
         self.current_frame = None
         self.stop_background_threads = Event()
 
-        # Start the frame capture thread
-        self.thread = Thread(target=self.capture_frames, daemon=True)
-        self.thread.start()
+        if not self.camera.isOpened():
+            print("Error: Could not open camera.")
+        else:
+            # Start the frame capture thread
+            self.thread = Thread(target=self.capture_frames, daemon=True)
+            self.thread.start()
 
     def capture_frames(self):
         while not self.stop_background_threads.is_set():
