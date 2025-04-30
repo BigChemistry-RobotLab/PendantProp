@@ -15,7 +15,7 @@ maintainers = [
 ]
 dependencies = [
     "flask",
-    "imutils"
+    "imutils",
     "jax",
     "matplotlib",
     "numpy",
