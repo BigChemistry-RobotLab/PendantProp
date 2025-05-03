@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PendantProp"
+version = "0.0.0"
+description = "A"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { file = "LICENSE" }
+authors = [{ name = "P Laceholder", email = "email@email.com" }]
+maintainers = [
+  { name = "P Laceholder", email = "email@email.com" },
+]
+dependencies = [
+    "flask",
+    "imutils",
+    "jax",
+    "matplotlib",
+    "numpy",
+    "numpyro",
+    "opencv-python",
+    "pandas",
+    "pypylon",
+    "scikit-learn",
+]
+
+[project.optional-dependencies]
+dev = ["notebook", "ruff"]
+
+[project.urls]
+"Source" = "https://github.com/BigChemistry-RobotLab/PendantProp"
+"Bug Reports" = "https://github.com/BigChemistry-RobotLab/PendantProp/issues"
+"Homepage" = "https://github.com/BigChemistry-RobotLab/PendantProp"
