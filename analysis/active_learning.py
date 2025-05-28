@@ -42,7 +42,7 @@ class ActiveLearner:
         # self.plot_suggestion(x_suggestion=suggested_concentration)
         suggested_concentration = float(suggested_concentration[0] * 1000) # back to mM
         st_at_suggested_concentration = float(st_at_suggested_concentration[0] * 1000) # back to mN/m
-        
+
         return suggested_concentration, st_at_suggested_concentration
 
     def fit(self, obs: tuple, outlier_check = False):
@@ -53,6 +53,12 @@ class ActiveLearner:
 
         self.obs = obs
         x_obs, y_obs = self.obs
+
+        # Check if x_obs is empty
+        if x_obs.size == 0:
+            self.logger.warning("x_obs is empty. Skipping fitting process.")
+            return
+
         mcmc.run(key_, x_obs=x_obs, y_obs=y_obs)
         self.logger.info("analysis: fitting model to data")
         posterior_samples = mcmc.get_samples()

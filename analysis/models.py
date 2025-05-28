@@ -70,6 +70,11 @@ def szyszkowski_model(x_obs, y_obs=None):
         - x_obs (np.array): list of total surfactant concentrations
         - y_obs (np.array): list of surface tension values
     """
+    if x_obs.size == 0:
+        # Log a warning and return a default value
+        print("Warning: x_obs is empty. Skipping computation.")
+        return None  # or return a default value like 0 or an empty array
+    
     cmc = npy.sample("cmc", dist.Uniform(0, jnp.max(x_obs)))
     gamma_max = npy.sample("gamma_max", dist.Uniform(0, jnp.max(x_obs) / 10))
     Kad = npy.sample("Kad", dist.Uniform(0, 100000))

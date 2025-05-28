@@ -224,35 +224,40 @@ class Protocol:
                 results=self.results, solution_name=surfactant
             )
             self.formulater.wash(return_needle=True)
-            self.formulater.formulate_exploit_point(
-                suggest_concentration=suggest_concentration,
-                solution_name=surfactant,
-                well_volume=float(self.settings["WELL_VOLUME"]),
-                well_id_exploit=well_id_exploit,
-            )
-            self.logger.info(
-                f"Start pendant drop measurement of {well_id_exploit}, containing {self.containers[well_id_exploit].concentration} mM {surfactant}.\n"
-            )
-            self.left_pipette.mixing(container=self.containers[well_id_exploit], mix=("before", 20, 5))
-            dynamic_surface_tension, drop_volume, drop_count = (
-                self.droplet_manager.measure_pendant_drop(
-                    source=self.containers[well_id_exploit],
-                    max_measure_time=measure_time,
+            if suggest_concentration is None:
+                self.logger.warning(
+                    f"Suggestion for {surfactant} is None. Skipping this point.\n"
                 )
-            )
-            drop_parameters = self._create_drop_parameters(
-                drop_volume=drop_volume,
-                measure_time=measure_time,
-                drop_count=drop_count,
-            )
-            self._append_and_save_results(
-                point_type="exploit",
-                dynamic_surface_tension=dynamic_surface_tension,
-                well_id=well_id_exploit,
-                drop_parameters=drop_parameters,
-                solution_name=surfactant,
-                plot_type="concentrations",
-            )
+            else:
+                self.formulater.formulate_exploit_point(
+                    suggest_concentration=suggest_concentration,
+                    solution_name=surfactant,
+                    well_volume=float(self.settings["WELL_VOLUME"]),
+                    well_id_exploit=well_id_exploit,
+                )
+                self.logger.info(
+                    f"Start pendant drop measurement of {well_id_exploit}, containing {self.containers[well_id_exploit].concentration} mM {surfactant}.\n"
+                )
+                self.left_pipette.mixing(container=self.containers[well_id_exploit], mix=("before", 20, 5))
+                dynamic_surface_tension, drop_volume, drop_count = (
+                    self.droplet_manager.measure_pendant_drop(
+                        source=self.containers[well_id_exploit],
+                        max_measure_time=measure_time,
+                    )
+                )
+                drop_parameters = self._create_drop_parameters(
+                    drop_volume=drop_volume,
+                    measure_time=measure_time,
+                    drop_count=drop_count,
+                )
+                self._append_and_save_results(
+                    point_type="exploit",
+                    dynamic_surface_tension=dynamic_surface_tension,
+                    well_id=well_id_exploit,
+                    drop_parameters=drop_parameters,
+                    solution_name=surfactant,
+                    plot_type="concentrations",
+                )
         self.formulater.wash(return_needle=True)
 
     def _create_drop_parameters(
