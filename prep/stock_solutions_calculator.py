@@ -4,8 +4,8 @@ import numpy as np
 surfactant_properties = pd.read_csv('prep/surfactant_properties.csv')
 
 # input parameters
-surfactant = "12-BAC" # acronym of the surfactant
-volume = 50 # in mL
+surfactant = "SDS" # acronym of the surfactant
+volume = 15 # in mL
 factor_above_CMC = 4 # factor above CMC
 
 CMC_literature = surfactant_properties.loc[surfactant_properties['surfactant'] == surfactant, 'CMC (mM)'].values[0] # in mM

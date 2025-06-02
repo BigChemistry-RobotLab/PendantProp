@@ -1,5 +1,11 @@
-stock name,surfactant,barcode,exp tag,mass (mg),volume (mL)
-SDBS_1,SDBS,,,125.17,50
-NaOleate_1,NaOleate,,,5.82,50
-DTAB_1,DTAB,,,504.77,50
-TTAB_1,TTAB,,,286.14,50
+stock name,surfactant,barcode,mass (mg),volume (mL)
+SDBS_1,SDBS,,125.17,50
+NaOleate_1,NaOleate,,5.82,50
+DTAB_1,DTAB,,504.77,50
+TTAB_1,TTAB,,286.14,50
+SDS_1,SDS,SC194286,470.64,50
+SOS_1,SOS,,399,5
+BDDAB_1,BDDAB,,202.19,50
+C12E3_1,C12E3,,7.08,50
+C12E4_1,C12E4,,6.75,50
+SDS_2,SDS,,109.56,15

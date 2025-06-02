@@ -51,8 +51,9 @@ class PendantDropAnalysis:
 
         blur = cv2.GaussianBlur(self.raw_image, (9, 9), 0)
         canny = cv2.Canny(blur, 10, 10)
-        edged = cv2.dilate(canny, None, iterations=1)
-        self.processed_image = cv2.erode(edged, None, iterations=1)
+        dilated = cv2.dilate(canny, None, iterations=1)
+        eroded = cv2.erode(dilated, None, iterations=1)
+        self.processed_image = eroded
 
     def analyse(self):
 
@@ -322,11 +323,10 @@ class PendantDropAnalysis:
         taken from https://doi.org/10.1016/j.jcis.2015.05.012.
         units cancel out if st given in mN/m and needle_diameter in mm and vol droplet in uL
         """
-        
+
         Wo = (self.density*self.gravity_constant* vol_droplet) / (np.pi * st* self.needle_diameter_mm )
         return Wo
 
-    
     def check_diameter(self):
         diameter_needle_px_given = self.settings["NEEDLE_DIAMETER_PX"]
         if 0.95*diameter_needle_px_given < self.needle_diameter_px < 1.05*diameter_needle_px_given:
@@ -334,7 +334,7 @@ class PendantDropAnalysis:
         else:
             # print(f"too large of diameter ({self.needle_diameter_px} px), droplet probably sticking to needle.")
             return False
-    
+
     def image2wortington(self, img, vol_droplet):
         self.raw_image = img    
         self.process_image()
@@ -385,3 +385,9 @@ class PendantDropAnalysis:
         if file_path == None:
             file_path = f"experiments/{self.settings['EXPERIMENT_NAME']}/data/analysis.jpg"
         cv2.imwrite(file_path, self.analysis_image)
+
+
+    def save_process_image(self, file_path=None):
+        if file_path == None:
+            file_path = f"experiments/{self.settings['EXPERIMENT_NAME']}/data/processed.jpg"
+        cv2.imwrite(file_path, self.processed_image)

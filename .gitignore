@@ -8,7 +8,13 @@ legacy/
 settings/
 experiments/**/*.json
 experiments/**/*.log
+experiments/**/*.txt
 hardware/sensor/*.txt
 playbook.ipynb
 test_camera.py
 test_protocol.py
+figures
+analysis/mixtures
+image_analysis_figure.py
+requirements.txt
+
