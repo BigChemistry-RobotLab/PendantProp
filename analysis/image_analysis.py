@@ -129,9 +129,10 @@ class PendantDropAnalysis:
             cropped_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
         )
 
-        # Assuming cnts_2 is available and contains the contours
-        contourright, contourleft = max(
-            itertools.combinations(cnts_2, 2),
+
+        # Assuming cnts_2 is available and contains the contours 
+        contourright, contourleft = max(        # max() arg is an empty sequence, soms wel een non-zero wt number, maar kleine kans
+            itertools.combinations(cnts_2, 2),  
             key=lambda pair: euclidean(
                 cv2.minEnclosingCircle(pair[0])[0], cv2.minEnclosingCircle(pair[1])[0]
             ),
@@ -338,7 +339,7 @@ class PendantDropAnalysis:
     def image2wortington(self, img, vol_droplet):
         self.raw_image = img    
         self.process_image()
-        st = self.analyse()
+        st = self.analyse()     # Hier gaat het fout, max() arg is an empty sequence
         if st > 20:
             if self.check_diameter():
                 return self._calculate_wortington(vol_droplet=vol_droplet, st=st)
@@ -364,6 +365,7 @@ class PendantDropAnalysis:
         )
         de_scaled = np.sqrt(st_water / (self.density * self.gravity_constant * self.Hin))
         scale = de_scaled / self.de
+        print(f"scale: {scale} px/mm")
         return scale
 
     def show_raw_image(self):

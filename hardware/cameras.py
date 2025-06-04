@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from io import BytesIO
 
-from utils.load_save_functions import load_settings
+from utils.load_save_functions import load_settings, load_info
 from utils.logger import Logger
 from analysis.image_analysis import PendantDropAnalysis
 
@@ -96,9 +96,14 @@ class PendantDropCamera:
 
     def initialize_measurement(self, well_id: str, drop_count: int):
         self.settings = load_settings()
+        characterization_info = load_info(
+            file_name=self.settings["CHARACTERIZATION_INFO_FILENAME"]
+        )
+        self.max_measurement_time = float(characterization_info["measure time"].iloc[0])
         self.experiment_name = self.settings["EXPERIMENT_NAME"]
         self.save_dir = f"experiments/{self.experiment_name}/data"
         self.analyzer = PendantDropAnalysis()
+        self.photo_step_time = 1
         self.logger = Logger(
             name="protocol",
             file_path=f"experiments/{self.experiment_name}/meta_data",
@@ -111,6 +116,8 @@ class PendantDropCamera:
     def start_stream(self):
         if not self.streaming:
             self.streaming = True
+            if self.max_measurement_time > 600:
+                self.photo_step_time = round(self.max_measurement_time/200)
             self.stream_thread = threading.Thread(target=self._stream, daemon=True)
             self.stream_thread.start()
 
@@ -161,7 +168,7 @@ class PendantDropCamera:
         last_save_time = time.time()
         while self.capturing:
             if self.current_image is not None:
-                if time.time() - last_save_time >= 1.0:
+                if time.time() - last_save_time >= self.photo_step_time:
                     self._save_image(self.current_image)
                     last_save_time = time.time()
                 with self.lock:
@@ -177,6 +184,7 @@ class PendantDropCamera:
                 target=self._check, args=(vol_droplet,), daemon=True
             )
             self.check_thread.start()
+            print("Started check")
             # self.logger.info("Camera: checking started")
 
     def stop_check(self):
@@ -197,6 +205,7 @@ class PendantDropCamera:
                 )
                 if wortington_number is not None:
                     self.wortington_numbers.append(wortington_number)
+                    return wortington_number
 
     # Image Processing
     def _save_image(self, img):
@@ -221,8 +230,8 @@ class PendantDropCamera:
 
     def _check_image(self, img, vol_droplet):
         try:
-            return self.analyzer.image2wortington(img=img, vol_droplet=vol_droplet)
-        except Exception:
+            return self.analyzer.image2wortington(img=img, vol_droplet=vol_droplet)     # Hier gaat het fout, weet niet waarom precies
+        except Exception:                                                               # max() arg is an empty sequence
             return None
 
     # Frame Generation

@@ -26,7 +26,6 @@ def save_csv_file(exp_name: str, subdir_name: str, csv_file, app):
     file_path = os.path.join(exp_dir, csv_file.filename)
     csv_file.save(file_path)
 
-
 def load_settings(file_name="settings.json"):
     """
     Load settings from json file
@@ -49,12 +48,10 @@ def save_settings(settings, file_name="settings.json"):
     with open(file_path, "w") as file:
         json.dump(settings, file, indent=4)
 
-
 def save_settings_meta_data(settings: dict):
     file_path = f"experiments/{settings['EXPERIMENT_NAME']}/meta_data/settings.json"
     with open(file_path, "w") as file:
         json.dump(settings, file, indent=4)
-
 
 def save_instances_to_csv(instances, filename):
     # Get the attribute names from the first instance
@@ -70,12 +67,10 @@ def save_instances_to_csv(instances, filename):
         for instance in instances:
             writer.writerow(vars(instance))
 
-
 def save_calibration_data(scale_t: list):
     settings = load_settings()
     df = pd.DataFrame(scale_t, columns=["time (s)", "scale"])
     df.to_csv(f"experiments/{settings['EXPERIMENT_NAME']}/calibration.csv")
-
 
 def initialize_results():
     # Initialize an empty DataFrame with the required columns
@@ -96,12 +91,10 @@ def initialize_results():
         ]
     )
 
-
 def load_info(file_name: str):
     settings = load_settings()
     file_path = f"experiments/{settings['EXPERIMENT_NAME']}/meta_data"
     return pd.read_csv(f"{file_path}/{file_name}")
-
 
 def append_results(
     results: pd.DataFrame,
@@ -133,6 +126,33 @@ def append_results(
         print("Was not able to measure pendant drop!")
     return results
 
+def append_results_binary(
+    results: pd.DataFrame,
+    dynamic_surface_tension: list,
+    well_id: str,
+    drop_parameters: dict,
+    n_eq_points: int,
+    solutions: dict,
+    sensor_api: SensorAPI,
+):
+    if dynamic_surface_tension:
+        save_dynamic_surface_tension(dynamic_surface_tension, well_id)
+        st_eq = calculate_equillibrium_value(
+            x=dynamic_surface_tension,
+            n_eq_points=n_eq_points,
+            column_index=1,
+        )
+        results = add_data_to_results_binary(
+            results=results,
+            well_id=well_id,
+            surface_tension_eq=st_eq,
+            drop_parameters=drop_parameters,
+            solutions=solutions,
+            sensor_api=sensor_api,
+        )
+    else:
+        print("Was not able to measure pendant drop!")
+    return results
 
 def save_dynamic_surface_tension(dynamic_surface_tension, well_id):
     settings = load_settings()
@@ -171,6 +191,39 @@ def add_data_to_results(
             "pressure (Pa)": [float(sensor_data["Pressure (Pa)"])],
         }
     )
+    new_row.update
+    results = pd.concat([results, new_row], ignore_index=True)
+    return results
+
+def add_data_to_results_binary(
+    results: pd.DataFrame,
+    well_id: str,
+    surface_tension_eq: float,
+    drop_parameters: dict,
+    solutions: dict,  # Expecting: {"SDS": 0.1, "NaCl": 0.05}
+    sensor_api=SensorAPI,
+):
+    sensor_data = sensor_api.capture_sensor_data()
+
+    # Define core measurement + metadata fields
+    fixed_data = {
+        "well id": well_id,
+        "surface tension eq. (mN/m)": surface_tension_eq,
+        "drop count": drop_parameters["drop_count"],
+        "drop volume (uL)": drop_parameters["drop_volume"],
+        "max measure time (s)": drop_parameters["max_measure_time"],
+        "flow rate (uL/s)": drop_parameters["flow_rate"],
+        "temperature (C)": float(sensor_data["Temperature (C)"]),
+        "humidity (%)": float(sensor_data["Humidity (%)"]),
+        "pressure (Pa)": float(sensor_data["Pressure (Pa)"]),
+    }
+
+    # Build the row: insert solution concentrations first, then fixed metadata
+    row_data = {"well id": fixed_data.pop("well id")}
+    row_data.update(solutions)      # Add dynamic solution-concentration columns
+    row_data.update(fixed_data)     # Add measurement metadata
+
+    new_row = pd.DataFrame([row_data])
     results = pd.concat([results, new_row], ignore_index=True)
     return results
 
@@ -180,7 +233,6 @@ def save_results(results: pd.DataFrame):
         f"experiments/{settings['EXPERIMENT_NAME']}/results.csv"
     )
     results.to_csv(file_name_results, index=False)
-
 
 def load_commit_hash():
     try:
@@ -192,7 +244,6 @@ def load_commit_hash():
         return commit_hash
     except subprocess.CalledProcessError:
         return None
-
 
 if __name__ == "__main__":
     settings = load_settings()

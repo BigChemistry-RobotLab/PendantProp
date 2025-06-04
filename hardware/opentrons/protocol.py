@@ -1,6 +1,7 @@
 import warnings
 import pandas as pd
 import numpy as np
+import time
 
 # Suppress the specific FutureWarning of Pandas
 warnings.filterwarnings(
@@ -26,6 +27,7 @@ from utils.load_save_functions import (
     initialize_results,
     load_info,
     append_results,
+    append_results_binary,
     save_results,
 )
 from utils.logger import Logger
@@ -93,8 +95,92 @@ class Protocol:
 
         self.left_pipette.return_needle()
         self.logger.info("Finished measure wells protocol.\n\n\n")
-        play_sound("Knietje?") 
 
+    # def random_measurement(self) -> None:
+        # """
+        # Perform pendant drop measurements for all wells specified in the settings.
+        # """
+        # self.logger.info("Starting measure wells protocol...\n\n\n")
+        # self.settings = load_settings()
+        # well_info = load_info(file_name=self.settings["WELL_INFO_FILENAME"])
+        # wells_ids = well_info["location"].astype(str) + well_info["well"].astype(str)
+
+        # try:
+        #     df = pd.read_csv("experiments/csv_file.csv")
+        # except Exception as e:
+        #     self.logger.error(f"Error loading formulation CSV: {e}")
+        #     return
+
+        # if len(df) != len(wells_ids):
+        #     self.logger.error(f"Mismatch: {len(wells_ids)} wells but {len(df)} formulation rows.")
+        #     return
+
+        # for i, well_id in enumerate(wells_ids):
+        #     row = df.iloc[i]
+        #     conc_dict = row.dropna().to_dict()
+        #     print(f"Row {i}: {conc_dict}")
+        # for i, well_id in enumerate(wells_ids):
+        #     row = df.iloc[i]
+        #     conc_dict = row.dropna().to_dict()
+        #     # self.formulater.formulate_random_single_well(well_id=well_id, concentrations=conc_dict)   single well
+
+        #     self._measure_single_well(well_id)
+
+    def _measure_random_well(self) -> None:
+        """
+        Perform pendant drop measurements for wells in batches of 8.
+        """
+        self.logger.info("Starting measure wells protocol...\n\n\n")
+        self.settings = load_settings()
+        well_info = load_info(file_name=self.settings["WELL_INFO_FILENAME"])
+        wells_ids = (well_info["location"].astype(str) + well_info["well"].astype(str)).tolist()
+        batch_size = 8 # set in settings
+
+        try:
+            df = pd.read_csv("experiments/csv_file.csv")
+        except Exception as e:
+            self.logger.error(f"Error loading formulation CSV: {e}")
+            return
+
+        if len(df) != len(wells_ids):
+            self.logger.error(f"Mismatch: {len(wells_ids)} wells but {len(df)} formulation rows.")
+            return
+
+        num_batches = (len(wells_ids) + batch_size - 1) // batch_size
+
+        for batch_idx in range(num_batches):
+            # Extract batch of 8 (or fewer if final batch)
+            batch_wells = wells_ids[batch_idx * batch_size : (batch_idx + 1) * batch_size]
+            batch_rows = df.iloc[batch_idx * batch_size : (batch_idx + 1) * batch_size]
+
+            # Build per-well concentration dict
+            concentrations_per_well = {}
+            for i, well_id in enumerate(batch_wells):
+                row = batch_rows.iloc[i].dropna().to_dict()
+                row.pop("well", None)      # remove non-concentration columns
+                row.pop("location", None)
+                concentrations_per_well[well_id] = row
+
+            # Formulate batch of 8 wells
+            self.formulater.formulate_random_single_well(
+                well_ids=batch_wells,
+                concentrations_per_well=concentrations_per_well
+            )
+
+            # Measure each well individually
+            for well_id in batch_wells:
+                conc_dict = concentrations_per_well[well_id]
+                drop_parameters = self.drop_parameters  # Assuming you have this preset
+                dynamic_surface_tension = self._measure_single_well(well_id)  # Your measurement method
+
+                self._append_and_save_results_binary(
+                    dynamic_surface_tension=dynamic_surface_tension,
+                    well_id=well_id,
+                    drop_parameters=drop_parameters,
+                    solution=self.containers[well_id].solution_name,
+                )
+        self.logger.info(f"End of pendant drop measurement of {well_id}.\n")
+        
     def _measure_single_well(self, well_id: str) -> None:
         """
         Measure pendant drop for a single well and process the results.
@@ -138,6 +224,8 @@ class Protocol:
         explore_points = int(self.settings["EXPLORE_POINTS"])
         exploit_points = int(self.settings["EXPLOIT_POINTS"])
 
+        self._check_needle_position()
+
         for i, surfactant in enumerate(characterization_info["surfactant"]):
             self.logger.info(f"Start characterization of {surfactant}.\n\n")
             row_id = characterization_info["row id"][i]
@@ -149,6 +237,7 @@ class Protocol:
                 solution_name=surfactant,
                 n_dilutions=explore_points,
                 well_volume=float(self.settings["WELL_VOLUME"]),
+                dilution_factor=float(self.settings["DILUTION_FACTOR"]),
             )
 
             # Explore phase
@@ -167,7 +256,8 @@ class Protocol:
                 exploit_points=exploit_points,
                 measure_time=measure_time,
             )
-
+        if self.left_pipette.has_needle:
+            self.left_pipette.return_needle()
         self.logger.info("Finished characterization protocol.\n\n\n")
         play_sound("DATA DATA.")
 
@@ -223,7 +313,7 @@ class Protocol:
             suggest_concentration, st_at_suggestion = self.learner.suggest(
                 results=self.results, solution_name=surfactant
             )
-            self.formulater.wash(return_needle=True)
+            self.formulater.wash(return_needle=False)
             self.formulater.formulate_exploit_point(
                 suggest_concentration=suggest_concentration,
                 solution_name=surfactant,
@@ -253,7 +343,7 @@ class Protocol:
                 solution_name=surfactant,
                 plot_type="concentrations",
             )
-        self.formulater.wash(return_needle=True)
+        self.formulater.wash(return_needle=False)
 
     def _create_drop_parameters(
         self, drop_volume: float, measure_time: float, drop_count: int
@@ -300,7 +390,50 @@ class Protocol:
                 df=self.results, solution_name=solution_name
             )
 
+    def _append_and_save_results_binary(
+        self,
+        dynamic_surface_tension: list,
+        well_id: str,
+        drop_parameters: dict,
+        solutions: dict[str, float],
+        ) -> None:
+    # Append base results
+        self.results = append_results_binary(
+            results=self.results,
+            dynamic_surface_tension=dynamic_surface_tension,
+            well_id=well_id,
+            drop_parameters=drop_parameters,
+            n_eq_points=self.n_measurement_in_eq,
+            solutions=solutions,
+            sensor_api=self.sensor_api,
+        )
 
+        # Add solution-specific columns
+        for solution, conc in solutions.items():
+            self.results[solution] = conc
+
+        # Save updated results
+        save_results(self.results)
+
+        # Plotting logic
+        # self.plotter.plot_results_well_id(df=self.results) TODO Probably broken, automatic heatmap?, only after multiple points?
+
+    def _check_needle_position(self):
+        self.left_pipette.pick_up_needle()
+        self.left_pipette.move_to_well(
+            container=self.containers["drop_stage"]
+            )
+        
+        time.sleep(30)
+        # play_sound("Remove hands from the deck within 5 seconds.")
+        play_sound("Beep")
+        time.sleep(5)
+
+        self.left_pipette.move_to_well(
+            container=self.containers["drop_stage"],
+            depth_offset=-10,
+            )
+        
 ### legacy ###
 
 # def calibrate(self):

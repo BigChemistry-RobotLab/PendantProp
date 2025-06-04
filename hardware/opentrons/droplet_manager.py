@@ -34,6 +34,7 @@ class DropletManager:
         self.DROP_VOLUME_DECREASE_AFTER_RETRY = float(
             settings["DROP_VOLUME_DECREASE_AFTER_RETRY"]
         )
+        self.delta_threshold = float(settings["DELTA_THRESHOLD"])
         self.PENDANT_DROP_DEPTH_OFFSET = float(settings["PENDANT_DROP_DEPTH_OFFSET"])
         self.FLOW_RATE = float(settings["FLOW_RATE"])
         self.CHECK_TIME = settings["CHECK_TIME"]
@@ -66,7 +67,7 @@ class DropletManager:
             if not valid_droplet:
                 valid_measurement = False
                 self.logger.warning(
-                    f"No valid droplet was created for {self.source.WELL_ID}. Stoppped measurement for this well."
+                    f"No valid droplet was created for {self.source.WELL_ID}. Stopped measurement for this well."
                 )
                 self._return_pendant_drop(drop_volume=drop_volume)
                 dynamic_surface_tension = []  # failed measurement
@@ -121,7 +122,7 @@ class DropletManager:
 
     def _reduce_pendant_drop_volume(self, drop_volume_decrease: float):
         self.logger.info(
-            f"Reducing pendant drop volume by {drop_volume_decrease}."
+            f"Reduced pendant drop volume by {drop_volume_decrease}."
         )
         self.left_pipette.aspirate(
             volume=drop_volume_decrease,
@@ -148,12 +149,12 @@ class DropletManager:
         )
 
         drop_volume = self.INITIAL_DROP_VOLUME
-
+        wortington_number_limit = self.WORTINGTON_NUMBER_LIMIT - (self.drop_count-1)* (0.03)
         self.logger.info(
             "Starting dispensing pendant drop while checking Wortington number."
         )
         while (
-            not (self.WORTINGTON_NUMBER_LIMIT <= wortington_number <= 1)
+            not (wortington_number_limit <= wortington_number <= 1)
             and drop_volume < 14
         ):
             self.left_pipette.dispense(
@@ -169,25 +170,25 @@ class DropletManager:
             time.sleep(self.CHECK_TIME)
             wortington_numbers = self.pendant_drop_camera.wortington_numbers
             self.pendant_drop_camera.stop_check()
-            if len(wortington_numbers) > 1:
+            if len(wortington_numbers) >= 1:
                 wortington_number = np.mean(wortington_numbers)
             else:
                 wortington_number = 0
 
             print(f"Wortington number: {wortington_number:2f}")
 
-        if wortington_number < self.WORTINGTON_NUMBER_LIMIT:
+        if wortington_number < wortington_number_limit:
             self.logger.warning(
                 "No valid droplet was created. Wortington number below limit."
             )
             valid_droplet = False
         elif wortington_number > 1:
             self.logger.warning(
-                "No valid droplet was created. Wortington number above theoritical limit."
+                "No valid droplet was created. Wortington number above theoretical limit."
             )
             valid_droplet = False
         else:
-            self.logger.info(f"Valid droplet created with drop volume {drop_volume:2f}.")
+            self.logger.info(f"Valid droplet created with drop volume {drop_volume:2f} and wortington number {wortington_number_limit}.")
             valid_droplet = True
 
         return valid_droplet, drop_volume
@@ -229,7 +230,7 @@ class DropletManager:
 
             if prev_len_st == len(dynamic_surface_tension):
                 self.logger.warning(
-                    f"No new data was captured. length {len(dynamic_surface_tension)}.")
+                    f"No new data was captured. length {len(dynamic_surface_tension)}.")    #if this happens, why does it continue?
 
             prev_len_st = len(dynamic_surface_tension)
             if last_st < 25:
@@ -238,6 +239,19 @@ class DropletManager:
                 valid_measurement = False
                 self.pendant_drop_camera.stop_capture()
                 return dynamic_surface_tension, valid_measurement, drop_time
+            
+            if len(dynamic_surface_tension) >= 400:
+                last_values = [pt[1] for pt in dynamic_surface_tension[-200:]]
+                avg_last_200 = sum(last_values) / len(last_values)
+                last_value = last_values[-1]
+                delta = abs(avg_last_200 - last_value)
+                print(f"Delta: {delta:2f} mN/m")
+            
+            if delta < self.delta_threshold:
+                self.logger.info(
+                    f"Dynamic surface tension stabilized at {last_st:2f} mN/m at {time.time()}. Stopping capture."
+                )
+                break
 
         self.pendant_drop_camera.stop_capture()
         self.logger.info("Successful pendant drop measurement.")

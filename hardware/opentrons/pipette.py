@@ -80,7 +80,7 @@ class Pipette:
         self.well_index += 1
         self.logger.info("Picked up tip.")
 
-    def drop_tip(self):
+    def drop_tip(self, return_to_tiprack=False, tiprack_labware_id=None, tip_well_name=None):
         if not self.has_tip:
             self.logger.error("Pipette does not have a tip to drop!")
             return
@@ -88,16 +88,34 @@ class Pipette:
         if self.has_needle:
             self.logger.warning("Pipette has needle, which should be returned.")
 
-        self.opentrons_api.drop_tip(pipette_id=self.PIPETTE_ID)
-        self.logger.info(
-            f"{self.MOUNT.capitalize()} pipette dropped tip into trash."
-        )
+        if return_to_tiprack:
+            if not tiprack_labware_id or not tip_well_name:
+                self.logger.error("Missing tiprack ID or well name for returning tip.")
+                return
+            self.opentrons_api.drop_tip(
+                pipette_id=self.PIPETTE_ID,
+                labware_id=tiprack_labware_id,
+                well=tip_well_name,
+            )
+            self.logger.info(
+                f"{self.MOUNT.capitalize()} pipette returned tip to {tiprack_labware_id} well {tip_well_name}."
+            )
+        else:
+            self.opentrons_api.drop_tip(pipette_id=self.PIPETTE_ID)
+            self.logger.info(
+                f"{self.MOUNT.capitalize()} pipette dropped tip into trash."
+            )
+
         self.has_tip = False
         self.volume = 0
 
     def pick_up_needle(self):
         if self.has_tip:
             self.logger.error("tried to pick up needle, while pipette has tip.")
+            return
+        
+        if self.has_needle:
+            self.logger.error("tried to pick up needle, while pipette has needle.")
             return
 
         # adjust offset to pick the needle up a bit more gently
@@ -242,13 +260,13 @@ class Pipette:
             self.mixing(container=destination, mix=mix)
 
         self.opentrons_api.dispense(
-            pipette_id=self.PIPETTE_ID,
-            labware_id=destination.LABWARE_ID,
-            well=destination.WELL,
-            volume=volume,
-            depth=destination.height_mm - destination.DEPTH + depth_offset,
-            offset=self.OFFSET,
-            flow_rate=flow_rate,
+        pipette_id=self.PIPETTE_ID,
+        labware_id=destination.LABWARE_ID,
+        well=destination.WELL,
+        volume=volume,
+        depth=destination.height_mm - destination.DEPTH + depth_offset, 
+        offset=self.OFFSET,
+        flow_rate=flow_rate,
         )
         if mix and (mix_order == "after" or mix_order == "both"):
             self.mixing(container=destination, mix=mix)
@@ -275,7 +293,8 @@ class Pipette:
         touch_tip=False,
         mix=None,
         blow_out=False,
-        update_info = True
+        update_info=True,
+        depth_offset=0,
     ):
         self.logger.info(
             f"Transferring {volume} uL from {source.WELL_ID} to well {destination.WELL_ID} with {self.MOUNT} pipette."
@@ -287,16 +306,19 @@ class Pipette:
             touch_tip=touch_tip,
             mix=mix,
             blow_out=blow_out,
-            update_info=update_info
+            update_info=update_info,
+            depth_offset=depth_offset 
         )
 
-    def move_to_well(self, container: Container, offset=None):
+    def move_to_well(self, container: Container, offset=None, depth_offset=0):
         if offset == None:
             offset_move = self.OFFSET.copy()
         else:
             offset_move = self.OFFSET.copy()
             for key in offset:
                 offset_move[key] += offset[key]
+
+        offset_move["z"] += depth_offset
 
         self.opentrons_api.move_to_well(
             pipette_id=self.PIPETTE_ID,

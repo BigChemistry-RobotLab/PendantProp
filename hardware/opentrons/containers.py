@@ -268,8 +268,11 @@ class DropStage:
     def aspirate(self, volume, log = True):
         pass
 
-    def dispense(self, volume, source: Container, log = True):
-        self.solution_name = source.solution_name
+    def dispense(self, volume, source: Container, log = True):  # why does this exist?
+        if self.solution_name == None:
+            pass
+        else:
+            self.solution_name = source.solution_name
         pass
 
     def __str__(self):
@@ -333,6 +336,9 @@ class Sponge:
     def update_well(self):
         self.index += 1
         self.well = self.ORDERING[self.index]
+        if self.index == len(self.ORDERING) - 1:
+            print("Sponge is fully used! resetting index to 0.")
+            self.index = 0
 
     def aspirate(self, volume):
         print("Attempted to aspirate from sponge. This should never be the case!")
