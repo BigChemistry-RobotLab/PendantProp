@@ -1,14 +1,14 @@
-surfactant,trivial name,cas no,type,subtype,molar mass (g/mol),CMC (wt %),CMC (mM),ST at CMC (mN/m),ref doi
-SOS,sodium octyl sulfate,142-31-4,anionic,sulfonic acid salts,232.26,3,129.1655903,40,https://doi.org/10.1021/jp952425r
-CTAB,cetrimonium bromide,57-09-0,cationic,quarternary ammonium salts,364.45,0.03,0.823158184,36,https://doi.org/10.1021/jp952425r
-CTAC,cetrimonium chloride,112-02-7,cationic,quarternary ammonium salts,320,0.00992,0.31,39,https://doi.org/10.5004/dwt.2020.25419
-NaOleate,sodium oleate,143-19-1,anionic,carboxylic acid salts,304.4,0.00143068,0.047,28,https://doi.org/10.1006/jcis.2000.7543
-SDS,sodium dodecyl sulfate,151-21-3,anionic,sulfonic acid salts,288.38,0.23849026,8.27,38,https://pubs.acs.org/doi/pdf/10.1021/la00070a008
-C12E3,dodecyl triethylene glycol ether,3055-98-9,non-ionic,poly-ethoxylates,318.498,,0.0519996,,https://doi.org/10.1021/ie800954k
-C12E4,dodecyltetraethylene glycol monoether,5274-68-0,non-ionic,poly-ethoxylates,362.551,,0.063973484,,https://doi.org/10.1021/ie800954k
-BDDAB,benzyldimethyldodecylammonium bromide,,cationic,quarternary ammonium salts,384.437,,5.25,34,https://doi.org/10.1016/j.jcis.2008.11.064
-DTAB,dodecyltrimethylammonium bromide,1119-94-4,cationic,quarternary ammonium salts,308.348,,10.5,39,https://doi.org/10.1021/la9800957
-16-BAC,benzyldimethylhexadecyl ammonium chloride,122-18-9,cationic,quarternary ammonium salts,369.09,,0.501187234,36,https://doi.org/10.1016/j.molliq.2022.118479
-TTAB,myristyltrimethylammonium bromide,1119-97-7,cationic,quarternary ammonium salts,336.39,,2.51,34,https://doi.org/10.1016/j.colsurfa.2013.03.023
-NaStearate,sodium s,822-16-2,anionic,carboxylic acid salts,306.466,,0.95,,https://doi.org/10.3126/iimrjbc.v2i1.68654
-SDBS,sodium dodecyl benzene sulfonic acid,25155-30-0,anionic,sulfonic acid salts,348.48,,2.11,32,10.4236/gsc.2015.51005
+surfactant,SMILES,trivial name,cas no,type,subtype,molar mass (g/mol),CMC (wt %),CMC (mM),ST at CMC (mN/m),ref doi
+SOS,CCCCCCCCOS(=O)(=O)[O-].[Na+],sodium octyl sulfate,142-31-4,anionic,sulfonic acid salts,232.26,3,129.1655903,40,https://doi.org/10.1021/jp952425r
+CTAB,CCCCCCCCCCCCCCCC[N+](C)(C)C.[Br-],cetrimonium bromide,57-09-0,cationic,quarternary ammonium salts,364.45,0.03,0.823158184,36,https://doi.org/10.1021/jp952425r
+CTAC,CCCCCCCCCCCCCCCC[N+](C)(C)C.[Cl-],cetrimonium chloride,112-02-7,cationic,quarternary ammonium salts,320,0.00992,0.31,39,https://doi.org/10.5004/dwt.2020.25419
+NaOleate,CCCCCCCC/C=C\CCCCCCCC(=O)[O-].[Na+],sodium oleate,143-19-1,anionic,carboxylic acid salts,304.4,0.00143068,0.047,28,https://doi.org/10.1006/jcis.2000.7543
+SDS,CCCCCCCCCCCCOS(=O)([O-])=O.[Na+],sodium dodecyl sulfate,151-21-3,anionic,sulfonic acid salts,288.38,0.23849026,8.27,38,https://pubs.acs.org/doi/pdf/10.1021/la00070a008
+C12E3,CCCCCCCCCCCCOCCOCCOCCO,dodecyl triethylene glycol ether,3055-98-9,non-ionic,poly-ethoxylates,318.498,,,,
+C12E4,CCCCCCCCCCCCOCCOCCOCCOCCO,dodecyltetraethylene glycol monoether,5274-68-0,non-ionic,poly-ethoxylates,362.551,,,,
+BDDAB,CCCCCCCCCCCC[N+](C)(C)Cc1ccccc1.[Br-],benzyldimethyldodecylammonium bromide,,cationic,quarternary ammonium salts,384.437,,5.25,34,https://doi.org/10.1016/j.jcis.2008.11.064
+DTAB,CCCCCCCCCCCC[N+](C)(C)C.[Br-],dodecyltrimethylammonium bromide,1119-94-4,cationic,quarternary ammonium salts,308.348,,10.5,39,https://doi.org/10.1021/la9800957
+16-BAC,CCCCCCCCCCCCCCC(C)C(C)(Cl)Cc1ccccc1.[NH4+],benzyldimethylhexadecyl ammonium chloride,122-18-9,cationic,quarternary ammonium salts,369.09,,0.501187234,36,https://doi.org/10.1016/j.molliq.2022.118479
+TTAB,CCCCCCCCCCCCCC[N+](C)(C)C.[Br-],myristyltrimethylammonium bromide,1119-97-7,cationic,quarternary ammonium salts,336.39,,2.51,34,https://doi.org/10.1016/j.colsurfa.2013.03.023
+NaStearate,CCCCCCCCCCCCCCCCCC(=O)[O-].[Na+],sodium s,822-16-2,anionic,carboxylic acid salts,306.466,,0.95,,https://doi.org/10.3126/iimrjbc.v2i1.68654
+SDBS,CCCCCCCCCCCCc1ccc(S(=O)(=O)[O-])cc1.[Na+],sodium dodecyl benzene sulfonic acid,25155-30-0,anionic,sulfonic acid salts,348.48,,2.11,32,10.4236/gsc.2015.51005
