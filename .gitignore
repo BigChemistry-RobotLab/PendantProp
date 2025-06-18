@@ -1,11 +1,13 @@
 *.pyc
 *.jpg
-*.csv
 *.png
+*.log
+settings.json
 !prep/*.csv
 legacy/ot2_ssh_key
 legacy/
 settings/
+misc/
 experiments/**/*.json
 experiments/**/*.log
 experiments/**/*.txt
@@ -13,7 +15,6 @@ hardware/sensor/*.txt
 playbook.ipynb
 test_camera.py
 test_protocol.py
-figures
 analysis/mixtures
 image_analysis_figure.py
 requirements.txt

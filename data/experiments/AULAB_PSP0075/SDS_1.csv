@@ -1,0 +1,13 @@
+well id,solution,concentration,point type,surface tension eq. (mN/m),drop count,drop volume (uL),max measure time (s),flow rate (uL/s),temperature (C),humidity (%),pressure (Pa)
+,SDS_1,0.210859375,explore,73.02864178,,,,,,,
+,SDS_1,0.42171875,explore,72.41261171,,,,,,,
+,SDS_1,0.8434375,explore,70.13166976,,,,,,,
+,SDS_1,1.686875,explore,65.55252377,,,,,,,
+,SDS_1,3.37375,explore,55.78057921,,,,,,,
+,SDS_1,6.7475,explore,43.03374189,,,,,,,
+,SDS_1,13.495,explore,38.61166161,,,,,,,
+,SDS_1,26.99,explore,38.04307464,,,,,,,
+,SDS_1,7.888999939,exploit,39.53956986,,,,,,,
+,SDS_1,7.726899624,exploit,39.03688233,,,,,,,
+,SDS_1,2.86379981,exploit,58.26024339,,,,,,,
+,SDS_1,7.699800014,exploit,39.12057426,,,,,,,
