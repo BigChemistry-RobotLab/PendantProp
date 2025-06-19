@@ -21,7 +21,7 @@ def extract_properties_from_isotherm(results_solution: pd.DataFrame) -> pd.DataF
     parameters = ["cmc", "gamma_max", "Kad"]
 
     post_pred, x_new = fit_model(
-        obs, model=szyszkowski_model, parameters=parameters, outlier_check=False
+        obs, model=szyszkowski_model, parameters=parameters, outlier_check=True
     )
 
     # extract properties from the fitted model
@@ -81,10 +81,11 @@ def format_table(agg_df: pd.DataFrame) -> pd.DataFrame:
     agg_df = agg_df.rename(columns={"sample": "surfactant"})
 
     # Remove std columns
-    agg_df = agg_df.loc[:, ~agg_df.columns.str.contains("std")]
+    agg_df = agg_df.loc[:, ~agg_df.columns.str.contains("err")]
 
     # Convert gamma_max to mol/cm^2 * 1e10
     agg_df["gamma_max_mean"] = agg_df["gamma_max_mean"] / 1e4 * 1e10
+    agg_df["gamma_max_std"] = agg_df["gamma_max_std"] / 1e4 * 1e10
 
     # Round columns
     agg_df = agg_df.round({
@@ -103,35 +104,35 @@ def format_table(agg_df: pd.DataFrame) -> pd.DataFrame:
     # Add the relative error behind the mean value in brackets
     for col in ["cmc", "gamma_max", "Kad", "st_at_cmc", "C20"]:
         mean_col = f"{col}_mean"
-        relerr_col = f"{col}_relerr"
+        std_col = f"{col}_std"
         agg_df[mean_col] = agg_df.apply(
             lambda x: (
-                f"{x[mean_col]} ({int(x[relerr_col])}%)"
-                if pd.notna(x[relerr_col])
+                f"{x[mean_col]} ({x[std_col]:.2f})"
+                if pd.notna(x[std_col])
                 else x[mean_col]
             ),
             axis=1,
         )
 
     # Drop the relative error columns
-    agg_df = agg_df.drop(columns=[f"{col}_relerr" for col in ["cmc", "gamma_max", "Kad", "st_at_cmc", "C20"]])
+    agg_df = agg_df.drop(columns=[f"{col}_std" for col in ["cmc", "gamma_max", "Kad", "st_at_cmc", "C20"]])
 
     return agg_df
 
 if __name__ == "__main__":
 
-    id = "syszkowski_model"
+    id = "final"
     ##### part 1: fit isotherm and extract properties #####
-    total_properties = extract_total_properties()
-    total_properties.to_csv(f"data/experiments/total_properties_{id}.csv", index=False)
+    # total_properties = extract_total_properties()
+    # total_properties.to_csv(f"data/experiments/total_properties_{id}.csv", index=False)
 
     ##### part 2: aggregate properties for each sample #####
-    # total_properties = pd.read_csv("data/experiments/total_properties.csv")
+    total_properties = pd.read_csv(f"data/experiments/total_properties_{id}.csv")
     agg_df = aggregate_properties(total_properties)
     agg_df.to_csv(f"data/experiments/total_properties_agg_{id}.csv", index=False)
 
     ###### part 3: load and process the aggregated properties #####
-    # agg_df = pd.read_csv("data/experiments/total_properties_agg_raw.csv")
+    # agg_df = pd.read_csv("data/experiments/total_properties_agg_syszkowski_model.csv")
     table = format_table(agg_df)
     table.to_csv(f"data/experiments/table_{id}.csv", index=False)
     print(table)
