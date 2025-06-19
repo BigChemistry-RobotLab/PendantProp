@@ -3,7 +3,7 @@ SOS,CCCCCCCCOS(=O)(=O)[O-].[Na+],sodium octyl sulfate,142-31-4,anionic,sulfonic 
 CTAB,CCCCCCCCCCCCCCCC[N+](C)(C)C.[Br-],cetrimonium bromide,57-09-0,cationic,quarternary ammonium salts,364.45,0.03,0.823158184,36,https://doi.org/10.1021/jp952425r
 CTAC,CCCCCCCCCCCCCCCC[N+](C)(C)C.[Cl-],cetrimonium chloride,112-02-7,cationic,quarternary ammonium salts,320,0.00992,0.31,39,https://doi.org/10.5004/dwt.2020.25419
 NaOleate,CCCCCCCC/C=C\CCCCCCCC(=O)[O-].[Na+],sodium oleate,143-19-1,anionic,carboxylic acid salts,304.4,0.00143068,0.047,28,https://doi.org/10.1006/jcis.2000.7543
-SDS,CCCCCCCCCCCCOS(=O)([O-])=O.[Na+],sodium dodecyl sulfate,151-21-3,anionic,sulfonic acid salts,288.38,0.23849026,8.27,38,https://pubs.acs.org/doi/pdf/10.1021/la00070a008
+SDS,CCCCCCCCCCCCOS(=O)(=O)[O-].[Na+],sodium dodecyl sulfate,151-21-3,anionic,sulfonic acid salts,288.38,0.23849026,8.27,38,https://pubs.acs.org/doi/pdf/10.1021/la00070a008
 C12E3,CCCCCCCCCCCCOCCOCCOCCO,dodecyl triethylene glycol ether,3055-98-9,non-ionic,poly-ethoxylates,318.498,,,,
 C12E4,CCCCCCCCCCCCOCCOCCOCCOCCO,dodecyltetraethylene glycol monoether,5274-68-0,non-ionic,poly-ethoxylates,362.551,,,,
 BDDAB,CCCCCCCCCCCC[N+](C)(C)Cc1ccccc1.[Br-],benzyldimethyldodecylammonium bromide,,cationic,quarternary ammonium salts,384.437,,5.25,34,https://doi.org/10.1016/j.jcis.2008.11.064
