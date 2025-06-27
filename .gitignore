@@ -15,7 +15,6 @@ hardware/sensor/*.txt
 playbook.ipynb
 test_camera.py
 test_protocol.py
-analysis/mixtures
 image_analysis_figure.py
 requirements.txt
 
