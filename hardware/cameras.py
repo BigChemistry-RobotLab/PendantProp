@@ -23,7 +23,6 @@ class OpentronCamera:
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         self.camera.set(cv2.CAP_PROP_FPS, fps)
-
         if not self.camera.isOpened():
             raise Exception("Error: Could not open camera.")
 
@@ -231,7 +230,7 @@ class PendantDropCamera:
     def _check_image(self, img, vol_droplet):
         try:
             return self.analyzer.image2wortington(img=img, vol_droplet=vol_droplet)     # Hier gaat het fout, weet niet waarom precies
-        except Exception:                                                               # max() arg is an empty sequence
+        except Exception:
             return None
 
     # Frame Generation
