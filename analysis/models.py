@@ -76,7 +76,7 @@ def szyszkowski_model(x_obs, y_obs=None):
         return None  # or return a default value like 0 or an empty array
     
     cmc = npy.sample("cmc", dist.Uniform(0, jnp.max(x_obs)))
-    gamma_max = npy.sample("gamma_max", dist.Uniform(0, jnp.max(x_obs) / 10))
+    gamma_max = npy.sample("gamma_max", dist.Uniform(0, jnp.max(x_obs) / 10)) #!
     Kad = npy.sample("Kad", dist.Uniform(0, 100000))
 
     sigma = npy.sample("sigma", dist.Exponential(100000))

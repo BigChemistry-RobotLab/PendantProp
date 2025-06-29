@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 from analysis.models import szyszkowski_model, szyszkowski_g0_model
 from analysis.utils import fit_model
@@ -59,50 +60,59 @@ def aggregate_properties(total_properties: pd.DataFrame) -> pd.DataFrame:
     total_properties["sample"] = (
         total_properties["solution"].str.rsplit("_", n=1).str[0]
     )
+    total_properties["log(Kad)"] = np.log10(total_properties["Kad"])
+    total_properties = total_properties.drop(columns=["Kad"])
     numeric_cols = total_properties.select_dtypes(include="number").columns
     agg_df = total_properties.groupby("sample")[numeric_cols].agg(["mean", "std"])
     # Flatten MultiIndex columns
     agg_df.columns = ["_".join(col).strip() for col in agg_df.columns.values]
     agg_df = agg_df.reset_index()
-    for col in numeric_cols:
-        mean_col = f"{col}_mean"
-        std_col = f"{col}_std"
-        relerr_col = f"{col}_relerr"
-        if mean_col in agg_df.columns and std_col in agg_df.columns:
-            agg_df[relerr_col] = agg_df[std_col] / agg_df[mean_col] * 100
+    # for col in numeric_cols:
+    #     mean_col = f"{col}_mean"
+    #     std_col = f"{col}_std"
+    #     relerr_col = f"{col}_relerr"
+    #     if mean_col in agg_df.columns and std_col in agg_df.columns:
+    #         agg_df[relerr_col] = agg_df[std_col] / agg_df[mean_col] * 100
     return agg_df
 
 def format_table(agg_df: pd.DataFrame) -> pd.DataFrame:
     """
     Format the aggregated properties table for better readability.
     """
+
     # Rename columns
     agg_df["sample"] = agg_df["sample"].str.replace(r"_[124]$", "", regex=True)
     agg_df = agg_df.rename(columns={"sample": "surfactant"})
 
-    # Remove std columns
+    # Remove relative err columns
     agg_df = agg_df.loc[:, ~agg_df.columns.str.contains("err")]
 
     # Convert gamma_max to mol/cm^2 * 1e10
     agg_df["gamma_max_mean"] = agg_df["gamma_max_mean"] / 1e4 * 1e10
     agg_df["gamma_max_std"] = agg_df["gamma_max_std"] / 1e4 * 1e10
 
+    # Gamma max divided by 2 for charged surfactants
+    surfactant_info = pd.read_csv("prep/surfactant_properties.csv")
+    for idx, row in agg_df.iterrows():
+        surfactant = row["surfactant"]
+        type_surfactant = surfactant_info[surfactant_info["surfactant"] == surfactant]['type'].values
+        if len(type_surfactant) > 0:
+            type_surfactant = type_surfactant[0]
+            if type_surfactant in ["anionic", "cationic"]:
+                agg_df.at[idx, "gamma_max_mean"] = row["gamma_max_mean"] / 2
+                agg_df.at[idx, "gamma_max_std"] = row["gamma_max_std"] / 2
+
     # Round columns
     agg_df = agg_df.round({
         "cmc_mean": 2,
         "gamma_max_mean": 1,
-        "Kad_mean": 0,
         "st_at_cmc_mean": 1,
         "C20_mean": 2,
-        "cmc_relerr": 0,
-        "gamma_max_relerr": 0,
-        "Kad_relerr": 0,
-        "st_at_cmc_relerr": 0,
-        "C20_relerr": 0
+        "log(Kad)_mean": 2
     })
 
     # Add the relative error behind the mean value in brackets
-    for col in ["cmc", "gamma_max", "Kad", "st_at_cmc", "C20"]:
+    for col in ["cmc", "gamma_max", "log(Kad)", "st_at_cmc", "C20"]:
         mean_col = f"{col}_mean"
         std_col = f"{col}_std"
         agg_df[mean_col] = agg_df.apply(
@@ -114,8 +124,8 @@ def format_table(agg_df: pd.DataFrame) -> pd.DataFrame:
             axis=1,
         )
 
-    # Drop the relative error columns
-    agg_df = agg_df.drop(columns=[f"{col}_std" for col in ["cmc", "gamma_max", "Kad", "st_at_cmc", "C20"]])
+    # Drop the std columns
+    agg_df = agg_df.drop(columns=[f"{col}_std" for col in ["cmc", "gamma_max", "log(Kad)", "st_at_cmc", "C20"]])
 
     return agg_df
 
@@ -127,12 +137,12 @@ if __name__ == "__main__":
     # total_properties.to_csv(f"data/experiments/total_properties_{id}.csv", index=False)
 
     ##### part 2: aggregate properties for each sample #####
-    total_properties = pd.read_csv(f"data/experiments/total_properties_{id}.csv")
-    agg_df = aggregate_properties(total_properties)
-    agg_df.to_csv(f"data/experiments/total_properties_agg_{id}.csv", index=False)
+    # total_properties = pd.read_csv(f"data/experiments/total_properties_{id}.csv")
+    # agg_df = aggregate_properties(total_properties)
+    # agg_df.to_csv(f"data/experiments/total_properties_agg_{id}.csv", index=False)
 
     ###### part 3: load and process the aggregated properties #####
-    # agg_df = pd.read_csv("data/experiments/total_properties_agg_syszkowski_model.csv")
+    agg_df = pd.read_csv(f"data/experiments/total_properties_agg_{id}.csv")
     table = format_table(agg_df)
     table.to_csv(f"data/experiments/table_{id}.csv", index=False)
     print(table)
