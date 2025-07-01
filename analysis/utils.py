@@ -138,3 +138,29 @@ def calculate_C20(x_new, post_pred: dict):
     c_20_std_rela = c_20_std / c_20_mu * 100  # relative std of the concentration at 50 mN/m
     
     return c_20_mu
+
+def calculate_gamma_max(x_new, post_pred: dict, n, interval = 10):
+    R = 8.31446261815324
+    T = 293.15
+
+    log_c = np.log(x_new) #natural log
+    st = post_pred["obs"].mean(axis=0)
+    slopes = []
+    gammas = []
+    avg_xs = []
+    for i in range(len(log_c) - interval + 1):
+        x_window = log_c[i:i+interval]
+        y_window = st[i:i+interval]
+        # Linear fit: slope is coefficient at index 0
+        slope = np.polyfit(x_window, y_window, 1)[0]
+        slopes.append(slope)
+        gamma =  (-1/(n*R*T))*slope
+        gammas.append(gamma)
+        avg_x = np.mean(x_window)
+        avg_xs.append(avg_x)
+    
+    return np.max(gammas)
+
+
+
+

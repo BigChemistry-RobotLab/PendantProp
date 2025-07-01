@@ -3,7 +3,7 @@ import numpy as np
 
 from analysis.models import szyszkowski_model, szyszkowski_g0_model
 from analysis.utils import fit_model
-from analysis.utils import calculate_st_at_cmc, calculate_C20
+from analysis.utils import calculate_st_at_cmc, calculate_C20, calculate_gamma_max
 
 def extract_properties_from_isotherm(results_solution: pd.DataFrame) -> pd.DataFrame:
     
@@ -22,13 +22,15 @@ def extract_properties_from_isotherm(results_solution: pd.DataFrame) -> pd.DataF
     parameters = ["cmc", "gamma_max", "Kad"]
 
     post_pred, x_new = fit_model(
-        obs, model=szyszkowski_model, parameters=parameters, outlier_check=True
+        obs, model=szyszkowski_model, parameters=parameters, outlier_check=False
     )
 
     # extract properties from the fitted model
     for parameter in parameters:
         if parameter == "cmc":
             properties[parameter] = float(post_pred[parameter].mean(axis=0) * 1000)
+        elif parameter == "gamma_max":
+            properties[parameter] = calculate_gamma_max(x_new=x_new, post_pred=post_pred, n = 2) # assume charge surfactant
         else:
             properties[parameter] = float(post_pred[parameter].mean(axis=0))
     
@@ -91,16 +93,16 @@ def format_table(agg_df: pd.DataFrame) -> pd.DataFrame:
     agg_df["gamma_max_mean"] = agg_df["gamma_max_mean"] / 1e4 * 1e10
     agg_df["gamma_max_std"] = agg_df["gamma_max_std"] / 1e4 * 1e10
 
-    # Gamma max divided by 2 for charged surfactants
-    surfactant_info = pd.read_csv("prep/surfactant_properties.csv")
-    for idx, row in agg_df.iterrows():
-        surfactant = row["surfactant"]
-        type_surfactant = surfactant_info[surfactant_info["surfactant"] == surfactant]['type'].values
-        if len(type_surfactant) > 0:
-            type_surfactant = type_surfactant[0]
-            if type_surfactant in ["anionic", "cationic"]:
-                agg_df.at[idx, "gamma_max_mean"] = row["gamma_max_mean"] / 2
-                agg_df.at[idx, "gamma_max_std"] = row["gamma_max_std"] / 2
+    # # Gamma max divided by 2 for charged surfactants
+    # surfactant_info = pd.read_csv("prep/surfactant_properties.csv")
+    # for idx, row in agg_df.iterrows():
+    #     surfactant = row["surfactant"]
+    #     type_surfactant = surfactant_info[surfactant_info["surfactant"] == surfactant]['type'].values
+    #     if len(type_surfactant) > 0:
+    #         type_surfactant = type_surfactant[0]
+    #         if type_surfactant in ["anionic", "cationic"]:
+    #             agg_df.at[idx, "gamma_max_mean"] = row["gamma_max_mean"] / 2
+    #             agg_df.at[idx, "gamma_max_std"] = row["gamma_max_std"] / 2
 
     # Round columns
     agg_df = agg_df.round({
@@ -131,15 +133,15 @@ def format_table(agg_df: pd.DataFrame) -> pd.DataFrame:
 
 if __name__ == "__main__":
 
-    id = "final"
-    ##### part 1: fit isotherm and extract properties #####
+    id = "gamma_max_calculate"
+    #### part 1: fit isotherm and extract properties #####
     # total_properties = extract_total_properties()
     # total_properties.to_csv(f"data/experiments/total_properties_{id}.csv", index=False)
 
-    ##### part 2: aggregate properties for each sample #####
-    # total_properties = pd.read_csv(f"data/experiments/total_properties_{id}.csv")
-    # agg_df = aggregate_properties(total_properties)
-    # agg_df.to_csv(f"data/experiments/total_properties_agg_{id}.csv", index=False)
+    #### part 2: aggregate properties for each sample #####
+    total_properties = pd.read_csv(f"data/experiments/total_properties_{id}.csv")
+    agg_df = aggregate_properties(total_properties)
+    agg_df.to_csv(f"data/experiments/total_properties_agg_{id}.csv", index=False)
 
     ###### part 3: load and process the aggregated properties #####
     agg_df = pd.read_csv(f"data/experiments/total_properties_agg_{id}.csv")

@@ -56,10 +56,10 @@ def szyszkowski(cS0, theta):
 
     """
     cmc, gamma_max, Kad = theta
-    cS1 = APNModel_S1(cS0, cmc, r=0.001)
+    cS1 = APNModel_S1(cS0, cmc, r=1e-2)
     R = 8.314  # J/(mol*K)
     T = 294.15  # K (21 degrees Celsius)
-    g = 72.8 / 1000 - R * T * gamma_max * jnp.log(1 + Kad * cS1)  # N/m
+    g = 72.8 / 1000 - (R * T * gamma_max) * jnp.log(1 + Kad * cS1)  # N/m
     return g
 
 def szyszkowski_model(x_obs, y_obs=None):
