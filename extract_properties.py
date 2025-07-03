@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
 
-from analysis.models import szyszkowski_model, szyszkowski_g0_model
+from analysis.models import szyszkowski_model
 from analysis.utils import fit_model
-from analysis.utils import calculate_st_at_cmc, calculate_C20, calculate_gamma_max
+from analysis.utils import calculate_st_at_cmc, calculate_gamma_max
 
 def extract_properties_from_isotherm(results_solution: pd.DataFrame) -> pd.DataFrame:
     
@@ -33,12 +33,11 @@ def extract_properties_from_isotherm(results_solution: pd.DataFrame) -> pd.DataF
             properties[parameter] = float(post_pred[parameter].mean(axis=0))
     
     properties["st_at_cmc"] = float(calculate_st_at_cmc(x_new, post_pred))
-    properties["C20"] = float(calculate_C20(x_new, post_pred))
     properties = pd.DataFrame([properties])
     return properties
 
 def extract_total_properties() -> pd.DataFrame:
-    overview = pd.read_csv("data/experiments/overview.csv")
+    overview = pd.read_csv("data/single_surfactant_characterization/overview.csv")
     total_properties = pd.DataFrame()
     for idx, row in overview.iterrows():
         experiment_tag = row["experiment name"]
@@ -46,7 +45,7 @@ def extract_total_properties() -> pd.DataFrame:
         print(f"Processing {sample}")
         for i in range(1, 4): # change to range(1, 4) to process all solutions
             solution_name = f"{sample}_{i}"
-            results = pd.read_csv(f"data/experiments/{experiment_tag}/results.csv")
+            results = pd.read_csv(f"data/single_surfactant_characterization/{experiment_tag}/results.csv")
             results_solution = results[results["solution"] == solution_name]
             print("extracting properties for solution:", solution_name)
             properties = extract_properties_from_isotherm(results_solution=results_solution)
@@ -90,12 +89,11 @@ def format_table(agg_df: pd.DataFrame) -> pd.DataFrame:
         "cmc_mean": 2,
         "gamma_max_mean": 1,
         "st_at_cmc_mean": 1,
-        "C20_mean": 2,
         "log(Kad)_mean": 2
     })
 
-    # Add the relative error behind the mean value in brackets
-    for col in ["cmc", "gamma_max", "log(Kad)", "st_at_cmc", "C20"]:
+    # Add the  error behind the mean value in brackets
+    for col in ["cmc", "gamma_max", "log(Kad)", "st_at_cmc"]:
         mean_col = f"{col}_mean"
         std_col = f"{col}_std"
         agg_df[mean_col] = agg_df.apply(
@@ -108,7 +106,7 @@ def format_table(agg_df: pd.DataFrame) -> pd.DataFrame:
         )
 
     # Drop the std columns
-    agg_df = agg_df.drop(columns=[f"{col}_std" for col in ["cmc", "gamma_max", "log(Kad)", "st_at_cmc", "C20"]])
+    agg_df = agg_df.drop(columns=[f"{col}_std" for col in ["cmc", "gamma_max", "log(Kad)", "st_at_cmc"]])
 
     return agg_df
 
