@@ -17,4 +17,5 @@ test_camera.py
 test_protocol.py
 image_analysis_figure.py
 requirements.txt
-
+bw_figures/
+figure_notebook_bw.ipynb

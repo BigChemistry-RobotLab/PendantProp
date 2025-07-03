@@ -3,7 +3,8 @@ from jax.scipy.special import erf
 from jax.numpy import sqrt, pi
 import numpyro as npy
 import numpyro.distributions as dist
-from jax import random
+import jax
+import numpy as np
 
 def APNModel_S1(cS0, cmc, r):
     """
@@ -61,6 +62,11 @@ def szyszkowski(cS0, theta):
     T = 294.15  # K (21 degrees Celsius)
     g = 72.8 / 1000 - (R * T * gamma_max) * jnp.log(1 + Kad * cS1)  # N/m
     return g
+
+def sample_szyszkowski(c, theta_true, noise_level, key):
+    c = c / 1000
+    noise = jax.random.normal(key, shape=c.shape, dtype=jnp.float32) * noise_level
+    return szyszkowski(cS0=c, theta=theta_true)*1000 + noise 
 
 def szyszkowski_model(x_obs, y_obs=None):
     """

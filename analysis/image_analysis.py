@@ -156,17 +156,17 @@ class PendantDropAnalysis:
         )
 
         # Draw the double-arrow line for the needle diameter on the analysis image
-        self._draw_double_arrow_line(
-            image=self.analysis_image,
-            point1=left_point_needle_transposed,
-            point2=right_point_needle_transposed,
-            color=(44, 160, 44), 
-            thickness=5,
-            tip_length=0.05,
-            fontscale=0.5,
-            text=f"Needle D: {self.needle_diameter_px}px",
-            thickness_font=2
-        )
+        # self._draw_double_arrow_line(
+        #     image=self.analysis_image,
+        #     point1=left_point_needle_transposed,
+        #     point2=right_point_needle_transposed,
+        #     color=(44, 160, 44), 
+        #     thickness=5,
+        #     tip_length=0.05,
+        #     fontscale=0.5,
+        #     text=f"Needle D: {self.needle_diameter_px}px",
+        #     thickness_font=2
+        # )
 
         # Calculate the horizontal distance between the two farthest points of the contours
         Lx, Ly, Lw, Lh = cv2.boundingRect(contourleft)

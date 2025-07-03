@@ -1,0 +1,2 @@
+Literature value of SOS was measured at 40 degrees Celsius, see: 10.1006/jcis.1996.4680
+CMC value of C12E4 was replaced by value found in the same source as C12E3 for consistency

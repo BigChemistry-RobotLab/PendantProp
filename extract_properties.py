@@ -7,20 +7,15 @@ from analysis.utils import calculate_st_at_cmc, calculate_C20, calculate_gamma_m
 
 def extract_properties_from_isotherm(results_solution: pd.DataFrame) -> pd.DataFrame:
     
-    # extract metadata from results_solution
+    # extract metadata
     properties = {}
     properties["solution"] = results_solution["solution"].iloc[0]
-    # properties["temperature"] = results_solution["temperature (C)"].mean().round(2)
-    # properties["pressure"] = results_solution["pressure (Pa)"].mean().round(2)
-    # properties["humidity"] = results_solution["humidity (%)"].mean().round(2)
-
 
     # fit model to the isotherm data
     c = results_solution["concentration"] / 1000
     st = results_solution["surface tension eq. (mN/m)"] / 1000
     obs = (c, st)
     parameters = ["cmc", "gamma_max", "Kad"]
-
     post_pred, x_new = fit_model(
         obs, model=szyszkowski_model, parameters=parameters, outlier_check=False
     )
@@ -30,7 +25,10 @@ def extract_properties_from_isotherm(results_solution: pd.DataFrame) -> pd.DataF
         if parameter == "cmc":
             properties[parameter] = float(post_pred[parameter].mean(axis=0) * 1000)
         elif parameter == "gamma_max":
-            properties[parameter] = calculate_gamma_max(x_new=x_new, post_pred=post_pred, n = 2) # assume charge surfactant
+            if properties["solution"] == "C12E3" or properties["solution"] == "C12E4": 
+                properties[parameter] = calculate_gamma_max(x_new=x_new, post_pred=post_pred, n = 1) # non-ionic
+            else:
+                properties[parameter] = calculate_gamma_max(x_new=x_new, post_pred=post_pred, n = 2) # ionic
         else:
             properties[parameter] = float(post_pred[parameter].mean(axis=0))
     
@@ -57,7 +55,7 @@ def extract_total_properties() -> pd.DataFrame:
 
 def aggregate_properties(total_properties: pd.DataFrame) -> pd.DataFrame:
     """
-    Aggregate properties for each sample.
+    Aggregate properties for each sample to a mean and std.
     """
     total_properties["sample"] = (
         total_properties["solution"].str.rsplit("_", n=1).str[0]
@@ -66,15 +64,9 @@ def aggregate_properties(total_properties: pd.DataFrame) -> pd.DataFrame:
     total_properties = total_properties.drop(columns=["Kad"])
     numeric_cols = total_properties.select_dtypes(include="number").columns
     agg_df = total_properties.groupby("sample")[numeric_cols].agg(["mean", "std"])
-    # Flatten MultiIndex columns
     agg_df.columns = ["_".join(col).strip() for col in agg_df.columns.values]
     agg_df = agg_df.reset_index()
-    # for col in numeric_cols:
-    #     mean_col = f"{col}_mean"
-    #     std_col = f"{col}_std"
-    #     relerr_col = f"{col}_relerr"
-    #     if mean_col in agg_df.columns and std_col in agg_df.columns:
-    #         agg_df[relerr_col] = agg_df[std_col] / agg_df[mean_col] * 100
+
     return agg_df
 
 def format_table(agg_df: pd.DataFrame) -> pd.DataFrame:
@@ -92,17 +84,6 @@ def format_table(agg_df: pd.DataFrame) -> pd.DataFrame:
     # Convert gamma_max to mol/cm^2 * 1e10
     agg_df["gamma_max_mean"] = agg_df["gamma_max_mean"] / 1e4 * 1e10
     agg_df["gamma_max_std"] = agg_df["gamma_max_std"] / 1e4 * 1e10
-
-    # # Gamma max divided by 2 for charged surfactants
-    # surfactant_info = pd.read_csv("prep/surfactant_properties.csv")
-    # for idx, row in agg_df.iterrows():
-    #     surfactant = row["surfactant"]
-    #     type_surfactant = surfactant_info[surfactant_info["surfactant"] == surfactant]['type'].values
-    #     if len(type_surfactant) > 0:
-    #         type_surfactant = type_surfactant[0]
-    #         if type_surfactant in ["anionic", "cationic"]:
-    #             agg_df.at[idx, "gamma_max_mean"] = row["gamma_max_mean"] / 2
-    #             agg_df.at[idx, "gamma_max_std"] = row["gamma_max_std"] / 2
 
     # Round columns
     agg_df = agg_df.round({
@@ -133,18 +114,18 @@ def format_table(agg_df: pd.DataFrame) -> pd.DataFrame:
 
 if __name__ == "__main__":
 
-    id = "gamma_max_calculate"
+    id = "final"
     #### part 1: fit isotherm and extract properties #####
-    # total_properties = extract_total_properties()
-    # total_properties.to_csv(f"data/experiments/total_properties_{id}.csv", index=False)
+    total_properties = extract_total_properties()
+    total_properties.to_csv(f"figures_and_tables/table1/total_properties_{id}.csv", index=False)
 
     #### part 2: aggregate properties for each sample #####
-    total_properties = pd.read_csv(f"data/experiments/total_properties_{id}.csv")
+    # total_properties = pd.read_csv(f"data/experiments/total_properties_{id}.csv")
     agg_df = aggregate_properties(total_properties)
-    agg_df.to_csv(f"data/experiments/total_properties_agg_{id}.csv", index=False)
+    agg_df.to_csv(f"figures_and_tables/table1/total_properties_agg_{id}.csv", index=False)
 
     ###### part 3: load and process the aggregated properties #####
-    agg_df = pd.read_csv(f"data/experiments/total_properties_agg_{id}.csv")
+    # agg_df = pd.read_csv(f"data/experiments/total_properties_agg_{id}.csv")
     table = format_table(agg_df)
-    table.to_csv(f"data/experiments/table_{id}.csv", index=False)
-    print(table)
+    table.to_csv(f"figures_and_tables/table1/table_{id}.csv", index=False)
+
