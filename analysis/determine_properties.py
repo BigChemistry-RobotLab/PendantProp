@@ -109,21 +109,3 @@ def format_table(agg_df: pd.DataFrame) -> pd.DataFrame:
     agg_df = agg_df.drop(columns=[f"{col}_std" for col in ["cmc", "gamma_max", "log(Kad)", "st_at_cmc"]])
 
     return agg_df
-
-if __name__ == "__main__":
-
-    # Set the ID for the table
-    id = "final"
-
-    #### part 1: fit isotherm and extract properties #####
-    total_properties = extract_total_properties()
-
-    #### part 2: aggregate properties for each sample #####
-    agg_df = aggregate_properties(total_properties)
-
-    ###### part 3: load and process the aggregated properties #####
-    table = format_table(agg_df)
-
-    # Save the table to a CSV file
-    table.to_csv(f"figures_and_tables/table1/table_{id}.csv", index=False)
-
