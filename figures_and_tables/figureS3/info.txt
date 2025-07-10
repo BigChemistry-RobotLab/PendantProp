@@ -1,0 +1,4 @@
+experiment tag: AULAB_PSP0074
+surfactant: SDS
+concentration: 2mM
+temperature: 23C

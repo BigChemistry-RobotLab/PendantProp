@@ -1,6 +1,5 @@
 *.pyc
 *.jpg
-*.png
 *.log
 settings.json
 legacy/ot2_ssh_key
