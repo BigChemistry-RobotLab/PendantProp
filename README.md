@@ -13,4 +13,4 @@ pip install -r requirements.txt
 ```
 
 ## Reproducing results of the paper 
-To reproduce the figures and tables for the paper, the Jupyter notebook [`figure_notebook.py`](figure_notebook.py)
+To reproduce the figures and tables for the paper, the Jupyter notebook [`figure_notebook.ipynb`](figure_notebook.ipynb)
