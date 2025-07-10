@@ -1,1 +1,0 @@
-I manually put in 7C3/2/1 via dynamic surface tension plots, reason: droplet fell off during measurement, resulting in faulty measurement in script, but value was still observed. Same for C12E3

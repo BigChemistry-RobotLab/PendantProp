@@ -3,7 +3,6 @@
 *.png
 *.log
 settings.json
-!prep/*.csv
 legacy/ot2_ssh_key
 legacy/
 settings/
@@ -19,3 +18,4 @@ image_analysis_figure.py
 requirements.txt
 bw_figures/
 figure_notebook_bw.ipynb
+prep/

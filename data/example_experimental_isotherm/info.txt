@@ -1,0 +1,2 @@
+surfactant: SDS
+temperature: 23C

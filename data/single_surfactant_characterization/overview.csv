@@ -1,12 +1,12 @@
-experiment name,sample,info
+experiment name,sample,comments
 AULAB_PSP0076/part_1,DTAB_1,good
-AULAB_PSP0076/part_2,TTAB_1,impurity? drops around CMC
+AULAB_PSP0076/part_2,TTAB_1,unexpected behaviour due to possible impurity
 AULAB_PSP0076/part_3,BDDAB_1,good
 AULAB_PSP0076/part_3,SDBS_1,good
 AULAB_PSP0076/part_4,SDS_2,good
-AULAB_PSP0076/part_5,SOS_4,"removed first two exploit points, pipetting error"
-AULAB_PSP0076/part_6,C12E4_1,exploit removed due to evaporation
-AULAB_PSP0076/part_6,NaOleate_1,"too little points post CMC, could use redo"
+AULAB_PSP0076/part_5,SOS_4,good
+AULAB_PSP0076/part_6,C12E4_1,exploit points removed due to evaporation
+AULAB_PSP0076/part_6,NaOleate_1,good
 AULAB_PSP0076/part_7,16BAC_1,good
-AULAB_PSP0076/part_7,C12E3_1,exploit removed due to evaporation
+AULAB_PSP0076/part_7,C12E3_1,exploit points removed due to evaporation
 AULAB_PSP0075,CTAB_1,good

@@ -112,18 +112,18 @@ def format_table(agg_df: pd.DataFrame) -> pd.DataFrame:
 
 if __name__ == "__main__":
 
+    # Set the ID for the table
     id = "final"
+
     #### part 1: fit isotherm and extract properties #####
     total_properties = extract_total_properties()
-    total_properties.to_csv(f"figures_and_tables/table1/total_properties_{id}.csv", index=False)
 
     #### part 2: aggregate properties for each sample #####
-    # total_properties = pd.read_csv(f"data/experiments/total_properties_{id}.csv")
     agg_df = aggregate_properties(total_properties)
-    agg_df.to_csv(f"figures_and_tables/table1/total_properties_agg_{id}.csv", index=False)
 
     ###### part 3: load and process the aggregated properties #####
-    # agg_df = pd.read_csv(f"data/experiments/total_properties_agg_{id}.csv")
     table = format_table(agg_df)
+
+    # Save the table to a CSV file
     table.to_csv(f"figures_and_tables/table1/table_{id}.csv", index=False)
 

@@ -1,1 +1,0 @@
-CTAB_1_3 C1 did not measure. average from B1 and A1 were taken.
