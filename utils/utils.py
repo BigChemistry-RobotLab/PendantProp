@@ -1,5 +1,4 @@
 import numpy as np
-import pyttsx3
 
 def smooth_list(x: list, window_size):
     x_smooth = np.convolve(x, np.ones(window_size), "valid") / window_size
@@ -27,12 +26,8 @@ def get_well_id_from_index(well_index: int, plate_location: int):
             list_of_wells.append(well_id)
     return list_of_wells[well_index]
 
-def play_sound(text: str):
-    engine = pyttsx3.init()
-    engine.say(text)
-    engine.runAndWait()
 
 if __name__ == "__main__":
-    print(get_well_id_from_index(12, 7))
+    pass
 
 
