@@ -113,7 +113,7 @@ class Protocol:
             drop_count=drop_count,
         )
 
-        self.formulater.wash(repeat=self.settings["WASH_REPEATS"])
+        # self.formulater.wash(repeat=self.settings["WASH_REPEATS"]) #! for now
 
         self._append_and_save_results(
             point_type="None",

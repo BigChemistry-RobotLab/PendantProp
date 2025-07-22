@@ -16,8 +16,8 @@ class Configuration:
         self.ROBOT_TYPE = settings["ROBOT_TYPE"]
         self.FILE_PATH_CONFIG = f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data/{settings["CONFIG_FILENAME"]}'
         self.LAYOUT = self._load_config_file()
-        self.RIGHT_PIPETTE_NAME = "p1000_single_gen2"
-        self.LEFT_PIPETTE_NAME = "p20_single_gen2"
+        self.RIGHT_PIPETTE_NAME = settings["RIGHT_PIPETTE_NAME"]
+        self.LEFT_PIPETTE_NAME = settings["LEFT_PIPETTE_NAME"]
         self.RIGHT_PIPETTE_ID = None
         self.LEFT_PIPETTE_ID = None
         self.LABWARE = None
@@ -39,7 +39,7 @@ class Configuration:
                 mount="right",
                 pipette_name=self.RIGHT_PIPETTE_NAME,
                 pipette_id=self.RIGHT_PIPETTE_ID,
-                tips_info=self._find_tips_info("tips P1000"),
+                tips_info=self._find_tips_info("tips P300"), #TODO: make dynamic
                 containers=self.CONTAINERS
             )
 
@@ -51,7 +51,7 @@ class Configuration:
                 mount="left",
                 pipette_name=self.LEFT_PIPETTE_NAME,
                 pipette_id=self.LEFT_PIPETTE_ID,
-                tips_info=self._find_tips_info("tips P20"),
+                tips_info=self._find_tips_info("tips P20"), #TODO: make dynamic
                 containers=self.CONTAINERS,
                 needle_info=self._find_needle_info("needle")
             )

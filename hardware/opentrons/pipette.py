@@ -29,11 +29,15 @@ class Pipette:
         # set max volume and offset pipettes (pipette specific)
         if self.PIPETTE_NAME == "p20_single_gen2":
             self.MAX_VOLUME = 20
-            self.OFFSET = settings["LEFT_PIPETTE_OFFSET"]
+            self.OFFSET = settings["LEFT_PIPETTE_OFFSET_P20"]
 
         elif self.PIPETTE_NAME == "p1000_single_gen2":
             self.MAX_VOLUME = 1000
-            self.OFFSET = settings["RIGHT_PIPETTE_OFFSET"]
+            self.OFFSET = settings["RIGHT_PIPETTE_OFFSET_P1000"]
+        
+        elif self.PIPETTE_NAME == "p300_single_gen2":
+            self.MAX_VOLUME = 300
+            self.OFFSET = settings["RIGHT_PIPETTE_OFFSET_P300"]
 
         # dynamic attributes
         self.has_tip = False
@@ -328,9 +332,13 @@ class Pipette:
         if not self.has_tip and not self.has_needle:
             self.logger.error("No tip or needle attached to perform touch_tip!")
             return
-        depth = (
-            0.05 * container.DEPTH
-        )  # little depth to ensure the tip touches the wall of the container
+        if container.CONTAINER_TYPE != "Plate Well":
+            depth = (
+                0.05 * container.DEPTH
+            )  # little depth to ensure the tip touches the wall of the container
+        else:
+            depth = 0.3 * container.DEPTH
+        
         initial_offset = self.OFFSET.copy()
         initial_offset["z"] -= 0.05 * container.DEPTH
         self.opentrons_api.move_to_well(

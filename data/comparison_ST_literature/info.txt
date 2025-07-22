@@ -1,3 +1,0 @@
-Experiment tag: AULAB_PSP0072
-source SDS: https://doi.org/10.1021/je9800149
-source water: 10.1007/s10765-022-03077-y

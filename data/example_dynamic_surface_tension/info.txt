@@ -1,3 +1,0 @@
-surfactant: C12E4
-concentration: 46 uM
-temperature: 23C

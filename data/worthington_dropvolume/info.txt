@@ -1,3 +1,0 @@
-experimental tag: AULAB_PSP0074
-surfactant: SDS
-temperature: 23C

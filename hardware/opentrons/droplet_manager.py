@@ -153,7 +153,7 @@ class DropletManager:
             "Starting dispensing pendant drop while checking Wortington number."
         )
         while (
-            not (self.WORTINGTON_NUMBER_LIMIT <= wortington_number <= 1)
+            not (self.WORTINGTON_NUMBER_LIMIT <= wortington_number)
             and drop_volume < 14
         ):
             self.left_pipette.dispense(
