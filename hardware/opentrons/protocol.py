@@ -238,7 +238,7 @@ class Protocol:
                 self.logger.info(
                     f"Start pendant drop measurement of {well_id_exploit}, containing {self.containers[well_id_exploit].concentration} mM {surfactant}.\n"
                 )
-                self.left_pipette.mixing(container=self.containers[well_id_exploit], mix=("before", 20, 5))
+                # self.left_pipette.mixing(container=self.containers[well_id_exploit], mix=("before", 20, 5))
                 dynamic_surface_tension, drop_volume, drop_count = (
                     self.droplet_manager.measure_pendant_drop(
                         source=self.containers[well_id_exploit],
