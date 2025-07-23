@@ -1,8 +1,3 @@
-# TODO list
-# documentation
-# touch_tip
-# lights
-
 import requests
 import json
 import os
