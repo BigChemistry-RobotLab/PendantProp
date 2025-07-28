@@ -4,13 +4,18 @@ import numpy as np
 
 pd_camera = PendantDropCamera()
 
-# # Initialize the camera
-# # pd_camera.stop_measurement()
+# Initialize the camera
 pd_camera._initialize_camera()
-pd_camera.initialize_measurement(well_id="7H1", drop_count=1)
-# pd_camera.start_check(vol_droplet=12.700000)
-pd_camera.start_capture()
+
+# Start stream camera
 pd_camera.start_stream()
+
+# Uncomment if you want to check if analysis scripts runs proper
+
+pd_camera.initialize_measurement(well_id="7E3", drop_count=1)
+pd_camera.start_capture_before_measurement()
+pd_camera.start_capture()
+
 
 # # Test the frame generator
 for frame_data in pd_camera.generate_frames():
@@ -23,8 +28,10 @@ for frame_data in pd_camera.generate_frames():
 
     # Break the loop if 'q' is pressed
     if cv2.waitKey(1) & 0xFF == ord("q"):
-        print(pd_camera.st_t)
-        print(pd_camera.wortington_numbers)
+        
+        # uncomment if you want to see dynamic surface tension
+        # print(pd_camera.st_t)
+        
         pd_camera.stop_measurement()
         break
 

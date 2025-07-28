@@ -137,7 +137,38 @@ class Pipette:
         self.volume = 0
         self.logger.info("Returned needle.")
 
-    def _find_well_and_tips_id(self):
+    def return_tip(self, well: str = None):
+        '''
+        Returns the tip to the tip rack.
+
+        '''
+
+        if not self.has_tip:
+            self.logger.info("No tip to return!")
+            return
+
+        if well == None:
+            tips_id, well = self._find_well_and_tips_id(return_well=True)
+            if tips_id == None:
+                self.logger.error("Well index is out of bounds.")
+        else:
+            tips_id =  self.TIPS_INFO[next(iter(self.TIPS_INFO))]["labware_id"] # takes from the first tip rack
+        
+        # bit deeper to plunge the tip in the tip rack
+        offset = self.OFFSET.copy()
+        offset['z'] -= 20
+
+        self.opentrons_api.drop_tip(
+            pipette_id=self.PIPETTE_ID,
+            labware_id=tips_id,
+            well=well,
+            offset=offset,
+        )
+        self.has_tip = False
+        self.volume = 0
+        self.logger.info("Returned tip.")
+
+    def _find_well_and_tips_id(self, return_well=False):
         tips_ids = []
         tips_orderings = []
         for tip_name in self.TIPS_INFO.keys():
@@ -149,7 +180,10 @@ class Pipette:
         for i, tips_id in enumerate(tips_ids):
             if self.well_index < (i + 1) * total_wells:
                 tips_id = tips_ids[i]
-                well = tips_orderings[i][self.well_index - i * total_wells]
+                if return_well:
+                    well = tips_orderings[i][self.well_index-1 - i * total_wells]
+                else:
+                    well = tips_orderings[i][self.well_index - i * total_wells]
                 return tips_id, well
 
     def aspirate(
@@ -332,15 +366,20 @@ class Pipette:
         if not self.has_tip and not self.has_needle:
             self.logger.error("No tip or needle attached to perform touch_tip!")
             return
-        if container.CONTAINER_TYPE != "Plate Well":
+        if container.CONTAINER_TYPE != "Plate well":
+            percentage = 0.05
             depth = (
-                0.05 * container.DEPTH
-            )  # little depth to ensure the tip touches the wall of the container
+                percentage * container.DEPTH
+            )
+            initial_offset = self.OFFSET.copy()
+            initial_offset["z"] -= percentage * container.DEPTH  
         else:
-            depth = 0.3 * container.DEPTH
+            percentage = 0.3  # for plate wells, we use a larger percentage
+            depth = percentage * container.DEPTH
+            initial_offset = self.OFFSET.copy()
+            initial_offset["z"] -= percentage * container.DEPTH  
         
-        initial_offset = self.OFFSET.copy()
-        initial_offset["z"] -= 0.05 * container.DEPTH
+
         self.opentrons_api.move_to_well(
             pipette_id=self.PIPETTE_ID,
             labware_id=container.LABWARE_ID,

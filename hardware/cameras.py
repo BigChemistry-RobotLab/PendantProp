@@ -5,12 +5,6 @@ from threading import Thread, Event
 import time
 import os
 from datetime import datetime
-import matplotlib
-
-matplotlib.use("Agg")  # Use the Agg backend for non-GUI rendering
-import matplotlib.pyplot as plt
-import numpy as np
-from io import BytesIO
 
 from utils.load_save_functions import load_settings
 from utils.logger import Logger
@@ -83,12 +77,14 @@ class PendantDropCamera:
     def _initialize_attributes(self):
         self.stop_background_threads = Event()
         self.capturing = False
+        self.capturing_before_measurement = False
         self.streaming = False
         self.checking = False
         self.current_image = None
         self.analysis_image = None
         self.stream_thread = None
         self.process_thread = None
+        self.capture_before_measurement_thread = None
         self.check_thread = None
         self.well_id = None
         self.st_t = []  # Surface tension measurements
@@ -139,6 +135,7 @@ class PendantDropCamera:
     # Capture Management
     def start_capture(self):
         if not self.capturing:
+            self.stop_capture_before_measurement()
             self.start_time = datetime.now()
             self.capturing = True
             self.process_thread = threading.Thread(
@@ -163,6 +160,37 @@ class PendantDropCamera:
             if self.current_image is not None:
                 if time.time() - last_save_time >= 1.0:
                     self._save_image(self.current_image)
+                    last_save_time = time.time()
+                with self.lock:
+                    self._analyze_image(self.current_image)
+            time.sleep(0.1)
+    
+    def start_capture_before_measurement(self):
+        if not self.capturing_before_measurement:
+            self.start_time = datetime.now()
+            self.capturing_before_measurement = True
+            self.capture_before_measurement_thread = threading.Thread(
+                target=self._capture_before_measurement_thread, daemon=True
+            )
+            self.capture_before_measurement_thread.start()
+            self.logger.info("Camera: capturing images before measument.")
+    
+    def stop_capture_before_measurement(self):
+        self.capturing_before_measurement = False
+        if self.capture_before_measurement_thread is not None:
+            self.stop_background_threads.set()
+            self.capture_before_measurement_thread.join()
+            self.logger.info("Camera: stopped capturing before")
+        self.capture_before_measurement_thread = None
+        self.analysis_image = None
+        self.current_image = None
+
+    def _capture_before_measurement_thread(self):
+        last_save_time = time.time()
+        while self.capturing_before_measurement:
+            if self.current_image is not None:
+                if time.time() - last_save_time >= 1.0:
+                    self._save_image_before_capture(self.current_image)
                     last_save_time = time.time()
                 with self.lock:
                     self._analyze_image(self.current_image)
@@ -201,6 +229,13 @@ class PendantDropCamera:
     # Image Processing
     def _save_image(self, img):
         directory = f"{self.save_dir}/{self.well_id}/images/droplet_{self.drop_count}"
+        os.makedirs(directory, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{directory}/{timestamp}.png"
+        cv2.imwrite(filename, img)
+
+    def _save_image_before_capture(self, img):
+        directory = f"{self.save_dir}/{self.well_id}/images/droplet_{self.drop_count}/before_measurement"
         os.makedirs(directory, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{directory}/{timestamp}.png"
@@ -246,6 +281,7 @@ class PendantDropCamera:
 
     # Cleanup
     def stop_measurement(self):
+        self.stop_capture_before_measurement()
         self.stop_capture()
         self.stop_check()
         self.stop_stream()

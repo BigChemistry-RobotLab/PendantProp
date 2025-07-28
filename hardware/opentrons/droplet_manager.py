@@ -138,6 +138,7 @@ class DropletManager:
         self.logger.info(
             f"Dispensing initial pendant drop volume of {self.INITIAL_DROP_VOLUME}."
         )
+        self.pendant_drop_camera.start_capture_before_measurement()
         self.left_pipette.dispense(
             volume=self.INITIAL_DROP_VOLUME,
             destination=self.containers["drop_stage"],
