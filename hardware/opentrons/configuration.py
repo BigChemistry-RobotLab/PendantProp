@@ -161,6 +161,8 @@ class Configuration:
             return GlassVial
         elif "tube rack 50 mL" in labware_name:
             return FalconTube50
+        elif "eppendorf rack" in labware_name:
+            return Eppendorf
         elif "plate" in labware_name:
             return PlateWell
         else:

@@ -47,10 +47,12 @@ class Container:
         self.volume_mL = self.INITIAL_VOLUME_ML
         self.height_mm = self.INITIAL_HEIGHT_MM
         self.solution_name = solution_name
-        self.concentration = concentration 
+        self.concentration = concentration
 
         # Create logger (container & protocol)
-        os.makedirs(f"experiments/{self.settings['EXPERIMENT_NAME']}/data", exist_ok=True)
+        os.makedirs(
+            f"experiments/{self.settings['EXPERIMENT_NAME']}/data", exist_ok=True
+        )
         os.makedirs(
             f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{self.WELL_ID}",
             exist_ok=True,
@@ -64,7 +66,7 @@ class Container:
             file_path=f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data',
         )
 
-    def aspirate(self, volume: float, log = True):
+    def aspirate(self, volume: float, log=True):
         if self.volume_mL < (volume * 1e-3):
             self.protocol_logger.warning(
                 "Aspiration volume is larger than container volume!"
@@ -77,7 +79,7 @@ class Container:
                 f"Container: aspirated {volume} uL from this container with content {self.concentration} mM {self.solution_name}."
             )
 
-    def dispense(self, volume: float, source: "Container", log = True):
+    def dispense(self, volume: float, source: "Container", log=True):
         if (self.volume_mL * 1e3) + volume > self.MAX_VOLUME:
             self.protocol_logger.warning("Overflowing of container!")
             return
@@ -92,7 +94,9 @@ class Container:
         # case 2: container contains water and solution is added from source
         elif self.solution_name == "water" and source.solution_name != "water":
             self.solution_name = source.solution_name
-            self.concentration = (float(source.concentration) * volume*1e-3) / self.volume_mL
+            self.concentration = (
+                float(source.concentration) * volume * 1e-3
+            ) / self.volume_mL
 
         # case 3: containers contains solution and water is added from source
         elif self.solution_name != "water" and source.solution_name == "water":
@@ -104,17 +108,19 @@ class Container:
         elif self.solution_name == source.solution_name:
             if self.solution_name != "water":
                 n_source_mM = float(source.concentration) * volume * 1e-3
-                n_container_mM = float(self.concentration) * (self.volume_mL - volume * 1e-3)
-                self.concentration = (
-                    n_source_mM + n_container_mM
-                ) / self.volume_mL
+                n_container_mM = float(self.concentration) * (
+                    self.volume_mL - volume * 1e-3
+                )
+                self.concentration = (n_source_mM + n_container_mM) / self.volume_mL
             else:
                 pass
 
         # case 5: other cases #TODO extend to mixtures
         else:
             if log:
-                self.container_logger.warning(f"The case of adding {source.solution_name} of {source.concentration} mM from source, to a container with {self.solution_name} of {self.concentration} mM is not captured. Leads to wrong updated attributes in containers")
+                self.container_logger.warning(
+                    f"The case of adding {source.solution_name} of {source.concentration} mM from source, to a container with {self.solution_name} of {self.concentration} mM is not captured. Leads to wrong updated attributes in containers"
+                )
             else:
                 pass
 
@@ -140,7 +146,79 @@ class Container:
         """
 
 
+class Eppendorf(Container):
+    """
+    Container class for 1.5 mL eppendorf
+    Accurate to 0.2 mL
+    """
+    def __init__(
+        self,
+        labware_info: dict,
+        well: str,
+        initial_volume_mL: float,
+        solution_name: str,
+        concentration: any,
+    ):
+        super().__init__(
+            labware_info,
+            well,
+            initial_volume_mL,
+            solution_name,
+            concentration,
+            inner_diameter_mm=10,
+        )
+        self.CONTAINER_TYPE = "Eppendorf 1.5 mL"
+
+
+    def update_liquid_height(self, volume_mL):
+        HEIGHT_CONE_MM = (
+            18.6  # this matches for cone part of eppendorf tube of 1.5 mL
+        )
+        INNER_DIAMETER_CONE_MM = 2  # this matches for the inner diameter of the truncated cone part of eppendorf tube of 1.5 mL
+        VOLUME_CONE_ML = (
+            1e-3
+            * (1 / 12)
+            * np.pi
+            * HEIGHT_CONE_MM
+            * (
+                self.INNER_DIAMETER_MM**2
+                + self.INNER_DIAMETER_MM * INNER_DIAMETER_CONE_MM
+                + INNER_DIAMETER_CONE_MM**2
+            )
+        )
+        GENERAL_OFFSET = 3.5 #due to dead volume
+        if volume_mL < VOLUME_CONE_ML:
+            self.height_mm = (
+                1e3
+                * 12
+                * volume_mL
+                / (
+                    np.pi
+                    * (
+                        self.INNER_DIAMETER_MM**2
+                        + self.INNER_DIAMETER_MM * INNER_DIAMETER_CONE_MM
+                        + INNER_DIAMETER_CONE_MM**2
+                    )
+                )
+                - GENERAL_OFFSET
+            )
+        else:
+            self.height_mm = (
+                1e3
+                * (volume_mL - VOLUME_CONE_ML)
+                / (np.pi * (self.INNER_DIAMETER_MM / 2) ** 2)
+                + HEIGHT_CONE_MM
+                - GENERAL_OFFSET
+            )
+        return self.height_mm
+
+
 class FalconTube15(Container):
+    """
+    Container class for 15 mL Falcon tube
+    Accurate to 1 mL
+    """
+
     def __init__(
         self,
         labware_info: dict,
@@ -172,6 +250,11 @@ class FalconTube15(Container):
 
 
 class FalconTube50(Container):
+    """
+    Container class for 15 mL Falcon tube
+    Accurate to 5 mL
+    """
+
     def __init__(
         self,
         labware_info: dict,
@@ -202,6 +285,11 @@ class FalconTube50(Container):
 
 
 class GlassVial(Container):
+    """
+    Container class for 5 mL glass vial
+    Accurate to 0.5 mL
+    """
+
     def __init__(
         self,
         labware_info: dict,
@@ -226,6 +314,10 @@ class GlassVial(Container):
 
 
 class PlateWell(Container):
+    """
+    Container class for a well in a plate (max volume 400 uL)
+    Accurate t0 40 uL
+    """
 
     def __init__(
         self,
@@ -247,11 +339,15 @@ class PlateWell(Container):
 
     def update_liquid_height(self, volume_mL):
         # self.height_mm = 1e3 * (volume_mL) / (np.pi * (self.INNER_DIAMETER_MM / 2) ** 2)
-        self.height_mm = self.settings["WELL_DEPTH_MM"] # static height for now
+        self.height_mm = self.settings["WELL_DEPTH_MM"]  # static height for now
         return self.height_mm
 
 
 class DropStage:
+    """
+    Drop stage representation as container
+    """
+
     def __init__(self, labware_info):
         self.LABWARE_ID = labware_info["labware_id"]
         self.LABWARE_NAME = labware_info["labware_name"]
@@ -265,10 +361,10 @@ class DropStage:
         self.solution_name = "empty"
         self.concentration = "pure"
 
-    def aspirate(self, volume, log = True):
+    def aspirate(self, volume, log=True):
         pass
 
-    def dispense(self, volume, source: Container, log = True):
+    def dispense(self, volume, source: Container, log=True):
         self.solution_name = source.solution_name
         pass
 
@@ -284,6 +380,10 @@ class DropStage:
 
 
 class LightHolder:
+    """
+    Light stage representation as container
+    """
+
     def __init__(self, labware_info):
         self.LABWARE_ID = labware_info["labware_id"]
         self.LABWARE_NAME = labware_info["labware_name"]
@@ -296,15 +396,11 @@ class LightHolder:
         self.MAX_VOLUME = labware_info["max_volume"]
 
     def aspirate(self, volume):
-        print(
-            "Attempted to aspirate from light holder. This should never be the case!"
-        )
+        print("Attempted to aspirate from light holder. This should never be the case!")
         pass
 
     def dispense(self, volume, source: Container):
-        print(
-            "Attempted to dispense from light holder. This should never be the case!"
-        )
+        print("Attempted to dispense from light holder. This should never be the case!")
         pass
 
     def __str__(self):
@@ -317,6 +413,10 @@ class LightHolder:
 
 
 class Sponge:
+    """
+    Sponge representation as container
+    """
+
     def __init__(self, labware_info):
         self.LABWARE_ID = labware_info["labware_id"]
         self.LABWARE_NAME = labware_info["labware_name"]
