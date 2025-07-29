@@ -103,6 +103,8 @@ class Pipette:
         if self.has_tip:
             self.logger.error("tried to pick up needle, while pipette has tip.")
             return
+        if self.has_needle:
+            self.logger.error("tried to pick up needle, but pipette already has needle")
 
         # adjust offset to pick the needle up a bit more gently
         offset = self.OFFSET.copy()

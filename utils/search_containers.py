@@ -2,7 +2,7 @@ import numpy as np
 
 def get_well_id_solution(containers: dict, solution_name: str) -> str:
     for key, container in containers.items():
-        if "tube" in container.CONTAINER_TYPE:
+        if "tube" in container.CONTAINER_TYPE or "Eppendorf" in container.CONTAINER_TYPE: #? No plate well needed in here?
             if container.solution_name == solution_name:
                 return container.WELL_ID
     raise ValueError(
@@ -16,7 +16,7 @@ def get_well_id_concentration(containers: dict, solution: str, requested_concent
 
     # Collect differences and well IDs
     for key, container in containers.items():
-        if "tube" in container.CONTAINER_TYPE or "Plate" in container.CONTAINER_TYPE:
+        if "tube" in container.CONTAINER_TYPE or "Plate" in container.CONTAINER_TYPE or "Eppendorf" in container.CONTAINER_TYPE:
             if container.solution_name == solution:
                 differences.append(float(container.concentration) - requested_concentration)
                 well_ids.append(key)
@@ -46,7 +46,7 @@ def get_list_of_well_ids_concentration(
 
     # Collect differences and well IDs
     for key, container in containers.items():
-        if "tube" in container.CONTAINER_TYPE or "Plate" in container.CONTAINER_TYPE:
+        if "tube" in container.CONTAINER_TYPE or "Plate" in container.CONTAINER_TYPE or "Eppendorf" in container.CONTAINER_TYPE:
             if container.solution_name == solution:
                 differences.append(
                     float(container.concentration) - requested_concentration

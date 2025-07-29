@@ -6,5 +6,5 @@
 legacy/
 settings/
 experiments/
-test_files/
+config/
 playbook.ipynb

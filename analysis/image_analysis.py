@@ -329,7 +329,8 @@ class PendantDropAnalysis:
 
     def check_diameter(self):
         diameter_needle_px_given = self.settings["NEEDLE_DIAMETER_PX"]
-        if 0.95*diameter_needle_px_given < self.needle_diameter_px < 1.05*diameter_needle_px_given:
+        print(f"measured needle diameter: {self.needle_diameter_px} px")
+        if 0.98*diameter_needle_px_given < self.needle_diameter_px < 1.02*diameter_needle_px_given:
             return True
         else:
             # print(f"too large of diameter ({self.needle_diameter_px} px), droplet probably sticking to needle.")
