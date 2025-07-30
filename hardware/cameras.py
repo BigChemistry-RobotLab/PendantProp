@@ -9,7 +9,8 @@ from datetime import datetime
 from utils.load_save_functions import load_settings
 from utils.logger import Logger
 from analysis.image_analysis import PendantDropAnalysis
-
+import matplotlib
+matplotlib.use('Agg')
 
 class OpentronCamera:
     def __init__(self, width=640, height=480, fps=60):
