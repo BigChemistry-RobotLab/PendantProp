@@ -5,7 +5,7 @@ import subprocess
 import pandas as pd
 
 from utils.utils import calculate_equillibrium_value
-from hardware.sensor.sensor_api import SensorAPI
+from hardware.sensor.legacy.sensor_api import SensorAPI
 
 def save_csv_file(exp_name: str, subdir_name: str, csv_file, app):
     """

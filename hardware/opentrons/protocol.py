@@ -19,7 +19,7 @@ from hardware.opentrons.formulater import Formulater
 from hardware.opentrons.configuration import Configuration
 from hardware.opentrons.containers import Container
 from hardware.cameras import PendantDropCamera
-from hardware.sensor.sensor_api import SensorAPI
+from hardware.sensor.legacy.sensor_api import SensorAPI
 from utils.load_save_functions import (
     load_settings,
     save_calibration_data,
