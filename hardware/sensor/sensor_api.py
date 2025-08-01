@@ -9,9 +9,8 @@ class SensorAPI:
         try:
             response = requests.get("http://localhost:5001/data", timeout=5)
             response.raise_for_status()  # Raise error for bad status
-            data = response.json()
-            df = pd.DataFrame([data])
-            return df
+            sensor_data = response.json()
+            return sensor_data
         except requests.RequestException as e:
             print(f"[Error] Could not fetch data: {e}")
             empty_data = {
