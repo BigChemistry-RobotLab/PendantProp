@@ -5,7 +5,7 @@ import subprocess
 import pandas as pd
 
 from utils.utils import calculate_equillibrium_value
-from hardware.sensor.legacy.sensor_api import SensorAPI
+from hardware.sensor.sensor_api import SensorAPI
 
 def save_csv_file(exp_name: str, subdir_name: str, csv_file, app):
     """
@@ -153,7 +153,9 @@ def add_data_to_results(
     containers=list,
     sensor_api=SensorAPI,
 ):
+
     sensor_data = sensor_api.capture_sensor_data()
+    
     container = containers[well_id]
     new_row = pd.DataFrame(
         {

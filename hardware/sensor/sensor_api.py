@@ -14,9 +14,13 @@ class SensorAPI:
             return df
         except requests.RequestException as e:
             print(f"[Error] Could not fetch data: {e}")
-            return None
+            empty_data = {
+            "Temperature (C)": 0,
+            "Humidity (%)": 0,
+            "Pressure (Pa)": 0
+            }
+            return empty_data
 
-        return last_sensor_data
     
     def __str__(self):
         f"""
