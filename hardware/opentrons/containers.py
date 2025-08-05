@@ -1,8 +1,7 @@
 """
 TODO
 ----
-- maybe i messed up by changing the version of aionotify (opentrons requires 0.2.0, but have pip upgraded to 0.3.1)
-- Eppendorf child class
+- ABC? 
 - Well diameter from labware_info, not hard coded.
 """
 
@@ -10,9 +9,6 @@ import numpy as np
 import os
 from utils.logger import Logger
 from utils.load_save_functions import load_settings
-
-# from hardware.opentrons.pipette import Pipette
-
 
 class Container:
     def __init__(
