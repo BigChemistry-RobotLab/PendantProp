@@ -51,15 +51,15 @@ class Container:
 
         # Create logger (container & protocol)
         os.makedirs(
-            f"experiments/{self.settings['EXPERIMENT_NAME']}/data", exist_ok=True
+            f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{self.LABWARE_NAME}", exist_ok=True
         )
         os.makedirs(
-            f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{self.WELL_ID}",
+            f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{self.LABWARE_NAME}/{self.WELL_ID}",
             exist_ok=True,
         )
         self.container_logger = Logger(
             name=self.WELL_ID,
-            file_path=f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{self.WELL_ID}",
+            file_path=f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{self.LABWARE_NAME}/{self.WELL_ID}",
         )
         self.protocol_logger = Logger(
             name="protocol",
