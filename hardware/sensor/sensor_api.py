@@ -21,11 +21,11 @@ class SensorAPI:
             return empty_data
 
     
-    def __str__(self):
-        f"""
-        Sensor instance.
+    # def __str__(self):
+    #     f"""
+    #     Sensor instance.
 
-        sensor name: {self.sensor_name}
-        last sensor data: {self.capture_sensor_data()}
-        """
+    #     sensor name: {self.sensor_name}
+    #     last sensor data: {self.capture_sensor_data()}
+    #     """
 

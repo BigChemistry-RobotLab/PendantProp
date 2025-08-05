@@ -193,8 +193,6 @@ class PendantDropCamera:
                 if time.time() - last_save_time >= 1.0:
                     self._save_image_before_capture(self.current_image)
                     last_save_time = time.time()
-                with self.lock:
-                    self._analyze_image(self.current_image)
             time.sleep(0.1)
 
     # Check Management
