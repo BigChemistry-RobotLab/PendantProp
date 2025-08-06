@@ -175,7 +175,7 @@ class DropletManager:
             else:
                 wortington_number = 0
 
-            print(f"Wortington number: {wortington_number:2f}")
+            print(f"Wortington number: {wortington_number:2f}".ljust(30), end="\r")
 
         if wortington_number < self.WORTINGTON_NUMBER_LIMIT:
             self.logger.warning(

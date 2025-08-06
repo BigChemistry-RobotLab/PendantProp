@@ -11,3 +11,4 @@ flask==3.0.3
 pypylon==4.1.0
 imutils==0.5.4
 requests==2.31.0
+serial==0.0.97
