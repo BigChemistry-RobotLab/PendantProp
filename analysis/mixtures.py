@@ -1,5 +1,10 @@
+# Import
+
+## Packages
 import numpy as np
 from scipy.optimize import root_scalar, minimize
+
+## Custom code
 
 
 def mix_ideal(c1, c2, alpha):
@@ -31,11 +36,10 @@ def rubingh_equation(x1, alpha, c1, c2, c_mix):
     return term1 - term2
 
 
-
 def find_x1(alpha, c1, c2, c_mix):
     def equation(x1):
         return rubingh_equation(x1, alpha, c1, c2, c_mix)
-    
+
     if c_mix > mix_ideal(c1, c2, alpha):
         c_mix = mix_ideal(c1, c2, alpha)
 
@@ -58,14 +62,15 @@ def objective(beta, alpha_list, c_mix_list, c1, c2):
     c_mix_list = c_mix_list[1:-1]
     residuals = []
     for alpha, c_mix in zip(alpha_list, c_mix_list):
+        x1 = find_x1(alpha, c1, c2, c_mix)
+        if x1 == np.nan:
+            print("re")
+            c_mix = mix_ideal(c1=c1, c2=c2, alpha=alpha)
             x1 = find_x1(alpha, c1, c2, c_mix)
-            if x1 == np.nan:
-                print("re")
-                c_mix = mix_ideal(c1=c1, c2=c2, alpha=alpha) 
-                x1 = find_x1(alpha, c1, c2, c_mix) 
-            beta_calc = calculate_beta(x1, alpha, c1, c_mix)
-            residuals.append((beta_calc - beta) ** 2)
+        beta_calc = calculate_beta(x1, alpha, c1, c_mix)
+        residuals.append((beta_calc - beta) ** 2)
     return np.sum(residuals)
+
 
 def fit_beta(alpha_obs, c_mix_obs):
     c1 = c_mix_obs[-1]
@@ -87,6 +92,7 @@ def fit_beta(alpha_obs, c_mix_obs):
         fitted_beta = initial_beta  # Fallback to initial guess
 
     return fitted_beta
+
 
 if __name__ == "__main__":
     pass

@@ -1,3 +1,6 @@
+# Import
+
+## Packages
 import jax.numpy as jnp
 from jax.scipy.special import erf
 from jax.numpy import sqrt, pi
@@ -5,6 +8,9 @@ import numpyro as npy
 import numpyro.distributions as dist
 import jax
 import numpy as np
+
+## Custom code
+
 
 def APNModel_S1(cS0, cmc, r):
     """
@@ -63,10 +69,12 @@ def szyszkowski(cS0, theta):
     g = 72.8 / 1000 - (R * T * gamma_max) * jnp.log(1 + Kad * cS1)  # N/m
     return g
 
+
 def sample_szyszkowski(c, theta_true, noise_level, key):
     c = c / 1000
     noise = jax.random.normal(key, shape=c.shape, dtype=jnp.float32) * noise_level
-    return szyszkowski(cS0=c, theta=theta_true)*1000 + noise 
+    return szyszkowski(cS0=c, theta=theta_true) * 1000 + noise
+
 
 def szyszkowski_model(x_obs, y_obs=None):
     """
@@ -80,9 +88,9 @@ def szyszkowski_model(x_obs, y_obs=None):
         # Log a warning and return a default value
         print("Warning: x_obs is empty. Skipping computation.")
         return None  # or return a default value like 0 or an empty array
-    
+
     cmc = npy.sample("cmc", dist.Uniform(0, jnp.max(x_obs)))
-    gamma_max = npy.sample("gamma_max", dist.Uniform(0, jnp.max(x_obs) / 10)) #!
+    gamma_max = npy.sample("gamma_max", dist.Uniform(0, jnp.max(x_obs) / 10))  #!
     Kad = npy.sample("Kad", dist.Uniform(0, 100000))
 
     sigma = npy.sample("sigma", dist.Exponential(100000))
@@ -90,7 +98,6 @@ def szyszkowski_model(x_obs, y_obs=None):
     mu = szyszkowski(x_obs, theta=(cmc, gamma_max, Kad))
 
     npy.sample("obs", dist.Normal(mu, sigma), obs=y_obs)
-
 
 
 def szyszkowski_g0(cS0, theta):
@@ -117,6 +124,7 @@ def szyszkowski_g0(cS0, theta):
     T = 294.15  # K (21 degrees Celsius)
     g = g0 - R * T * gamma_max * jnp.log(1 + Kad * cS1)  # N/m
     return g
+
 
 def szyszkowski_g0_model(x_obs, y_obs=None):
     """

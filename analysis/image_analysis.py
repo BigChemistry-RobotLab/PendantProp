@@ -1,3 +1,6 @@
+# Import
+
+## Packages
 import cv2
 import imutils
 import numpy as np
@@ -6,14 +9,12 @@ from tkinter import Tk
 from scipy.spatial.distance import euclidean
 from tkinter.filedialog import askopenfilename
 import numpy as np
-from scipy.spatial import KDTree
 import cv2
 import itertools
 from scipy.spatial.distance import euclidean
-import os
 
+## Custom code
 from utils.load_save_functions import load_settings
-from utils.logger import Logger
 
 
 class PendantDropAnalysis:

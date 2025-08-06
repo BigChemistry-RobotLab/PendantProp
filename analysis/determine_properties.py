@@ -1,6 +1,10 @@
+# Imports
+
+## Packages
 import pandas as pd
 import numpy as np
 
+## Custom code
 from analysis.models import szyszkowski_model
 from analysis.utils import fit_model
 from analysis.utils import calculate_st_at_cmc, calculate_gamma_max

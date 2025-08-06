@@ -1,9 +1,13 @@
+# Imports
+
+## Packages
 import time
 import numpy as np
 import pandas as pd
 
+## Custom code
 from utils.logger import Logger
-from hardware.cameras import PendantDropCamera
+from hardware.cameras.pendant_drop_camera import PendantDropCamera
 from hardware.opentrons.opentrons_api import OpentronsAPI
 from hardware.opentrons.containers import Container
 from hardware.opentrons.pipette import Pipette
@@ -208,7 +212,7 @@ class DropletManager:
 
     def _initialise_camera(self):
         self.pendant_drop_camera.initialize_measurement(
-            well_id=self.source.WELL_ID, drop_count=self.drop_count
+            container=self.source, drop_count=self.drop_count
         )
 
     def _capture(self, max_measure_time: float):
@@ -220,7 +224,7 @@ class DropletManager:
             dynamic_surface_tension = self.pendant_drop_camera.st_t
             self.plotter.plot_dynamic_surface_tension(
                 dynamic_surface_tension=dynamic_surface_tension,
-                well_id=self.source.WELL_ID,
+                container=self.source,
                 drop_count=self.drop_count,
             )
             if dynamic_surface_tension:

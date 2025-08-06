@@ -1,3 +1,6 @@
+# Imports
+
+## Packages
 import jax.numpy as jnp
 from jax import random
 from numpyro import infer
@@ -6,6 +9,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 import pandas as pd
 
+## Custom code
 from utils.logger import Logger
 from utils.data_processing import smooth
 from utils.load_save_functions import load_settings

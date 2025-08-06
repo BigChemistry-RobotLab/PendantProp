@@ -1,58 +1,22 @@
-import cv2
-from pypylon import pylon
+# Imports
+
+## Packages
 import threading
-from threading import Thread, Event
+from pypylon import pylon
+from datetime import datetime
 import time
 import os
-from datetime import datetime
+import cv2
+import matplotlib
 
+## Custom code
 from utils.load_save_functions import load_settings
 from utils.logger import Logger
 from analysis.image_analysis import PendantDropAnalysis
-import matplotlib
+from hardware.opentrons.containers import Container
+
+## Change backend (otherwise error I dont understand) 
 matplotlib.use('Agg')
-
-class OpentronCamera:
-    def __init__(self, width=640, height=480, fps=60):
-        self.camera = cv2.VideoCapture(0)
-        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-        self.camera.set(cv2.CAP_PROP_FPS, fps)
-
-        if not self.camera.isOpened():
-            raise Exception("Error: Could not open camera.")
-
-        self.current_frame = None
-        self.stop_background_threads = Event()
-
-        # Start the frame capture thread
-        self.thread = Thread(target=self.capture_frames, daemon=True)
-        self.thread.start()
-
-    def capture_frames(self):
-        while not self.stop_background_threads.is_set():
-            success, frame = self.camera.read()
-            if success:
-                self.current_frame = frame
-            else:
-                print("Error: Could not read frame.")
-
-    def generate_frames(self):
-        while True:
-            if self.current_frame is not None:
-                # Encode the frame in JPEG format
-                ret, buffer = cv2.imencode(".jpg", self.current_frame)
-                frame = buffer.tobytes()
-
-                # Yield the frame in byte format
-                yield (
-                    b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
-                )
-
-    def stop(self):
-        self.stop_background_threads.set()
-        self.thread.join()
-        self.camera.release()
 
 
 class PendantDropCamera:
@@ -76,7 +40,7 @@ class PendantDropCamera:
             self.camera = None
 
     def _initialize_attributes(self):
-        self.stop_background_threads = Event()
+        self.stop_background_threads = threading.Event()
         self.capturing = False
         self.capturing_before_measurement = False
         self.streaming = False
@@ -91,16 +55,17 @@ class PendantDropCamera:
         self.st_t = []  # Surface tension measurements
         self.wortington_numbers = []  # Wortington numbers
 
-    def initialize_measurement(self, well_id: str, drop_count: int):
+    def initialize_measurement(self, container: Container, drop_count: int):
         self.settings = load_settings()
         self.experiment_name = self.settings["EXPERIMENT_NAME"]
-        self.save_dir = f"experiments/{self.experiment_name}/data"
         self.analyzer = PendantDropAnalysis()
         self.logger = Logger(
             name="protocol",
             file_path=f"experiments/{self.experiment_name}/meta_data",
         )
-        self.well_id = well_id
+        self.well_id = container.WELL_ID
+        self.labware_name = container.LABWARE_NAME
+        self.save_dir = f"experiments/{self.experiment_name}/data/{self.labware_name}"
         self.drop_count = drop_count
         self.start_stream()
 
@@ -286,6 +251,3 @@ class PendantDropCamera:
         self.stop_stream()
         self.st_t = []
         self.wortington_numbers = []
-
-if __name__ == "__main__":
-    pass

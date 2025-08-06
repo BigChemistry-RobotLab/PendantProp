@@ -1,6 +1,11 @@
+# Imports
+
+## Packages
 import requests
 import json
 import os
+
+## Custom code
 from utils.load_save_functions import load_settings
 from utils.logger import Logger
 

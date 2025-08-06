@@ -1,14 +1,11 @@
-"""
-TODO
-----
-- ABC? 
-- Well diameter from labware_info, not hard coded.
-"""
+# Imports
 
+## Packages
 import numpy as np
 import os
+
+## Custom code
 from utils.logger import Logger
-from utils.load_save_functions import load_settings
 
 class Container:
     def __init__(
@@ -21,6 +18,7 @@ class Container:
         inner_diameter_mm: float = None,
     ):
         # Settings
+        from utils.load_save_functions import load_settings
         self.settings = load_settings()
 
         # Constant attributes

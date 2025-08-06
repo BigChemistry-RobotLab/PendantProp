@@ -1,13 +1,18 @@
+# Imports
+
+## Packages
 import pandas as pd
 import os
+
+## Custom code
 from hardware.opentrons.containers import *
 from hardware.opentrons.pipette import Pipette
 from utils.load_save_functions import load_settings
 from utils.logger import Logger
 from hardware.opentrons.opentrons_api import OpentronsAPI
 
-class Configuration:
 
+class Configuration:
     def __init__(self, opentrons_api: OpentronsAPI):
         settings = load_settings()
         self.settings = settings
@@ -21,13 +26,11 @@ class Configuration:
         self.RIGHT_PIPETTE_ID = None
         self.LEFT_PIPETTE_ID = None
         self.LABWARE = None
-        self.CONTAINERS = None 
+        self.CONTAINERS = None
         self.logger = Logger(
             name="protocol",
             file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
         )
-
-
 
     def load_pipettes(self):
         try:
@@ -39,8 +42,8 @@ class Configuration:
                 mount="right",
                 pipette_name=self.RIGHT_PIPETTE_NAME,
                 pipette_id=self.RIGHT_PIPETTE_ID,
-                tips_info=self._find_tips_info("tips P300"), #TODO: make dynamic
-                containers=self.CONTAINERS
+                tips_info=self._find_tips_info("tips P300"),  # TODO: make dynamic
+                containers=self.CONTAINERS,
             )
 
             self.LEFT_PIPETTE_ID = self.opentrons_api.load_pipette(
@@ -51,9 +54,9 @@ class Configuration:
                 mount="left",
                 pipette_name=self.LEFT_PIPETTE_NAME,
                 pipette_id=self.LEFT_PIPETTE_ID,
-                tips_info=self._find_tips_info("tips P20"), #TODO: make dynamic
+                tips_info=self._find_tips_info("tips P20"),  # TODO: make dynamic
                 containers=self.CONTAINERS,
-                needle_info=self._find_needle_info("needle")
+                needle_info=self._find_needle_info("needle"),
             )
             self.logger.info("Pipettes loaded successfully.")
             return {"right": right_pipette, "left": left_pipette}
@@ -137,7 +140,7 @@ class Configuration:
         except Exception as e:
             self.logger.error(f"Error loading containers: {e}")
             return None
-        
+
     def _load_config_file(self):
         try:
             return pd.read_csv(self.FILE_PATH_CONFIG)

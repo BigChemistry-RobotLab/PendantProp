@@ -1,3 +1,8 @@
+# Imports
+
+## Packages
+
+## Custom code
 from hardware.opentrons.pipette import Pipette
 from hardware.opentrons.containers import Container
 from utils.logger import Logger

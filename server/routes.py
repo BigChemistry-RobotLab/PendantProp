@@ -1,3 +1,6 @@
+# Imports
+
+## Packages
 import os
 import glob
 import threading
@@ -6,7 +9,6 @@ import logging
 import numpy as np
 import cv2
 import time
-
 from flask import (
     Flask,
     render_template,
@@ -18,6 +20,7 @@ from flask import (
     jsonify,
 )
 
+## Custom code
 from utils.load_save_functions import (
     save_csv_file,
     load_settings,
@@ -25,10 +28,12 @@ from utils.load_save_functions import (
     save_settings_meta_data,
     load_commit_hash,
 )
-from hardware.cameras import OpentronCamera, PendantDropCamera
+from hardware.cameras.opentrons_camera import OpentronCamera
+from hardware.cameras.pendant_drop_camera import PendantDropCamera
 from hardware.opentrons.opentrons_api import OpentronsAPI
 from hardware.sensor.sensor_api import SensorAPI
 from hardware.opentrons.protocol import Protocol
+
 
 # initialize the Flask app
 app = Flask(__name__)
