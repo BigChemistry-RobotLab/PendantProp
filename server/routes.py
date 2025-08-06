@@ -224,33 +224,33 @@ def about():
     return render_template("about.html")
 
 
-@app.route("/opentron_video_feed")
-def opentron_video_feed():
-    if has_opentrons_camera:
-        return Response(
-            opentron_camera.generate_frames(),
-            mimetype="multipart/x-mixed-replace; boundary=frame",
-        )
-    else:
-        # Generate a black screen as the video feed
-        def generate_black_frames():
-            black_frame = np.zeros(
-                (480, 640, 3), dtype=np.uint8
-            )  # Black frame (480p resolution)
-            while True:
-                ret, buffer = cv2.imencode(".jpg", black_frame)
-                if ret:
-                    frame = buffer.tobytes()
-                    yield (
-                        b"--frame\r\n"
-                        b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
-                    )
-                time.sleep(0.05)  # Add a small delay to simulate frame rate
+# @app.route("/opentron_video_feed")
+# def opentron_video_feed():
+#     if has_opentrons_camera:
+#         return Response(
+#             opentron_camera.generate_frames(),
+#             mimetype="multipart/x-mixed-replace; boundary=frame",
+#         )
+#     else:
+#         # Generate a black screen as the video feed
+#         def generate_black_frames():
+#             black_frame = np.zeros(
+#                 (480, 640, 3), dtype=np.uint8
+#             )  # Black frame (480p resolution)
+#             while True:
+#                 ret, buffer = cv2.imencode(".jpg", black_frame)
+#                 if ret:
+#                     frame = buffer.tobytes()
+#                     yield (
+#                         b"--frame\r\n"
+#                         b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
+#                     )
+#                 time.sleep(0.05)  # Add a small delay to simulate frame rate
 
-        return Response(
-            generate_black_frames(),
-            mimetype="multipart/x-mixed-replace; boundary=frame",
-        )
+#         return Response(
+#             generate_black_frames(),
+#             mimetype="multipart/x-mixed-replace; boundary=frame",
+#         )
 
 
 @app.route("/pendant_drop_video_feed")
