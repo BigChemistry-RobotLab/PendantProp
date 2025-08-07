@@ -18,6 +18,7 @@ from flask import (
     session,
     Response,
     jsonify,
+    send_from_directory
 )
 
 ## Custom code
@@ -224,41 +225,39 @@ def about():
     return render_template("about.html")
 
 
-# @app.route("/opentron_video_feed")
-# def opentron_video_feed():
-#     if has_opentrons_camera:
-#         return Response(
-#             opentron_camera.generate_frames(),
-#             mimetype="multipart/x-mixed-replace; boundary=frame",
-#         )
-#     else:
-#         # Generate a black screen as the video feed
-#         def generate_black_frames():
-#             black_frame = np.zeros(
-#                 (480, 640, 3), dtype=np.uint8
-#             )  # Black frame (480p resolution)
-#             while True:
-#                 ret, buffer = cv2.imencode(".jpg", black_frame)
-#                 if ret:
-#                     frame = buffer.tobytes()
-#                     yield (
-#                         b"--frame\r\n"
-#                         b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
-#                     )
-#                 time.sleep(0.05)  # Add a small delay to simulate frame rate
+@app.route("/opentron_video_feed")
+def opentron_video_feed():
+    if has_opentrons_camera:
+        return Response(
+            opentron_camera.generate_frames(),
+            mimetype="multipart/x-mixed-replace; boundary=frame",
+        )
+    else:
+        # Generate a black screen as the video feed
+        def generate_black_frames():
+            black_frame = np.zeros(
+                (480, 640, 3), dtype=np.uint8
+            )  # Black frame (480p resolution)
+            while True:
+                ret, buffer = cv2.imencode(".jpg", black_frame)
+                if ret:
+                    frame = buffer.tobytes()
+                    yield (
+                        b"--frame\r\n"
+                        b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
+                    )
+                time.sleep(0.05)  # Add a small delay to simulate frame rate
 
-#         return Response(
-#             generate_black_frames(),
-#             mimetype="multipart/x-mixed-replace; boundary=frame",
-#         )
+        return Response(
+            generate_black_frames(),
+            mimetype="multipart/x-mixed-replace; boundary=frame",
+        )
 
 
-@app.route("/pendant_drop_video_feed")
-def pendant_drop_video_feed():
-    return Response(
-        pendant_drop_camera.generate_frames(),
-        mimetype="multipart/x-mixed-replace; boundary=frame",
-    )
+
+@app.route("/pendant_drop_latest_image")
+def pendant_drop_latest_image():
+    return send_from_directory("static/plots_cache", "pendant_drop_latest.png")
 
 
 @app.route("/toggle_pendant_drop_camera", methods=["POST"])
@@ -280,11 +279,3 @@ def status():
     print(f"Status: {status}")
     return jsonify({"status": status})
 
-
-@app.route("/pendant_drop_plot_feed")
-def pendant_drop_plot_feed():
-    pendant_drop_camera.start_plot_frame_thread()
-    return Response(
-        pendant_drop_camera.generate_plot_frame(),
-        mimetype="multipart/x-mixed-replace; boundary=frame",
-    )

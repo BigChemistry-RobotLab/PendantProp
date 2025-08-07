@@ -40,7 +40,10 @@ class PendantDropCamera:
             self.camera = None
 
     def _initialize_attributes(self):
-        self.stop_background_threads = threading.Event()
+        self.stop_stream_event = threading.Event()
+        self.stop_process_event = threading.Event()
+        self.stop_capture_before_measurement_event = threading.Event()
+        self.stop_check_event = threading.Event()
         self.capturing = False
         self.capturing_before_measurement = False
         self.streaming = False
@@ -73,13 +76,14 @@ class PendantDropCamera:
     def start_stream(self):
         if not self.streaming:
             self.streaming = True
+            self.stop_stream_event.clear()
             self.stream_thread = threading.Thread(target=self._stream, daemon=True)
             self.stream_thread.start()
 
     def stop_stream(self):
         self.streaming = False
         if self.stream_thread is not None:
-            self.stop_background_threads.set()
+            self.stop_stream_event.set()
             self.stream_thread.join()
         self.stream_thread = None
         self.current_image = None
@@ -88,14 +92,21 @@ class PendantDropCamera:
         if self.camera is None:
             return
         self.camera.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
-        while self.streaming and self.camera.IsGrabbing():
+        last_cache_save = time.time()
+        while self.streaming and self.camera.IsGrabbing() and not self.stop_stream_event.is_set():
             grabResult = self.camera.RetrieveResult(
                 5000, pylon.TimeoutHandling_ThrowException
             )
             if grabResult.GrabSucceeded():
                 image = self.converter.Convert(grabResult)
-                self.current_image = image.GetArray()
+                frame = image.GetArray()
+                with self.lock:
+                    self.current_image = frame
                 grabResult.Release()
+                # Save cache image every second
+                if time.time() - last_cache_save > 2:
+                    self.save_latest_image_to_cache()
+                    last_cache_save = time.time()
         self.camera.StopGrabbing()
 
     # Capture Management
@@ -104,6 +115,7 @@ class PendantDropCamera:
             self.stop_capture_before_measurement()
             self.start_time = datetime.now()
             self.capturing = True
+            self.stop_process_event.clear()
             self.process_thread = threading.Thread(
                 target=self._process_thread, daemon=True
             )
@@ -113,7 +125,7 @@ class PendantDropCamera:
     def stop_capture(self):
         self.capturing = False
         if self.process_thread is not None:
-            self.stop_background_threads.set()
+            self.stop_process_event.set()
             self.process_thread.join()
             self.logger.info("Camera: stopped capturing")
         self.process_thread = None
@@ -122,19 +134,20 @@ class PendantDropCamera:
 
     def _process_thread(self):
         last_save_time = time.time()
-        while self.capturing:
-            if self.current_image is not None:
+        while self.capturing and not self.stop_process_event.is_set():
+            img = self.current_image
+            if img is not None:
                 if time.time() - last_save_time >= 1.0:
-                    self._save_image(self.current_image)
+                    self._save_image(img)
                     last_save_time = time.time()
-                with self.lock:
-                    self._analyze_image(self.current_image)
-            time.sleep(0.1)
+                self._analyze_image(img)
+            time.sleep(0.01)
     
     def start_capture_before_measurement(self):
         if not self.capturing_before_measurement:
             self.start_time = datetime.now()
             self.capturing_before_measurement = True
+            self.stop_capture_before_measurement_event.clear()
             self.capture_before_measurement_thread = threading.Thread(
                 target=self._capture_before_measurement_thread, daemon=True
             )
@@ -144,7 +157,7 @@ class PendantDropCamera:
     def stop_capture_before_measurement(self):
         self.capturing_before_measurement = False
         if self.capture_before_measurement_thread is not None:
-            self.stop_background_threads.set()
+            self.stop_capture_before_measurement_event.set()
             self.capture_before_measurement_thread.join()
             self.logger.info("Camera: stopped capturing before")
         self.capture_before_measurement_thread = None
@@ -153,10 +166,12 @@ class PendantDropCamera:
 
     def _capture_before_measurement_thread(self):
         last_save_time = time.time()
-        while self.capturing_before_measurement:
-            if self.current_image is not None:
+        while self.capturing_before_measurement and not self.stop_capture_before_measurement_event.is_set():
+            with self.lock:
+                img = self.current_image.copy() if self.current_image is not None else None
+            if img is not None:
                 if time.time() - last_save_time >= 1.0:
-                    self._save_image_before_capture(self.current_image)
+                    self._save_image_before_capture(img)
                     last_save_time = time.time()
             time.sleep(0.1)
 
@@ -165,6 +180,7 @@ class PendantDropCamera:
         if not self.checking:
             self.start_time = datetime.now()
             self.checking = True
+            self.stop_check_event.clear()
             self.check_thread = threading.Thread(
                 target=self._check, args=(vol_droplet,), daemon=True
             )
@@ -174,6 +190,7 @@ class PendantDropCamera:
     def stop_check(self):
         self.checking = False
         if self.check_thread is not None:
+            self.stop_check_event.set()
             self.check_thread.join()
         self.check_thread = None
         self.analysis_image = None
@@ -183,9 +200,11 @@ class PendantDropCamera:
 
     def _check(self, vol_droplet):
         while self.checking:
-            if self.current_image is not None:
+            with self.lock:
+                img = self.current_image.copy() if self.current_image is not None else None
+            if img is not None:
                 wortington_number = self._check_image(
-                    img=self.current_image, vol_droplet=vol_droplet
+                    img=img, vol_droplet=vol_droplet
                 )
                 if wortington_number is not None:
                     self.wortington_numbers.append(wortington_number)
@@ -209,14 +228,13 @@ class PendantDropCamera:
         try:
             time_stamp = datetime.now()
             relative_time = (time_stamp - self.start_time).total_seconds()
-
             st, analysis_image = self.analyzer.image2st(img)
-
             self.st_t.append([relative_time, st])
-            self.analysis_image = analysis_image
-
+            with self.lock:
+                self.analysis_image = analysis_image
         except Exception as e:
-            self.analysis_image = None
+            with self.lock:
+                self.analysis_image = None
 
     def _check_image(self, img, vol_droplet):
         try:
@@ -224,24 +242,27 @@ class PendantDropCamera:
         except Exception:
             return None
 
-    # Frame Generation
-    def generate_frames(self):
-        while True:
-            if self.analysis_image is not None:
-                image4feed = self.analysis_image
-            else:
-                image4feed = self.current_image
+    # # Frame Generation
+    # def generate_frames(self):
+    #     while True:
+    #         with self.lock:
+    #             image4feed = self.analysis_image if self.analysis_image is not None else self.current_image
+    #         if image4feed is not None:
+    #             ret, buffer = cv2.imencode(".jpg", image4feed)
+    #             if ret:
+    #                 frame = buffer.tobytes()
+    #                 yield (
+    #                     b"--frame\r\n"
+    #                     b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
+    #                 )
+    #         else:
+    #             time.sleep(0.05)
 
-            if image4feed is not None:
-                ret, buffer = cv2.imencode(".jpg", image4feed)
-                if ret:
-                    frame = buffer.tobytes()
-                    yield (
-                        b"--frame\r\n"
-                        b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
-                    )
-            else:
-                time.sleep(0.05)
+    def save_latest_image_to_cache(self, cache_path="server/static/plots_cache/pendant_drop_latest.png"):
+        with self.lock:
+            image4cache = self.analysis_image if self.analysis_image is not None else self.current_image
+            if image4cache is not None:
+                cv2.imwrite(cache_path, image4cache)
 
     # Cleanup
     def stop_measurement(self):

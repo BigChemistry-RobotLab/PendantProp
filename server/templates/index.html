@@ -14,9 +14,10 @@
         }
 
         setInterval(function() {
+            refreshImage('pendant-drop-latest', "{{ url_for('static', filename='plots_cache/pendant_drop_latest.png') }}");
             refreshImage('results-plot', "{{ url_for('static', filename=file_path_results_plot) }}");
             refreshImage('dynamic-surface-tension', "{{ url_for('static', filename=file_path_dynamic_surface_tension) }}");
-        }, 5000); // Refresh the images every 5 seconds
+        }, 2000); // Refresh the images every 2 seconds
     </script>
 </head>
 <body>
@@ -44,20 +45,24 @@
         </form>
 
     </div>
-    <div class="image-grid-new">
-        <div class="grid-item-large">
-            <h3>Pendant Drop Camera</h3>
-            <iframe src="{{ url_for('pendant_drop_video_feed') }}" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>
         </div>
-        <div class="grid-item-small">
+
+
+    <div class="image-grid">
+        <div class="grid-item">
+            <h3>Webcam Opentron</h3>
+            <iframe src="{{ url_for('opentron_video_feed') }}" width="480" height="360" frameborder="0" allowfullscreen></iframe>
+        </div>
+        <div class="grid-item">
+            <h3>Camera Pendant Drop</h3>
+            <img id="pendant-drop-latest" src="{{ url_for('static', filename='plots_cache/pendant_drop_latest.png') }}">
+        </div>
+        <div class="grid-item">
             <img id="dynamic-surface-tension" src="{{ url_for('static', filename=file_path_dynamic_surface_tension) }}" alt="No surface tension over time data available">
         </div>
-        <div class="grid-item-small">
-            <img id="results-plot" src="{{ url_for('static', filename=file_path_results_plot) }}" alt="No equilibrium surface tension data available.">
+        <div class="grid-item">
+            <img id="results-plot" src="{{ url_for('static', filename=file_path_results_plot) }}" alt="No equillibrium surface tension data available.">
         </div>
-    </div>
-    <div class="status-bar">
-        Last action: {{ last_action }}
     </div>
 </body>
 </html>
