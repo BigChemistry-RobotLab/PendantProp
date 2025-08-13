@@ -239,24 +239,24 @@ class PendantDropCamera:
     def _check_image(self, img, vol_droplet):
         try:
             return self.analyzer.image2wortington(img=img, vol_droplet=vol_droplet)
-        except Exception:
+        except Exception as e:
             return None
 
     # # Frame Generation
-    # def generate_frames(self):
-    #     while True:
-    #         with self.lock:
-    #             image4feed = self.analysis_image if self.analysis_image is not None else self.current_image
-    #         if image4feed is not None:
-    #             ret, buffer = cv2.imencode(".jpg", image4feed)
-    #             if ret:
-    #                 frame = buffer.tobytes()
-    #                 yield (
-    #                     b"--frame\r\n"
-    #                     b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
-    #                 )
-    #         else:
-    #             time.sleep(0.05)
+    def generate_frames(self):
+        while True:
+            with self.lock:
+                image4feed = self.analysis_image if self.analysis_image is not None else self.current_image
+            if image4feed is not None:
+                ret, buffer = cv2.imencode(".jpg", image4feed)
+                if ret:
+                    frame = buffer.tobytes()
+                    yield (
+                        b"--frame\r\n"
+                        b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
+                    )
+            else:
+                time.sleep(0.05)
 
     def save_latest_image_to_cache(self, cache_path="server/static/plots_cache/pendant_drop_latest.png"):
         with self.lock:

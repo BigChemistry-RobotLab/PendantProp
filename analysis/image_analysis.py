@@ -330,7 +330,6 @@ class PendantDropAnalysis:
 
     def check_diameter(self):
         diameter_needle_px_given = self.settings["NEEDLE_DIAMETER_PX"]
-        print(f"measured needle diameter: {self.needle_diameter_px} px".ljust(30), end="\r")
         if 0.98*diameter_needle_px_given < self.needle_diameter_px < 1.02*diameter_needle_px_given:
             return True
         else:
@@ -342,10 +341,14 @@ class PendantDropAnalysis:
         st = self.analyse()
         if st > 20:
             if self.check_diameter():
-                return self._calculate_wortington(vol_droplet=vol_droplet, st=st)
+                wo = self._calculate_wortington(vol_droplet=vol_droplet, st=st)
+                print(f"dia: {self.needle_diameter_px} px, wo: {wo:.2f}, st: {st:.2f}".ljust(30), end="\r")
+                return wo
             else:
+                print(f"dia: {self.needle_diameter_px} px, too big probably droplet sticking.".ljust(30), end="\r")
                 return 0
         else:
+            print(f"surface tension ({st:.2f}) too low, no droplet observer")
             return 0
 
     def image2st(self, img):

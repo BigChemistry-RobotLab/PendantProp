@@ -7,8 +7,7 @@ import numpy as np
 ## Custom code
 from hardware.cameras.pendant_drop_camera import PendantDropCamera
 from utils.utils import calculate_equillibrium_value
-from hardware.opentrons.opentrons_api import OpentronsAPI
-from hardware.opentrons.configuration import Configuration
+from hardware.opentrons.containers import PlateWell
 
 # Initialisation
 pd_camera = PendantDropCamera()
@@ -17,15 +16,27 @@ pd_camera.start_stream()
 
 analysis = True
 if analysis:
-    opentrons_api = OpentronsAPI()
-    opentrons_api.initialise()
-    config = Configuration(opentrons_api=opentrons_api)
-    labware = config.load_labware()
-    containers = config.load_containers()
-    container = containers["8H1"]
+    fake_labware_info = {
+        "location": 7,
+        "max_volume": 300,
+        "labware_id": None,
+        "labware_name": None,
+        "depth": None,
+        "well_diameter": None
+    }
+    container = PlateWell(
+        labware_info=fake_labware_info,
+        well='A1',
+        initial_volume_mL=0,
+        solution_name=None,
+        concentration=None
+    )
     pd_camera.initialize_measurement(container=container, drop_count=1)
     # pd_camera.start_capture_before_measurement()
-    pd_camera.start_capture()
+    # pd_camera.start_capture()
+    volume_droplet =12.85
+    pd_camera.start_check(vol_droplet=volume_droplet)
+
 
 
 # Generate frames
@@ -41,8 +52,9 @@ for frame_data in pd_camera.generate_frames():
         if analysis:
             st_t = pd_camera.st_t
             st_eq = calculate_equillibrium_value(x=st_t, n_eq_points=len(st_t), column_index=1)
+            wo = pd_camera.wortington_numbers
             print(f"equilibrium surface tension: {st_eq}")
-        
+            print(f"worthington number: {np.mean(wo)}")
         pd_camera.stop_measurement()
         break
 

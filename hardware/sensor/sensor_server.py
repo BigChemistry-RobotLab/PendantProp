@@ -42,7 +42,7 @@ def get_data():
 
 def _run_flask():
     # Prevent Flask reloader from spawning extra processes
-    app.run(host='0.0.0.0', port=5001, use_reloader=False)
+    app.run(debug=False, host='0.0.0.0', port=5001, use_reloader=False)
 
 def start_server():
     # Start serial reading in a daemon thread
