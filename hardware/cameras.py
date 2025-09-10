@@ -8,9 +8,6 @@ from datetime import datetime
 import matplotlib
 
 matplotlib.use("Agg")  # Use the Agg backend for non-GUI rendering
-import matplotlib.pyplot as plt
-import numpy as np
-from io import BytesIO
 
 from utils.load_save_functions import load_settings, load_info
 from utils.logger import Logger
@@ -92,17 +89,20 @@ class PendantDropCamera:
         self.well_id = None
         self.st_t = []  # Surface tension measurements
         self.wortington_numbers = []  # Wortington numbers
+        self.capturing_before_measurement = False        
+        self.capture_before_measurement_thread = None
 
     def initialize_measurement(self, well_id: str, drop_count: int):
         self.settings = load_settings()
-        characterization_info = load_info(
-            file_name=self.settings["CHARACTERIZATION_INFO_FILENAME"]
-        )
-        self.max_measurement_time = float(characterization_info["measure time"].iloc[0])
+        # characterization_info = load_info(
+        #     file_name=self.settings["CHARACTERIZATION_INFO_FILENAME"]
+        # )
+        # self.max_measurement_time = float(characterization_info["measure time"].iloc[0])
+        self.max_measurement_time = float(self.settings["MAX_MEASUREMENT_TIME"])
         self.experiment_name = self.settings["EXPERIMENT_NAME"]
         self.save_dir = f"experiments/{self.experiment_name}/data"
         self.analyzer = PendantDropAnalysis()
-        self.photo_step_time = 1
+        # self.photo_step_time = 1
         self.logger = Logger(
             name="protocol",
             file_path=f"experiments/{self.experiment_name}/meta_data",
@@ -115,8 +115,11 @@ class PendantDropCamera:
     def start_stream(self):
         if not self.streaming:
             self.streaming = True
-            if self.max_measurement_time > 600:
-                self.photo_step_time = round(self.max_measurement_time/200)
+            if self.max_measurement_time > 1801:
+                self.photo_step_time = round(self.max_measurement_time/600)
+            else:
+                print("infinite photos")
+                self.photo_step_time = 1
             self.stream_thread = threading.Thread(target=self._stream, daemon=True)
             self.stream_thread.start()
 
@@ -145,6 +148,7 @@ class PendantDropCamera:
     # Capture Management
     def start_capture(self):
         if not self.capturing:
+            self.stop_capture_before_measurement()
             self.start_time = datetime.now()
             self.capturing = True
             self.process_thread = threading.Thread(
@@ -172,6 +176,35 @@ class PendantDropCamera:
                     last_save_time = time.time()
                 with self.lock:
                     self._analyze_image(self.current_image)
+            time.sleep(0.1)
+
+    def start_capture_before_measurement(self):
+        if not self.capturing_before_measurement:
+            self.start_time = datetime.now()
+            self.capturing_before_measurement = True
+            self.capture_before_measurement_thread = threading.Thread(
+                target=self._capture_before_measurement_thread, daemon=True
+            )
+            self.capture_before_measurement_thread.start()
+            self.logger.info("Camera: capturing images before measument.")
+
+    def stop_capture_before_measurement(self):
+        self.capturing_before_measurement = False
+        if self.capture_before_measurement_thread is not None:
+            self.stop_background_threads.set()
+            self.capture_before_measurement_thread.join()
+            self.logger.info("Camera: stopped capturing before")
+        self.capture_before_measurement_thread = None
+        self.analysis_image = None
+        self.current_image = None
+
+    def _capture_before_measurement_thread(self):
+        last_save_time = time.time()
+        while self.capturing_before_measurement:
+            if self.current_image is not None:
+                if time.time() - last_save_time >= 1.0:
+                    self._save_image_before_capture(self.current_image)
+                    last_save_time = time.time()
             time.sleep(0.1)
 
     # Check Management
@@ -214,6 +247,13 @@ class PendantDropCamera:
         filename = f"{directory}/{timestamp}.png"
         cv2.imwrite(filename, img)
 
+    def _save_image_before_capture(self, img):
+        directory = f"{self.save_dir}/{self.well_id}/images/droplet_{self.drop_count}/before_measurement"
+        os.makedirs(directory, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{directory}/{timestamp}.png"
+        cv2.imwrite(filename, img)
+
     def _analyze_image(self, img):
         try:
             time_stamp = datetime.now()
@@ -229,7 +269,7 @@ class PendantDropCamera:
 
     def _check_image(self, img, vol_droplet):
         try:
-            return self.analyzer.image2wortington(img=img, vol_droplet=vol_droplet)     # Hier gaat het fout, weet niet waarom precies
+            return self.analyzer.image2wortington(img=img, vol_droplet=vol_droplet) 
         except Exception:
             return None
 
@@ -255,6 +295,7 @@ class PendantDropCamera:
     # Cleanup
     def stop_measurement(self):
         self.stop_capture()
+        self.stop_capture_before_measurement()
         self.stop_check()
         self.stop_stream()
         self.st_t = []

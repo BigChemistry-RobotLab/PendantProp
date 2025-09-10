@@ -1,14 +1,104 @@
 import numpy as np
 
+def find_stock_tubes(containers: dict, tube_type: str = "tube 50"):
+    stock_tubes = []
+    checked = []
+    x = True
+    while x:
+        exceptions = stock_tubes + checked
+        try:
+            tube, valid = get_solution_and_conc(
+                containers=containers,
+                container_type=tube_type,
+                exceptions=exceptions
+            )
+            if valid:
+                if any(sub in containers[tube].solution_name for sub in ["water", "trash"]):
+                    checked.append(tube)
+                else:
+                    stock_tubes.append(tube)
+            else:
+                checked.append(tube)
+        except ValueError:
+            x = False  # No more tubes to check
+    return stock_tubes
+   
+def find_container(
+    containers: dict,
+    content: str = "empty",
+    type: str = "tube",
+    amount: int = 0,
+    conc = None,
+    location = None,
+    checked=[],
+    match=[]
+):
+    x = True
+# Does not give error when less containers than requested are present 
+    while x:
+        exceptions = match + checked
+        # print("exceptions: ",exceptions)
+        try:
+            container, valid = get_solution_and_conc(
+                containers=containers,
+                solution_name=content,
+                container_type=type,
+                conc=conc,
+                exceptions=exceptions,
+                location=location
+            )
+            if valid:
+                match.append(container)
+            else:
+                checked.append(container)
+        except ValueError:
+            x = False  # No more tubes to check
+    if amount == 0:
+        return match
+    else: 
+        return match[:amount]
+
+
 def get_well_id_solution(containers: dict, solution_name: str) -> str:
     for key, container in containers.items():
-        if "tube" in container.CONTAINER_TYPE:
+        if "tube 50" in container.CONTAINER_TYPE:
             if container.solution_name == solution_name:
                 return container.WELL_ID
+        else: 
+            if "tube" in container.CONTAINER_TYPE:
+                if container.solution_name == solution_name:
+                    return container.WELL_ID
     raise ValueError(
         f"No container with type 'tube' and solution name '{solution_name}' found."
     )
 
+def get_solution_and_conc(
+    containers: dict,
+    solution_name: str = None,
+    container_type: str = "tube",
+    volume: float = None,
+    conc: float = None,
+    location: int = None,
+    exceptions: list = []
+) -> tuple[str, bool]:
+    containers = {k: v for k, v in containers.items() if k not in exceptions}
+
+    for key, container in containers.items():
+        if container_type in container.CONTAINER_TYPE:
+            if (
+                (solution_name is None or container.solution_name == solution_name)
+                and (conc is None or float(container.concentration) == conc or str(container.concentration) == conc)
+                and (location is None or container.LOCATION == location)
+                and (volume is None or container.volume_mL == volume)
+            ):
+                return container.WELL_ID, True  # Matching container
+            else:
+                return container.WELL_ID, False  # It's a tube, but doesn't match criteria
+
+    # If no tube found at all
+    raise ValueError(
+        f"No container with type '{container_type}' found after filtering. Searched for solution '{solution_name}' and conc {conc}."
+    )
 
 def get_well_id_concentration(containers: dict, solution: str, requested_concentration: float) -> str:
     differences = []

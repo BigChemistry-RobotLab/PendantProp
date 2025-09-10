@@ -1,13 +1,17 @@
 from hardware.opentrons.pipette import Pipette
 from hardware.opentrons.containers import Container
+from hardware.opentrons.opentrons_api import OpentronsAPI
+from hardware.opentrons.configuration import Configuration
 from utils.logger import Logger
 from utils.search_containers import (
     get_list_of_well_ids_concentration,
     get_well_id_solution,
     get_plate_ids,
+    get_solution_and_conc,
+    find_container
 )
 from utils.load_save_functions import load_settings, load_info
-from utils.utils import get_well_id_from_index
+from utils.utils import get_well_id_from_index, get_tube_id_from_index
 import pandas as pd
 
 
@@ -17,18 +21,23 @@ class Formulater:
         left_pipette: Pipette,
         right_pipette: Pipette,
         containers: dict,
-        labware: dict
+        labware: dict,
+        opentrons_api: OpentronsAPI
     ):
+        self.config = Configuration(opentrons_api=opentrons_api)
         self.left_pipette = left_pipette
         self.right_pipette = right_pipette
         self.containers = containers
         self.labware = labware
-        settings = load_settings()
+        self.settings = load_settings()
         self.logger = Logger(
             name="protocol",
-            file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
+            file_path=f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data',
         )
-        self.wash_index = settings["WASH_INDEX"]
+        self.wash_index = self.settings["WASH_INDEX"]
+        self.mixing_steps = self.settings["MIXING_STEPS_FORMULATION"]
+        self.tube_index = 0
+        self.well_tracker = []
 
     def formulate_exploit_point(
         self,
@@ -68,7 +77,7 @@ class Formulater:
             if volume_from_source / volume_in_source < 0.5:
                 well_id_source = well_id
                 break
-        
+
         if not well_id_source:
             self.logger.error(
                 "None of the sources have enough volume to formulate the exploit point."
@@ -94,7 +103,7 @@ class Formulater:
             volume=volume_water,
             source=self.containers[well_id_water],
             destination=self.containers[well_id_exploit],
-            mix=("after", well_volume / 1.2, 12),
+            mix=("after", well_volume / 1.2, self.mixing_steps),
         )
 
         self.logger.info("Finished formulating exploit point.")
@@ -117,7 +126,8 @@ class Formulater:
         drop_tip_behavior="trash",  # or "return", or "keep"
         solution=None,
         tip_return_info=None,
-        depth_offset=0
+        depth_offset=0,
+        side=None
     ):
         # Select pipette
         if volume < 20:
@@ -139,7 +149,8 @@ class Formulater:
         source=source,
         destination=destination,
         blow_out=True,
-        depth_offset=depth_offset
+        depth_offset=depth_offset,
+        side=side
         )
 
         if mix:
@@ -167,7 +178,7 @@ class Formulater:
         )  # well ID water stock
         well_id_solution = get_well_id_solution(
             containers=self.containers, solution_name=solution_name
-        )
+        )       # Make it jump out of serial dilution and measurement if tube is not found
 
         # log start of serial dilution
         self.logger.info(
@@ -187,28 +198,12 @@ class Formulater:
                 touch_tip=True
             )
             pipette.dispense(
-                volume=well_volume, destination=self.containers[f"{row_id}{i+2}"], blow_out=True
+                volume=well_volume-dilution_volume, destination=self.containers[f"{row_id}{i+2}"], blow_out=True
             )
 
-        # pipette.drop_tip()
+        pipette.aspirate(volume=well_volume, source=self.containers[well_id_solution], touch_tip=True, mix=("before", well_volume / 1.2, int((self.mixing_steps/2))))
         pipette.dispense(
-            volume=0,
-            destination=self.containers[well_id_trash],
-            touch_tip=True,
-            update_info=False,
-            blow_out=True
-        )
-        # pipette.dispense(
-        #     volume=0,
-        #     destination=self.containers[well_id_trash],
-        #     touch_tip=True,
-        #     update_info=False
-        # )
-        # adding surfactant to the first well
-        # pipette.pick_up_tip()
-        pipette.aspirate(volume=dilution_volume, source=self.containers[well_id_solution], touch_tip=True)
-        pipette.dispense(
-            volume=dilution_volume,
+            volume=well_volume,
             destination=self.containers[f"{row_id}1"],
             blow_out=True
         )
@@ -219,21 +214,23 @@ class Formulater:
                 volume=dilution_volume,
                 source=self.containers[f"{row_id}{i}"],
                 touch_tip=True,
+                depth_offset=0.5
             )
             pipette.dispense(
-                volume=dilution_volume, destination=self.containers[f"{row_id}{i+1}"]
+                volume=dilution_volume, destination=self.containers[f"{row_id}{i+1}"], depth_offset=0.5
             )
             pipette.mixing(
                 container=self.containers[f"{row_id}{i+1}"],
-                mix=("after", well_volume / 1.2, 12),
+                mix=("after", well_volume / 1.2, self.mixing_steps),
             )
             pipette.blow_out(container=self.containers[f"{row_id}{i+1}"])
 
-        # transfering half of the volume of the last well to trash to ensure equal volume in all wells (handy for dye check, not per se for surfactants dilutions)
+        # transferring half of the volume of the last well to trash to ensure equal volume in all wells (handy for dye check, not per se for surfactants dilutions)
         pipette.aspirate(
             volume=dilution_volume,
             source=self.containers[f"{row_id}{n_dilutions}"],
             touch_tip=True,
+            depth_offset=0.5
         )
         pipette.dispense(
             volume=dilution_volume,
@@ -245,7 +242,7 @@ class Formulater:
 
         # log end of serial dilution
         self.logger.info("End of serial dilution.")
-    
+
     def fill_plate(self, well_volume: float, solution_name: str, plate_location: int):
         self.logger.info(f"Start filling plate with {solution_name}.")
         well_id_stock = get_well_id_solution(
@@ -262,7 +259,7 @@ class Formulater:
             )
         self.right_pipette.drop_tip()
         self.logger.info("Done filling plate.")
-    
+
     def wash(self, repeat = 2, return_needle = False):
         self.logger.info("Start washing needle.")
         well_id_water = get_well_id_solution(containers=self.containers, solution_name="water_wash")
@@ -271,7 +268,7 @@ class Formulater:
         #     well_id_wash_well = get_well_id_from_index(
         #         well_index=self.wash_index, plate_location=self.labware["plate wash 1"]["location"]
         #     )
-        # else:    
+        # else:
         #     well_id_wash_well = get_well_id_from_index(
         #         well_index=self.wash_index, plate_location=self.labware["plate wash"]["location"]
         #     )
@@ -296,25 +293,201 @@ class Formulater:
             self.right_pipette.dispense(volume=300, destination=self.containers[well_id_wash_well], touch_tip=True, update_info=False)
 
             # flush needle with water via mixing
-            self.left_pipette.mixing(container=self.containers[well_id_wash_well], mix=("after", 20, 5))
-
+            self.left_pipette.mixing(container=self.containers[well_id_wash_well], mix=("after", 20, 10))
+            self.left_pipette.dispense(volume=0, destination=self.containers[well_id_wash_well], blow_out=True, update_info=False)
             # transfer water in cleaning well to trash falcon tube
             self.right_pipette.aspirate(
                 volume=300,
                 source=self.containers[well_id_wash_well],
                 touch_tip=True,
-                update_info=False
+                update_info=False,
+                depth_offset=0.5
             )
             self.right_pipette.dispense(
                 volume=300, destination=self.containers[well_id_trash], update_info=False
             )
-
             self.right_pipette.drop_tip()
 
-        self.left_pipette.clean_on_sponge()
+        # self.left_pipette.clean_on_sponge()
         if return_needle:
             self.left_pipette.return_needle()
         self.wash_index += 1
+
+    # def formulate_dilution_tube(self, dilution_df: pd.DataFrame, label: str, solution, dilution_factor):
+    #     for _, row in dilution_df.iterrows():
+    #         conc = row.iloc[0]
+    #         vol = row.iloc[1]
+    #         updated_mL = vol + 1000  # Adjusted volume
+    #         if updated_mL > 15000:
+    #             raise ValueError(f"There is too much volume required ({updated_mL}) for the tube.")
+    #         # Find an available empty 15 mL tube
+    #         tube_location = find_container(containers=self.containers, content="empty", type="tube 15", amount=1)
+    #         stock_location = find_container(containers=self.containers, content=solution, type="tube")  # Check if this runs over all tubes
+    #         source_stock = min(stock_location, key=lambda x: abs(x - conc))
+    #         self.left_pipette.transfer(
+    #             volume=0
+    #         )
+
+    def formulate_dilution_tube(self, dilution_df: pd.DataFrame, solution, dilution_factor):
+        dilution_df = dilution_df.rename(columns={
+            dilution_df.columns[0]: "dil",           # concentration values
+            dilution_df.columns[1]: "volume_needed"  # raw usage volumes in µL
+        })
+        dilution_df = self.compute_total_required_volumes(dilution_df, dilution_factor)
+        first_time = True
+        water_location = find_container(    # Only needs to be found once
+                containers=self.containers,
+                content="water",
+                type="tube",
+            )
+        for _, row in dilution_df.iterrows():
+            conc = row["dil"]
+            vol_uL = row["total_volume"]
+
+            if vol_uL > 14950:
+                raise ValueError(f"Too much volume required ({vol_uL} mL) for a 15 mL tube.")
+
+            tube_location = find_container( # Needs to be found every run, same for updated stocks 
+                containers=self.containers, # since this script creates them.
+                content="empty",
+                type="tube 15",
+                amount=1
+            )
+            stock_location = find_container(
+                containers=self.containers,
+                content=solution,
+                type="tube",
+                amount=10
+            )
+
+            if len(stock_location) > 1:
+                # pick the tube whose concentration is closest to the target
+                eligible_stocks = [loc for loc in stock_location
+                   if float(self.containers[loc].concentration) >= conc]
+
+                if not eligible_stocks:
+                    raise ValueError(f"No stock found with concentration >= target {conc} mM")
+
+                # Pick the one closest to the target
+                source_stock = min(
+                    eligible_stocks,
+                    key=lambda loc: float(self.containers[loc].concentration) - conc
+                )
+            else:
+                source_stock = stock_location[0]
+
+            if first_time:
+                first_dil_factor = float(self.containers[source_stock].concentration)/conc
+                total_vol = round(dilution_df["total_volume"][0], 0)
+                first_vol_sol = round(total_vol / first_dil_factor, 0)   # stock volume
+                first_vol_water = round(total_vol - first_vol_sol, 0)    # water volume
+                print(first_vol_water, first_vol_sol)
+                quit()
+                # Transfer stock in chunks
+                while first_vol_sol > 0:
+                    transfer_vol_sol = min(1000, max(20, first_vol_sol))
+                    self.left_pipette.transfer(
+                        volume=transfer_vol_sol,
+                        source=source_stock,
+                        destination=tube_location,
+                        touch_tip=True
+                    )
+                    first_vol_sol -= transfer_vol_sol
+
+                # Transfer water in chunks
+                while first_vol_water > 0:
+                    transfer_vol_water = min(1000, max(20, first_vol_water))
+                    self.left_pipette.transfer(
+                        volume=transfer_vol_water,
+                        source=water_location,  
+                        destination=tube_location,
+                        touch_tip=True,
+                        mix=("after", transfer_vol_water*0.9, 3)
+                    )
+                    first_vol_water -= transfer_vol_water
+                first_time = False
+                break   # Should be here?
+
+            while vol_uL > 0:
+                transfer_vol_sol = min(1000, max(20, vol_uL))
+                self.left_pipette.transfer(
+                    volume=vol_uL,  # mL
+                    source=source_stock,
+                    touch_tip=True,
+                    destination=tube_location,
+                )
+                vol_uL -= transfer_vol_sol
+
+            while vol_uL > 0:
+                transfer_vol_sol = min(1000, max(20, vol_uL))
+                self.left_pipette.transfer(
+                    volume=vol_uL,  # mL
+                    source=source_stock,
+                    destination=tube_location,
+                    touch_tip=True,
+                    mix=("after", transfer_vol_water*0.9, 3)
+                )
+                vol_uL -= transfer_vol_sol
+
+    def compute_total_required_volumes(self, df: pd.DataFrame, dilution_factor: float) -> pd.DataFrame:
+        df = df.sort_values("dil", ascending=False).reset_index(drop=True)
+        df["total_volume"] = df["volume_needed"] + 1000  # Start with direct usage, +1000 should be done here
+
+        for i in range(len(df) - 1, 0, -1):  # Work from most dilute to most concentrated
+            required_input = df.loc[i, "total_volume"] / dilution_factor
+            df.loc[i - 1, "total_volume"] += required_input
+
+        return df
+
+    # Legacy version
+    # def formulate_dilution_tube(self, dilution_df: pd.DataFrame, label: str, containers):
+    #         self.containers = containers  # Set initial in-memory container state
+
+    #         for _, row in dilution_df.iterrows():
+    #             conc = row.iloc[0]
+    #             vol = row.iloc[1]
+    #             updated_solution = f"{label}_{conc}"
+    #             updated_conc = conc
+    #             updated_mL = vol + 1  # Adjusted volume
+
+    #             # Find an available empty 15 mL tube
+    #             tube_location = find_container(containers=self.containers, content="empty", type="tube 15", amount=1)
+    #             print("tl",tube_location)
+    #             match = re.match(r"(\d+)([A-H]\d+)", tube_location[0])
+    #             if not match:
+    #                 raise ValueError(f"Invalid tube location format: {tube_location}")
+    #             print("match",match)
+    #             deck_pos = match.group(1)
+    #             well = match.group(2)   # Splitting works properly
+    #             print(deck_pos, well, "dp_w")
+    #             for location, c in self.containers.items():
+    #                 print("cloc",c, location)
+    #                 match = re.match(r"(\d+)([A-H]\d+)", location)
+    #                 print("match2", match)
+    #                 if not match:
+    #                     print("faulty")
+    #                     continue  # skip malformed keys
+
+    #                 c_deck = match.group(1)
+    #                 c_well = match.group(2)
+
+    #                 if c.LOCATION == int(c_deck) and c.WELL == c_well:
+    #                     print(c_deck, c_well, c_deck+c_well)
+    #                     c.solution_name = updated_solution
+    #                     c.concentration = updated_conc
+    #                     c.volume_mL = updated_mL  # or c.initial_volume_mL if that's the attribute
+    #                     self.containers[location] = c
+    #                     print(location)
+    #                     # print(self.containers[location])
+    #                     # print(self.containers[c_deck+c_well])
+    #                     break
+    #             else:
+    #                 raise ValueError(f"Could not find matching container at {deck_pos}{well} in self.containers")
+
+    #             print(f"Updated container at {deck_pos}{well} with {updated_solution}, {updated_conc}, {updated_mL} mL")
+    #             print(self.containers["3A2"])
+    #         print(self.containers["3A2"])
+    #         return self.containers
 
     # def formulate_random_single_well(self, well_id: str, concentrations: dict, well_volume: float = 150.0):
     #     self.logger.info("Starting formulation protocol...\n\n\n")
@@ -336,7 +509,7 @@ class Formulater:
     #     elif not isinstance(surfactants, list) or not surfactants:
     #         self.logger.error("Invalid or empty surfactant list in characterization info.")
     #         return
-        
+
     #     solution_plan = {}
     #     tip_map = {}
     #     solution_index = 0
@@ -386,8 +559,6 @@ class Formulater:
     #     self.logger.info(log_msg)
 
     #     for solution, (_, _, volume, stock_well_id) in solution_plan.items():
-            
-
 
     #         # TODO fix someday
     #         # is_water = solution.lower() == "water"
@@ -416,103 +587,218 @@ class Formulater:
 
     #     self.logger.info("Finished formulating random single wells.")
 
-    def formulate_random_single_well(
-        self,
-        well_ids: list[str],
-        concentrations_per_well: dict[str, dict[str, float]],
-        well_volume: float = 150.0,
-    ):
-        self.logger.info("Starting formulation protocol...\n\n\n")
-        self.settings = load_settings()
-        characterization_info = load_info(
-            file_name=self.settings["CHARACTERIZATION_INFO_FILENAME"]
-        )
-        safety_margin = 0.01
+    # def formulate_random_single_well(
+    #     self,
+    #     well_ids: list[str],
+    #     concentrations_per_well: dict[str, dict[str, float]],
+    #     well_volume: float = 150.0,
+    # ):
+    #     self.logger.info("Starting formulation protocol...\n\n\n")
+    #     self.settings = load_settings()
+    #     characterization_info = load_info(
+    #         file_name=self.settings["CHARACTERIZATION_INFO_FILENAME"]
+    #     )
+    #     safety_margin = 0.01
 
-        try:
-            well_id_water = get_well_id_solution(self.containers, "water")
-        except ValueError as e:
-            self.logger.error(f"Water source not found: {e}")
-            return
+    #     try:
+    #         well_id_water = get_well_id_solution(self.containers, "water")
+    #     except ValueError as e:
+    #         self.logger.error(f"Water source not found: {e}")
+    #         return
 
-        surfactants = characterization_info.get("surfactant", [])
-        if isinstance(surfactants, pd.Series):
-            surfactants = surfactants.tolist()
-        elif not isinstance(surfactants, list) or not surfactants:
-            self.logger.error("Invalid or empty surfactant list in characterization info.")
-            return
+    #     surfactants = characterization_info.get("surfactant", [])
+    #     if isinstance(surfactants, pd.Series):
+    #         surfactants = surfactants.tolist()
+    #     elif not isinstance(surfactants, list) or not surfactants:
+    #         self.logger.error("Invalid or empty surfactant list in characterization info.")
+    #         return
 
-        # Find all components to dispense
-        all_solutions = set()
-        for well_id in well_ids:
-            all_solutions.update(concentrations_per_well.get(well_id, {}).keys())
+    #     # Find all components to dispense
+    #     all_solutions = set()
+    #     for well_id in well_ids:
+    #         all_solutions.update(concentrations_per_well.get(well_id, {}).keys())
 
-        # solution_plan: well_id → solution → (target_conc, stock_conc, volume, stock_well_id)
-        solution_plan = {well_id: {} for well_id in well_ids}
-        total_volumes = {well_id: 0.0 for well_id in well_ids}
+    #     # solution_plan: well_id → solution → (target_conc, stock_conc, volume, stock_well_id)
+    #     solution_plan = {well_id: {} for well_id in well_ids}
+    #     total_volumes = {well_id: 0.0 for well_id in well_ids}
 
-        for well_id in well_ids:
-            concentrations = concentrations_per_well.get(well_id, {})
-            for solution, target_conc in concentrations.items():
-                if pd.isna(target_conc) or target_conc <= 0:
-                    self.logger.warning(f"Skipping {solution} in {well_id} due to missing or invalid concentration.")
-                    continue
+    #     for well_id in well_ids:
+    #         concentrations = concentrations_per_well.get(well_id, {})
+    #         for solution, target_conc in concentrations.items():
+    #             if pd.isna(target_conc) or target_conc <= 0:
+    #                 self.logger.warning(f"Skipping {solution} in {well_id} due to missing or invalid concentration.")
+    #                 continue
 
-                try:
-                    suitable_wells = get_list_of_well_ids_concentration(
-                        containers=self.containers,
-                        solution=solution,
-                        requested_concentration=target_conc,
+    #             try:
+    #                 suitable_wells = get_list_of_well_ids_concentration(
+    #                     containers=self.containers,
+    #                     solution=solution,
+    #                     requested_concentration=target_conc,
+    #                 )
+    #                 stock_well_id = suitable_wells[0]
+    #                 stock_conc = float(self.containers[stock_well_id].concentration)
+    #                 volume_needed = (target_conc * well_volume) / stock_conc
+
+    #                 if not (0 <= volume_needed <= well_volume):
+    #                     raise ValueError(f"Calculated volume {volume_needed:.2f} µL for {solution} in {well_id} is out of range.")
+
+    #                 solution_plan[well_id][solution] = (target_conc, stock_conc, volume_needed, stock_well_id)
+    #                 total_volumes[well_id] += volume_needed
+    #             except ValueError as e:
+    #                 self.logger.error(f"{e}")
+    #                 continue
+
+    #     # Transfer each solution across all wells that need it
+    #     for solution in all_solutions:
+    #         for well_id in well_ids:
+    #             if solution not in solution_plan[well_id]:
+    #                 continue
+    #             _, _, volume, stock_well_id = solution_plan[well_id][solution]
+
+    #             self._transfer(
+    #                 volume=volume,
+    #                 source=self.containers[stock_well_id],
+    #                 destination=self.containers[well_id],
+    #                 solution=solution,
+    #             )
+
+    #             self.logger.debug(
+    #                 f"Transferred {volume:.2f} µL of {solution} from {stock_well_id} to {well_id}."
+    #             )
+
+    #     # Transfer water last
+    #     for well_id in well_ids:
+    #         remaining = well_volume - total_volumes[well_id]
+    #         if remaining < -safety_margin:
+    #             self.logger.error(f"Total volume {total_volumes[well_id]:.2f} µL in {well_id} exceeds well capacity.")
+    #             continue
+
+    #         volume_water = max(remaining, 0.0)
+
+    #         self._transfer(
+    #             volume=volume_water,
+    #             source=self.containers[well_id_water],
+    #             destination=self.containers[well_id],
+    #             solution="water",
+    #         )
+
+    #         self.logger.debug(
+    #             f"Transferred {volume_water:.2f} µL of water to {well_id}."
+    #         )
+
+    #     self.logger.info("Finished formulating wells: " + ", ".join(well_ids))
+
+    def compute_stock_requirements(self, df, stock_conc_list, stock_label):
+        stock_usage = {}
+        for conc in stock_conc_list:
+            used = df[df[f'stock_{stock_label}_used'] == conc][f'vol_stock_{stock_label}'].sum()
+            # print(f"{stock_label}, {conc} mM, {used} uL.")
+            # Add 1000 µL as buffer
+            stock_usage[conc] = used + 1000
+        return stock_usage
+
+    def make_dilution_plan(self, max_stocks, stock_list, main_label, stock_requirements):
+        plan = {}
+        for i, conc in enumerate(stock_list):
+            if i == 0:
+                # Use max_stocks as the source concentration for the first (highest) dilution
+                plan[conc] = {
+                    'source_conc': max_stocks[main_label],     # max stocks for this label
+                    'source_label': f"main_{main_label}",
+                    'target_conc': conc,
+                    'total_vol': stock_requirements[conc],
+                    'dilution_factor': max_stocks[main_label] / conc
+                }
+            else:
+                prev = stock_list[i - 1]
+                plan[conc] = {
+                    'source_conc': prev,
+                    'source_label': f"{main_label}_{prev}",
+                    'target_conc': conc,
+                    'total_vol': stock_requirements[conc],
+                    'dilution_factor': prev / conc
+                }
+        return plan
+
+    def perform_serial_dilutions(self, plan, main_label):
+        for conc, p in plan.items():
+            src = p['source_label']         # Should be the lowest concentration present e.g. 15->1.5->0.15
+            dst = f"{main_label}_{conc}"    # Need to find the next empty falcon tube, indices
+            vol_stock = p['total_vol'] / p['dilution_factor']
+            vol_water = p['total_vol'] - vol_stock
+
+            well_id_water = get_well_id_solution(containers=self.containers, solution_name="water")
+            next_tube = get_tube_id_from_index(
+                tube_index=self.tube_index, rack_location=self.labware["tube rack 15 mL"]["location"]
                     )
-                    stock_well_id = suitable_wells[0]
-                    stock_conc = float(self.containers[stock_well_id].concentration)
-                    volume_needed = (target_conc * well_volume) / stock_conc
+            print(next_tube)
+            proper_conc = get_solution_and_conc(containers=self.containers, solution_name=main_label, conc=conc)
 
-                    if not (0 <= volume_needed <= well_volume):
-                        raise ValueError(f"Calculated volume {volume_needed:.2f} µL for {solution} in {well_id} is out of range.")
+            print(f"Making {p['total_vol'] / 1000:.2f} mL of {conc} mM {main_label.upper()} in well {dst}:")
 
-                    solution_plan[well_id][solution] = (target_conc, stock_conc, volume_needed, stock_well_id)
-                    total_volumes[well_id] += volume_needed
-                except ValueError as e:
-                    self.logger.error(f"{e}")
-                    continue
+            self._transfer(volume=vol_stock, source=self.containers[proper_conc], destination=self.containers[next_tube])
 
-        # Transfer each solution across all wells that need it
-        for solution in all_solutions:
-            for well_id in well_ids:
-                if solution not in solution_plan[well_id]:
-                    continue
-                _, _, volume, stock_well_id = solution_plan[well_id][solution]
+            for steps in range(1, int(round(vol_water,0)) + 1):
+                volume_per_step = vol_water / steps
+                if volume_per_step <= 1000 and round(volume_per_step, 1) == volume_per_step:
+                    break
 
+            for _ in range(steps):
                 self._transfer(
-                    volume=volume,
-                    source=self.containers[stock_well_id],
-                    destination=self.containers[well_id],
-                    solution=solution,
+                    volume=volume_per_step,
+                    source=self.containers[well_id_water],
+                    destination=self.containers[next_tube],
                 )
 
-                self.logger.debug(
-                    f"Transferred {volume:.2f} µL of {solution} from {stock_well_id} to {well_id}."
-                )
+            print(self.containers[next_tube].concentration)
+            self.tube_index += 1
+            # container = self.containers[next_tube](
+            #     labware_info: dict,
+            #     well: str,
+            #     initial_volume_mL: float,
+            #     solution_name: str,
+            #     concentration: any,
+            # )
 
-        # Transfer water last
-        for well_id in well_ids:
-            remaining = well_volume - total_volumes[well_id]
-            if remaining < -safety_margin:
-                self.logger.error(f"Total volume {total_volumes[well_id]:.2f} µL in {well_id} exceeds well capacity.")
-                continue
+    def formulate_batches(self, batch_df: pd.DataFrame, well_volume: int):
+        well_id_water = get_well_id_solution(
+            containers=self.containers, solution_name="water"
+        )
 
-            volume_water = max(remaining, 0.0)
+        print("Step 1: Pipette solution1 stocks (low → high to avoid contamination)")
+        sol1_sort = batch_df.sort_values("dil1", ascending=True)
+        self.right_pipette.pick_up_tip()
+        for _, row in sol1_sort.iterrows():
+            well = row["well_id"]
+            src = f"x_{row['dil1']}" 
+            vol = row["vol1"]
+            self._transfer(volume=vol, source=src, destination=well, drop_tip_behavior="keep", side="left")
+        self.right_pipette.drop_tip()
 
-            self._transfer(
-                volume=volume_water,
-                source=self.containers[well_id_water],
-                destination=self.containers[well_id],
-                solution="water",
+        print("Step 2: Pipette solution2 stocks (low → high to avoid contamination)")
+        sol2_sort = batch_df.sort_values("dil2", ascending=True)
+        self.right_pipette.pick_up_tip()
+        for _, row in sol2_sort.iterrows():
+            well = row["well_id"]
+            src = f"y_{row['dil2']}"  
+            vol = row["vol2"]       
+            self._transfer(volume=vol, source=src, destination=well, drop_tip_behavior="keep", side="right")
+        self.right_pipette.drop_tip()
+
+        print("Step 3: Add MilliQ and mix")
+        for _, row in batch_df.iterrows():
+            self.right_pipette.pick_up_tip()
+            well = row["well_id"]
+            vol = row["vol_water"]
+            if vol == 0:
+                self.right_pipette.mixing(container=well, mix=("after", ))
+            else:
+                self.right_pipette.transfer(
+                volume=vol,
+                source=well_id_water,
+                destination=well,
+                mix=("after", int(round(well_volume / 1.2, 0)), self.mixing_steps),
             )
+            self.right_pipette.drop_tip()
 
-            self.logger.debug(
-                f"Transferred {volume_water:.2f} µL of water to {well_id}."
-            )
-
-        self.logger.info("Finished formulating wells: " + ", ".join(well_ids))
+        return batch_df["well_id"].tolist()

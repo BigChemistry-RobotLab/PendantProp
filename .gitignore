@@ -14,3 +14,9 @@ test_camera.py
 test_protocol.py
 camera_cal.ipynb
 test_analysis.py
+labtest/
+labware_tester
+labware/definitions/3dprinted_15_tuberack_15000ul.json
+labware/definitions/needle_96_tiprack_20ul.json
+labware/definitions/sarstedt_77_tiprack_1000ul.json
+labware/definitions/greinerblackwalls_96_wellplate_392ul.json

@@ -102,7 +102,7 @@ class Container:
 
         # case 4: container contains solution and same solution, but different concentration, is added from source
         elif self.solution_name == source.solution_name:
-            if self.solution_name != "water":
+            if self.solution_name != ("water" or "water_wash"):
                 n_source_mM = float(source.concentration) * volume * 1e-3
                 n_container_mM = float(self.concentration) * (self.volume_mL - volume * 1e-3)
                 self.concentration = (
@@ -268,7 +268,7 @@ class DropStage:
     def aspirate(self, volume, log = True):
         pass
 
-    def dispense(self, volume, source: Container, log = True):  # why does this exist?
+    def dispense(self, volume, source: Container, log = True):
         if self.solution_name == None:
             pass
         else:

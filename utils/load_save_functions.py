@@ -83,8 +83,8 @@ def initialize_results():
             "surface tension eq. (mN/m)",
             "drop count",
             "drop volume (uL)",
-            "max measure time (s)",
-            "flow rate (uL/s)",
+            "measure time (s)",
+            "worthington number",
             "temperature (C)",
             "humidity (%)",
             "pressure (Pa)",
@@ -124,34 +124,15 @@ def append_results(
         )
     else:
         print("Was not able to measure pendant drop!")
-    return results
-
-def append_results_binary(
-    results: pd.DataFrame,
-    dynamic_surface_tension: list,
-    well_id: str,
-    drop_parameters: dict,
-    n_eq_points: int,
-    solutions: dict,
-    sensor_api: SensorAPI,
-):
-    if dynamic_surface_tension:
-        save_dynamic_surface_tension(dynamic_surface_tension, well_id)
-        st_eq = calculate_equillibrium_value(
-            x=dynamic_surface_tension,
-            n_eq_points=n_eq_points,
-            column_index=1,
-        )
-        results = add_data_to_results_binary(
+        results = add_data_to_results(
             results=results,
+            point_type=point_type,
             well_id=well_id,
-            surface_tension_eq=st_eq,
+            surface_tension_eq=0,
             drop_parameters=drop_parameters,
-            solutions=solutions,
+            containers=containers,
             sensor_api=sensor_api,
         )
-    else:
-        print("Was not able to measure pendant drop!")
     return results
 
 def save_dynamic_surface_tension(dynamic_surface_tension, well_id):
@@ -184,15 +165,54 @@ def add_data_to_results(
             "surface tension eq. (mN/m)": [surface_tension_eq],
             "drop count": [drop_parameters["drop_count"]],
             "drop volume (uL)": [drop_parameters["drop_volume"]],
-            "max measure time (s)": [drop_parameters["max_measure_time"]],
-            "flow rate (uL/s)": [drop_parameters["flow_rate"]],
+            "measure time (s)": [drop_parameters["measure_time"]],
             "temperature (C)": [float(sensor_data["Temperature (C)"])],
             "humidity (%)": [float(sensor_data["Humidity (%)"])],
             "pressure (Pa)": [float(sensor_data["Pressure (Pa)"])],
+            "worthington number": [float(drop_parameters["wt_number"])],
         }
     )
     new_row.update
     results = pd.concat([results, new_row], ignore_index=True)
+    return results
+
+def append_results_binary(
+    results: pd.DataFrame,
+    dynamic_surface_tension: list,
+    well_id: str,
+    drop_parameters: dict,
+    n_eq_points: int,
+    solutions: list,
+    concentrations: list,
+    sensor_api: SensorAPI,
+):
+    if dynamic_surface_tension:
+        save_dynamic_surface_tension(dynamic_surface_tension, well_id)
+        st_eq = calculate_equillibrium_value(
+            x=dynamic_surface_tension,
+            n_eq_points=n_eq_points,
+            column_index=1,
+        )
+        results = add_data_to_results_binary(
+            results=results,
+            well_id=well_id,
+            surface_tension_eq=st_eq,
+            drop_parameters=drop_parameters,
+            solutions=solutions,
+            concentrations=concentrations,
+            sensor_api=sensor_api,
+        )
+    else:
+        print("Was not able to measure pendant drop!")
+        results = add_data_to_results_binary(
+            results=results,
+            well_id=well_id,
+            surface_tension_eq=0,
+            drop_parameters=drop_parameters,
+            solutions=solutions,
+            concentrations=concentrations,
+            sensor_api=sensor_api,
+        )
     return results
 
 def add_data_to_results_binary(
@@ -200,30 +220,29 @@ def add_data_to_results_binary(
     well_id: str,
     surface_tension_eq: float,
     drop_parameters: dict,
-    solutions: dict,  # Expecting: {"SDS": 0.1, "NaCl": 0.05}
+    solutions: list,
+    concentrations: list,
     sensor_api=SensorAPI,
 ):
     sensor_data = sensor_api.capture_sensor_data()
 
-    # Define core measurement + metadata fields
-    fixed_data = {
-        "well id": well_id,
-        "surface tension eq. (mN/m)": surface_tension_eq,
-        "drop count": drop_parameters["drop_count"],
-        "drop volume (uL)": drop_parameters["drop_volume"],
-        "max measure time (s)": drop_parameters["max_measure_time"],
-        "flow rate (uL/s)": drop_parameters["flow_rate"],
-        "temperature (C)": float(sensor_data["Temperature (C)"]),
-        "humidity (%)": float(sensor_data["Humidity (%)"]),
-        "pressure (Pa)": float(sensor_data["Pressure (Pa)"]),
-    }
-
-    # Build the row: insert solution concentrations first, then fixed metadata
-    row_data = {"well id": fixed_data.pop("well id")}
-    row_data.update(solutions)      # Add dynamic solution-concentration columns
-    row_data.update(fixed_data)     # Add measurement metadata
-
-    new_row = pd.DataFrame([row_data])
+    new_row = pd.DataFrame(
+        {
+        "well id": [well_id],
+        "solution1": [solutions[0]],
+        "concentration1": [concentrations[0]],
+        "solution2": [solutions[1]],
+        "concentration2": [concentrations[1]],
+        "surface tension eq. (mN/m)": [surface_tension_eq],
+        "drop count": [drop_parameters["drop_count"]],
+        "drop volume (uL)": [drop_parameters["drop_volume"]],
+        "measure time (s)": [drop_parameters["measure_time"]],
+        "temperature (C)": [float(sensor_data["Temperature (C)"])],
+        "humidity (%)": [float(sensor_data["Humidity (%)"])],
+        "pressure (Pa)": [float(sensor_data["Pressure (Pa)"])],
+        "worthington number": [float(drop_parameters["wt_number"])],
+    })
+    new_row.update
     results = pd.concat([results, new_row], ignore_index=True)
     return results
 

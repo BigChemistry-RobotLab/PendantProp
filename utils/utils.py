@@ -38,6 +38,17 @@ def get_wash_well_id_from_index(well_index: int, plate_location: int):
             list_of_wells.append(well_id)
     return list_of_wells[well_index]
 
+def get_tube_id_from_index(tube_index: int, rack_location: int):
+    """
+    Assumes a 5x3 tube rack
+    """
+    list_of_tubes = []
+    for letter in ["A", "B", "C"]:
+        for i in range(1, 6):
+            tube_id = f"{rack_location}{letter}{i}"
+            list_of_tubes.append(tube_id)
+    return list_of_tubes[tube_index]
+
 def play_sound(text: str):
     engine = pyttsx3.init()
     engine.say(text)

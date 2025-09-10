@@ -90,6 +90,8 @@ class Pipette:
 
         if return_to_tiprack:
             if not tiprack_labware_id or not tip_well_name:
+                print(tip_well_name)
+                print(tiprack_labware_id)
                 self.logger.error("Missing tiprack ID or well name for returning tip.")
                 return
             self.opentrons_api.drop_tip(
@@ -136,10 +138,11 @@ class Pipette:
         if not self.has_needle:
             self.logger.info("No needle to return!")
             return
-
+        print("Not dropping the needle due to possible breakage!")
+        return
         # bit deeper to plunge the needle in the tip rack
         offset = self.OFFSET.copy()
-        offset['z'] -= 40
+        offset['z'] -= 13
 
         self.opentrons_api.drop_tip(
             pipette_id=self.PIPETTE_ID,
@@ -176,6 +179,7 @@ class Pipette:
         flow_rate=100,
         log=True,
         update_info=True,
+        side=None
     ):
 
         # check if pipette has tip
@@ -199,11 +203,11 @@ class Pipette:
 
         if mix and (mix_order == "before" or mix_order == "both"):
             self.mixing(container=source, mix=mix)
-
         self.opentrons_api.aspirate(
             pipette_id=self.PIPETTE_ID,
             labware_id=source.LABWARE_ID,
             well=source.WELL,
+            location=source.LOCATION,
             volume=volume,
             depth=source.height_mm - source.DEPTH + depth_offset,
             offset=self.OFFSET,
@@ -213,7 +217,7 @@ class Pipette:
             self.mixing(container=source, mix=mix)
 
         if touch_tip:
-            self.touch_tip(container=source)
+            self.touch_tip(container=source, side=side)
 
         # update information:
         if update_info:
@@ -237,6 +241,7 @@ class Pipette:
         flow_rate=100,
         log=True,
         update_info=True,
+        side=None
     ):
         if not self.has_tip and not self.has_needle:
             self.logger.error(
@@ -258,11 +263,15 @@ class Pipette:
 
         if mix and (mix_order == "before" or mix_order == "both"):
             self.mixing(container=destination, mix=mix)
-
+        
+        if destination.CONTAINER_TYPE == "Plate well":
+            if destination.volume_mL == 0.:
+                depth_offset += 1
         self.opentrons_api.dispense(
         pipette_id=self.PIPETTE_ID,
         labware_id=destination.LABWARE_ID,
         well=destination.WELL,
+        location=destination.LOCATION,
         volume=volume,
         depth=destination.height_mm - destination.DEPTH + depth_offset, 
         offset=self.OFFSET,
@@ -273,7 +282,7 @@ class Pipette:
         if blow_out:
             self.blow_out(container=destination)
         if touch_tip:
-            self.touch_tip(container=destination)
+            self.touch_tip(container=destination, side=side)
 
         if update_info:
             self.volume -= volume
@@ -295,11 +304,12 @@ class Pipette:
         blow_out=False,
         update_info=True,
         depth_offset=0,
+        side=None
     ):
         self.logger.info(
             f"Transferring {volume} uL from {source.WELL_ID} to well {destination.WELL_ID} with {self.MOUNT} pipette."
         )
-        self.aspirate(volume=volume, source=source, touch_tip=touch_tip, mix=mix, update_info=update_info)
+        self.aspirate(volume=volume, source=source, touch_tip=touch_tip, mix=mix, update_info=update_info, side=side)
         self.dispense(
             volume=volume,
             destination=destination,
@@ -307,7 +317,8 @@ class Pipette:
             mix=mix,
             blow_out=blow_out,
             update_info=update_info,
-            depth_offset=depth_offset 
+            depth_offset=depth_offset ,
+            side=side
         )
 
     def move_to_well(self, container: Container, offset=None, depth_offset=0):
@@ -324,6 +335,23 @@ class Pipette:
             pipette_id=self.PIPETTE_ID,
             labware_id=container.LABWARE_ID,
             well=container.WELL,
+            offset=offset_move,
+        )
+
+    def move_to_tip(self, well, offset=None, depth_offset=0):
+        if offset == None:
+            offset_move = self.OFFSET.copy()
+        else:
+            offset_move = self.OFFSET.copy()
+            for key in offset:
+                offset_move[key] += offset[key]
+
+        offset_move["z"] += depth_offset
+        tips_id = self.TIPS_INFO[next(iter(self.TIPS_INFO))]["labware_id"]
+        self.opentrons_api.move_to_well(
+            pipette_id=self.PIPETTE_ID,
+            labware_id=tips_id,
+            well=well,
             offset=offset_move,
         )
 
@@ -346,37 +374,68 @@ class Pipette:
             offset=offset,
         )
 
-    def touch_tip(self, container: Container, repeat=1):
+    def touch_tip(self, container: Container, repeat=1, side=None):
         if not self.has_tip and not self.has_needle:
             self.logger.error("No tip or needle attached to perform touch_tip!")
             return
+        
         depth = (
             0.05 * container.DEPTH
         )  # little depth to ensure the tip touches the wall of the container
         initial_offset = self.OFFSET.copy()
         initial_offset["z"] -= 0.05 * container.DEPTH
+        if container.CONTAINER_TYPE == "Plate well":    
+            depth = (0.15 * container.DEPTH)
+            initial_offset["z"] -= 0.15 * container.DEPTH
+        radius = container.WELL_DIAMETER / 2
+        radius = radius * 0.9  # safety TODO fix
+        if self.MOUNT == 'left':        #TODO fix this Needle
+            radius = radius * 0.85
+            initial_offset["z"] -= 0.1 * container.DEPTH
+            depth -= 0.1
+            # initial_offset["x"] += 0.1?   TODO
         self.opentrons_api.move_to_well(
             pipette_id=self.PIPETTE_ID,
             labware_id=container.LABWARE_ID,
             well=container.WELL,
             offset=initial_offset,
         )
-        radius = container.WELL_DIAMETER / 2
-        radius = radius * 0.9  # safety TODO fix
-        for n in range(repeat):
-            for i in range(4):
+        if side == None:
+            for n in range(repeat):
+                for i in range(4):
+                    offset = (
+                        self.OFFSET.copy()
+                    )  # Create a copy of the offset to avoid modifying the original
+                    offset["z"] -= depth
+                    if i == 0:
+                        offset["x"] -= radius
+                    elif i == 1:
+                        offset["x"] += radius
+                    elif i == 2:
+                        offset["y"] -= radius
+                    elif i == 3:
+                        offset["y"] += radius
+                    self.opentrons_api.move_to_well(
+                        pipette_id=self.PIPETTE_ID,
+                        labware_id=container.LABWARE_ID,
+                        well=container.WELL,
+                        offset=offset,
+                        speed=30,
+                    )
+                    self.opentrons_api.move_to_well(
+                        pipette_id=self.PIPETTE_ID,
+                        labware_id=container.LABWARE_ID,
+                        well=container.WELL,
+                        offset=initial_offset,
+                        speed=30,
+                    )
+        elif side == "left":
+            for n in range(repeat):
                 offset = (
                     self.OFFSET.copy()
                 )  # Create a copy of the offset to avoid modifying the original
                 offset["z"] -= depth
-                if i == 0:
-                    offset["x"] -= radius
-                elif i == 1:
-                    offset["x"] += radius
-                elif i == 2:
-                    offset["y"] -= radius
-                elif i == 3:
-                    offset["y"] += radius
+                offset["x"] -= radius
                 self.opentrons_api.move_to_well(
                     pipette_id=self.PIPETTE_ID,
                     labware_id=container.LABWARE_ID,
@@ -391,14 +450,36 @@ class Pipette:
                     offset=initial_offset,
                     speed=30,
                 )
-
+        elif side == "right":
+            for n in range(repeat):
+                offset = (
+                    self.OFFSET.copy()
+                )  # Create a copy of the offset to avoid modifying the original
+                offset["z"] -= depth
+                offset["x"] += radius
+                self.opentrons_api.move_to_well(
+                    pipette_id=self.PIPETTE_ID,
+                    labware_id=container.LABWARE_ID,
+                    well=container.WELL,
+                    offset=offset,
+                    speed=30,
+                )
+                self.opentrons_api.move_to_well(
+                    pipette_id=self.PIPETTE_ID,
+                    labware_id=container.LABWARE_ID,
+                    well=container.WELL,
+                    offset=initial_offset,
+                    speed=30,
+                )
+        else:
+            self.logger.error(f"Side is not defined ({side})")
         self.logger.info(f"Touched tip performed, repeated {repeat} times")
 
-    def mixing(self, container: Container, mix: any):
-        mix_order, volume_mix, repeat_mix = mix
+    def mixing(self, container: Container, mix: any):   # example ("before", 20, 5), where before is when the mixing happens
+        mix_order, volume_mix, repeat_mix = mix         # where 20 is the volume and 5 the amount of repeats 
         for n in range(repeat_mix):
-            self.aspirate(volume=volume_mix, source=container, log=False, update_info=False)
-            self.dispense(volume=volume_mix, destination=container, log=False, update_info=False)
+            self.aspirate(volume=volume_mix, source=container, log=False, update_info=False, depth_offset=0.7)
+            self.dispense(volume=volume_mix, destination=container, log=False, update_info=False, depth_offset=0.7)
         self.logger.info(
             f"Done with mixing in {container.WELL_ID} with order {mix_order}, with volume {volume_mix} uL, repeated {repeat_mix} times"
         )

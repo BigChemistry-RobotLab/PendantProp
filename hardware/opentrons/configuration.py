@@ -163,6 +163,8 @@ class Configuration:
             return FalconTube50
         elif "plate" in labware_name:
             return PlateWell
+        # elif "drop_stage" in labware_name:
+        #     return DropStage
         else:
             self.logger.warning(
                 f"labware {labware_name} is container, but type is not found!"

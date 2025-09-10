@@ -21,13 +21,17 @@ class PendantDropAnalysis:
         self.settings = load_settings()
         self.density = float(self.settings["DENSITY"])
         self.needle_diameter_mm = self.settings["DIAMETER_NEEDLE_MM"] 
-        self.needle_diameter_px = None
+        self.needle_diameter_px = self.settings["NEEDLE_DIAMETER_PX"]
         # self.scale = float(self.settings["SCALE"])
         self.gravity_constant = 9.80665
         self.file_path = None
         self.raw_image = None
         self.processed_image = None
         self.analysis_image = None
+        self.logger = Logger(
+            name="protocol",
+            file_path=f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data',
+        )
 
     def select_image(self):
         # Create Tkinter root window
@@ -140,7 +144,7 @@ class PendantDropAnalysis:
 
         right_point_needle = contourright[-1][0]
         left_point_needle = contourleft[0][0]
-        self.needle_diameter_px = right_point_needle[0]-left_point_needle[0]
+        # self.needle_diameter_px = right_point_needle[0]-left_point_needle[0]
         self.scale = self.needle_diameter_mm / self.needle_diameter_px
         # Adjust the coordinates of the needle points to the original image
 
@@ -330,21 +334,21 @@ class PendantDropAnalysis:
     
     def check_diameter(self):
         diameter_needle_px_given = self.settings["NEEDLE_DIAMETER_PX"]
-        if 0.95*diameter_needle_px_given < self.needle_diameter_px < 1.05*diameter_needle_px_given:
+        if 0.92*diameter_needle_px_given < self.needle_diameter_px < 1.08*diameter_needle_px_given:
             return True
         else:
-            # print(f"too large of diameter ({self.needle_diameter_px} px), droplet probably sticking to needle.")
+            self.logger.warning(f"too large of diameter ({self.needle_diameter_px} px), droplet probably sticking to needle.")
             return False
     
     def image2wortington(self, img, vol_droplet):
         self.raw_image = img    
         self.process_image()
-        st = self.analyse()     # Hier gaat het fout, max() arg is an empty sequence
+        st = self.analyse()
         if st > 20:
-            if self.check_diameter():
-                return self._calculate_wortington(vol_droplet=vol_droplet, st=st)
-            else:
-                return 0
+            # if self.check_diameter():
+            return self._calculate_wortington(vol_droplet=vol_droplet, st=st)
+            # else:
+                # return 0
         else:
             return 0
 

@@ -83,30 +83,23 @@ class Plotter:
     def plot_results_concentration(self, df: pd.DataFrame, solution_name: str):
         try:
             if not df.empty:
-                df_solution = df.loc[df["solution"] == solution_name]
-                # concentrations = df_solution["concentration"]
-                # st_eq = df_solution["surface tension eq. (mN/m)"]
-                point_types = df_solution["point type"]
+                df_solution = df[df["solution"] == solution_name].copy()
+
+                seen = {}
 
                 fig, ax = plt.subplots()
 
-                # Plot explore points in blue (C0)
-                explore_points = df_solution[point_types == "explore"]
-                ax.scatter(
-                    explore_points["concentration"],
-                    explore_points["surface tension eq. (mN/m)"],
-                    color="C0",
-                    label="Explore",
-                )
+                for _, row in df_solution.iterrows():
+                    conc = row["concentration"]
+                    st = row["surface tension eq. (mN/m)"]
+                    key = (solution_name, conc)
 
-                # Plot exploit points in orange (C1)
-                exploit_points = df_solution[point_types == "exploit"]
-                ax.scatter(
-                    exploit_points["concentration"],
-                    exploit_points["surface tension eq. (mN/m)"],
-                    color="C1",
-                    label="Exploit",
-                )
+                    run_index = seen.get(key, 0)
+                    color = f"C{run_index % 10}"
+
+                    ax.scatter(conc, st, color=color, label=f"Run {run_index + 1}" if key not in seen else None)
+
+                    seen[key] = run_index + 1
 
                 ax.set_ylim(20, 80)
                 ax.set_xscale("log")
@@ -116,15 +109,17 @@ class Plotter:
                     f"{self.settings['EXPERIMENT_NAME']}, solution: {solution_name}",
                     fontsize=self.fontsize_labels,
                 )
-                ax.legend()
+
+                handles, labels = ax.get_legend_handles_labels()
+                by_label = dict(zip(labels, handles))
+                ax.legend(by_label.values(), by_label.keys())
+
                 plt.tight_layout()
 
-                # save in experiment folder and plots cache for web interface
-                plt.savefig(
-                    f"experiments/{self.settings['EXPERIMENT_NAME']}/results_plot_{solution_name}.png"
-                )
+                plt.savefig(f"experiments/{self.settings['EXPERIMENT_NAME']}/results_plot_{solution_name}.png")
                 plt.savefig("server/static/plots_cache/results_plot.png")
                 plt.close(fig)
+
         except Exception as e:
             self.logger.warning(
                 f"Plotter: could not create plot results with concentrations for solution: {solution_name}. Error: {e}"
