@@ -67,7 +67,7 @@ class Formulater:
             volume_in_source = self.containers[well_id].volume_mL * 1000
             volume_from_source, volume_water = self._calculate_volumes_from_ratios(
                 suggest_concentration=suggest_concentration,
-                well_concentration=self.containers[well_id].concentration,
+                well_concentration=self.containers[well_id].content[solution_name],
                 well_volume=well_volume,
             )
             if volume_from_source / volume_in_source < 0.5:
@@ -93,7 +93,7 @@ class Formulater:
 
         # Transfer water to exploit point
         well_id_water = get_well_id_solution(
-            containers=self.containers, solution_name="water"
+            containers=self.containers, solution="water"
         )
         self._transfer(
             volume=volume_water,
@@ -143,13 +143,13 @@ class Formulater:
         pipette = self.right_pipette
         # find relevant well id's
         well_id_trash = get_well_id_solution(
-            containers=self.containers, solution_name="trash"
+            containers=self.containers, solution="trash"
         )  # well ID liquid waste
         well_id_water = get_well_id_solution(
-            containers=self.containers, solution_name="water"
+            containers=self.containers, solution="water"
         )  # well ID water stock
         well_id_solution = get_well_id_solution(
-            containers=self.containers, solution_name=solution_name
+            containers=self.containers, solution=solution_name
         )
 
         # log start of serial dilution
@@ -219,7 +219,7 @@ class Formulater:
     def fill_plate(self, well_volume: float, solution_name: str, plate_location: int):
         self.logger.info(f"Start filling plate with {solution_name}.")
         well_id_stock = get_well_id_solution(
-            containers=self.containers, solution_name=solution_name
+            containers=self.containers, solution=solution_name
         )
         well_ids = get_plate_ids(location=plate_location)
         self.right_pipette.pick_up_tip()
@@ -235,8 +235,8 @@ class Formulater:
 
     def wash(self, repeat = 3, return_needle = False):
         self.logger.info("Start washing needle.")
-        well_id_water = get_well_id_solution(containers=self.containers, solution_name="water_wash")
-        well_id_trash = get_well_id_solution(containers=self.containers, solution_name="trash")
+        well_id_water = get_well_id_solution(containers=self.containers, solution="water_wash")
+        well_id_trash = get_well_id_solution(containers=self.containers, solution="trash")
         well_id_wash_well = get_well_id_from_index(
             well_index=self.wash_index, plate_location=self.labware["plate wash"]["location"]
         )

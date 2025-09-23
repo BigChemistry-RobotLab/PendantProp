@@ -51,6 +51,13 @@ class DropletManager:
         """
         Measure pendant drop with retries if the initial measurement fails.
         """
+        # log start
+        content_str = ", ".join(
+            [f"{compound}: {conc} mM" for compound, conc in source.content.items()]
+        )
+        self.logger.info(
+            f"Start pendant drop measurement of {source.WELL_ID}, containing [{content_str}].\n"
+        )
         # initialize variables
         self.source = source
         drop_volume = self.INITIAL_DROP_VOLUME

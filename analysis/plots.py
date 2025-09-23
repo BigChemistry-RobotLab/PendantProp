@@ -102,7 +102,7 @@ class Plotter:
             )
             self._create_empty_plot(f"dynamic_surface_tension_plot_{drop_count}")
 
-    def plot_results_concentration(self, df: pd.DataFrame, solution_name: str):
+    def plot_results_concentration(self, df: pd.DataFrame, container: Container):
         try:
             if not df.empty:
                 df_solution = df.loc[df["solution"] == solution_name]

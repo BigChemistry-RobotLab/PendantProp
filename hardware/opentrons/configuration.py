@@ -109,6 +109,7 @@ class Configuration:
                 location = labware_info["location"]
                 name_solution = layout.loc[i, "solution"]
                 concentration = layout.loc[i, "concentration (mM)"]
+                content = {name_solution: concentration}
                 well = layout.loc[i, "well"]
                 initial_volume = layout.loc[i, "initial volume (mL)"]
 
@@ -129,8 +130,7 @@ class Configuration:
                             labware_info=labware_info,
                             well=well,
                             initial_volume_mL=initial_volume,
-                            solution_name=name_solution,
-                            concentration=concentration,
+                            content=content
                         )
 
             self.logger.info("Containers loaded successfully.")

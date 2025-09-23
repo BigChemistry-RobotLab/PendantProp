@@ -121,7 +121,6 @@ class Protocol:
             dynamic_surface_tension=dynamic_surface_tension,
             container=container,
             drop_parameters=drop_parameters,
-            solution_name=container.solution_name,
             plot_type="wells",
         )
 
@@ -183,9 +182,6 @@ class Protocol:
         ):  # Reverse order for low to high concentration
             well_id_explore = f"{row_id}{i+1}"
             container = self.containers[well_id_explore]
-            self.logger.info(
-                f"Start pendant drop measurement of {container.WELL_ID}, containing {container.concentration} mM {container.solution_name}.\n"
-            )
             dynamic_surface_tension, drop_volume, drop_count = (
                 self.droplet_manager.measure_pendant_drop(
                     source=container, max_measure_time=measure_time
@@ -235,9 +231,6 @@ class Protocol:
                     well_volume=float(self.settings["WELL_VOLUME"]),
                     well_id_exploit=well_id_exploit,
                 )
-                self.logger.info(
-                    f"Start pendant drop measurement of {well_id_exploit}, containing {self.containers[well_id_exploit].concentration} mM {surfactant}.\n"
-                )
                 # self.left_pipette.mixing(container=self.containers[well_id_exploit], mix=("before", 20, 5))
                 dynamic_surface_tension, drop_volume, drop_count = (
                     self.droplet_manager.measure_pendant_drop(
@@ -279,7 +272,6 @@ class Protocol:
         dynamic_surface_tension: list,
         container: Container,
         drop_parameters: dict,
-        solution_name: str,
         plot_type: str
     ) -> None:
         """
@@ -301,5 +293,5 @@ class Protocol:
             )
         elif plot_type == "concentrations":
             self.plotter.plot_results_concentration(
-                df=self.results, solution_name=solution_name
+                df=self.results, container=container
             )
