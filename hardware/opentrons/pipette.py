@@ -109,7 +109,8 @@ class Pipette:
             self.logger.error("tried to pick up needle, while pipette has tip.")
             return
         if self.has_needle:
-            self.logger.error("tried to pick up needle, but pipette already has needle")
+            self.logger.warning("tried to pick up needle, but pipette already has needle")
+            return
 
         # adjust offset to pick the needle up a bit more gently
         offset = self.OFFSET.copy()
@@ -126,23 +127,24 @@ class Pipette:
         self.logger.info("Picked up needle.")
 
     def return_needle(self):
-        if not self.has_needle:
-            self.logger.info("No needle to return!")
-            return
+        pass
+        # if not self.has_needle:
+        #     self.logger.info("No needle to return!")
+        #     return
 
-        # bit deeper to plunge the needle in the tip rack
-        offset = self.OFFSET.copy()
-        offset['z'] -= 40
+        # # bit deeper to plunge the needle in the tip rack
+        # offset = self.OFFSET.copy()
+        # offset['z'] -= 40
 
-        self.opentrons_api.drop_tip(
-            pipette_id=self.PIPETTE_ID,
-            labware_id=self.NEEDLE_INFO["labware_id"],
-            well="A1",
-            offset=offset,
-        )
-        self.has_needle = False
-        self.volume = 0
-        self.logger.info("Returned needle.")
+        # self.opentrons_api.drop_tip(
+        #     pipette_id=self.PIPETTE_ID,
+        #     labware_id=self.NEEDLE_INFO["labware_id"],
+        #     well="A1",
+        #     offset=offset,
+        # )
+        # self.has_needle = False
+        # self.volume = 0
+        # self.logger.info("Returned needle.")
 
     def return_tip(self, well: str = None):
         '''

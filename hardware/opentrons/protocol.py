@@ -76,6 +76,7 @@ class Protocol:
             labware=self.labware,
         )
         self.opentrons_api.home()
+        self.left_pipette.pick_up_needle()
         self.logger.info("Initialization finished.\n\n\n")
 
     def measure_wells(self) -> None:
@@ -92,6 +93,7 @@ class Protocol:
 
         self.left_pipette.return_needle()
         self.logger.info("Finished measure wells protocol.\n\n\n")
+        self.opentrons_api.home()
 
     def _measure_single_well(self, well_id: str) -> None:
         """
@@ -166,7 +168,7 @@ class Protocol:
                 exploit_points=exploit_points,
                 measure_time=measure_time,
             )
-
+        self.opentrons_api.home()
         self.logger.info("Finished characterization protocol.\n\n\n")
 
     def _perform_explore_phase(

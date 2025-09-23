@@ -14,7 +14,7 @@ pd_camera = PendantDropCamera()
 pd_camera._initialize_camera()
 pd_camera.start_stream()
 
-analysis = True
+analysis = 0
 if analysis:
     fake_labware_info = {
         "location": 7,

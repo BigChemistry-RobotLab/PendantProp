@@ -118,7 +118,7 @@ class Formulater:
     ):
         if volume < 20:
             pipette = self.left_pipette
-        elif volume < 1000:
+        elif volume < 300:
             pipette = self.right_pipette
         else:
             self.logger.error(f"Volume {volume} uL is too big for both pipettes.")

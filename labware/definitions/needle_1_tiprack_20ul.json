@@ -1,0 +1,57 @@
+{
+    "ordering": [
+        [
+            "A1"
+        ]
+    ],
+    "brand": {
+        "brand": "needle",
+        "brandId": []
+    },
+    "metadata": {
+        "displayName": "Needle 1 Tip Rack 20 µL",
+        "displayCategory": "tipRack",
+        "displayVolumeUnits": "µL",
+        "tags": []
+    },
+    "dimensions": {
+        "xDimension": 127.76,
+        "yDimension": 85.5,
+        "zDimension": 140
+    },
+    "wells": {
+        "A1": {
+            "depth": 46,
+            "totalLiquidVolume": 20,
+            "shape": "circular",
+            "diameter": 3.27,
+            "x": 63.5,
+            "y": 42.75,
+            "z": 114
+        }
+    },
+    "groups": [
+        {
+            "metadata": {},
+            "wells": [
+                "A1"
+            ]
+        }
+    ],
+    "parameters": {
+        "format": "irregular",
+        "quirks": [],
+        "isTiprack": true,
+        "tipLength": 46,
+        "isMagneticModuleCompatible": false,
+        "loadName": "needle_1_tiprack_20ul"
+    },
+    "namespace": "custom_beta",
+    "version": 1,
+    "schemaVersion": 2,
+    "cornerOffsetFromSlot": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+    }
+}
