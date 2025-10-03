@@ -3,12 +3,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from utils.load_save_functions import load_settings
+from utils.search_containers import find_container
 from hardware.opentrons.containers import Container
 from utils.logger import Logger
 from hardware.opentrons.configuration import Configuration
 from hardware.opentrons.opentrons_api import OpentronsAPI
 
-# from pyDOE import lhs
 from scipy.spatial.distance import cdist
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern
@@ -236,12 +236,12 @@ class GridSearch:
 #             (self.max_bounds[1] / self.bound_dilution, self.max_bounds[1]),
 #         ]
 #         self.grid_step_x = 0.1
-#         self.grid_step_y = 0.2
+#         self.grid_step_y = 0.1
 #         self.initial_points = 8
 #         self.batch_size = 8
 #         self.n_candidates = 500
-#         self.threshold = 0.05
-#         self.min_separation = 0.15
+#         self.threshold = 0.05   # Tune
+#         self.min_separation = 0.15  # Tune
 #         self.round_decimals = 4
 #         self.random_state = 42
 #         self.rng = np.random.default_rng(self.random_state)
@@ -271,27 +271,27 @@ class GridSearch:
 #                 best_min_dist, best_pts = m, scaled
 #         return best_pts
 
-#     def _build_accessible_space(self):
-#         """
-#         Creates a discrete grid of all possible experimental points within the defined
-#         bounds and resolution. This serves as the search space for the algorithm.
-#         """
-#         x_vals = np.round(
-#             np.arange(self.bounds[0][0], self.bounds[0][1] + 1e-12, self.grid_step_x),
-#             10,
-#         )
-#         y_vals = np.round(
-#             np.arange(self.bounds[1][0], self.bounds[1][1] + 1e-12, self.grid_step_y),
-#             10,
-#         )
-#         xx, yy = np.meshgrid(x_vals, y_vals)
-#         return np.c_[xx.ravel(), yy.ravel()]
+    # def _build_accessible_space(self):
+    #     """
+    #     Creates a discrete grid of all possible experimental points within the defined
+    #     bounds and resolution. This serves as the search space for the algorithm.
+    #     """
+    #     x_vals = np.round(
+    #         np.arange(self.bounds[0][0], self.bounds[0][1] + 1e-12, self.grid_step_x),
+    #         10,
+    #     )
+    #     y_vals = np.round(
+    #         np.arange(self.bounds[1][0], self.bounds[1][1] + 1e-12, self.grid_step_y),
+    #         10,
+    #     )
+    #     xx, yy = np.meshgrid(x_vals, y_vals)
+    #     return np.c_[xx.ravel(), yy.ravel()]
 
 #     def _select_diverse_batch(self, points, sigmas):
 #         """
 #         Selects a new batch of points by prioritizing those with high uncertainty (sigma)
 #         while enforcing a minimum separation distance to ensure diversity.
-#         """
+#         """     # Maybe make a function that penalizes based on proximity?
 #         order = np.argsort(-sigmas)
 #         selected = []
 #         for idx in order:
@@ -333,7 +333,7 @@ class GridSearch:
 
 #         # If data is provided, perform Bayesian optimization to suggest the next batch
 #         X = data[['x', 'y']].values
-#         y = data['objective_value'].values
+#         y = data['target'].values
 
 #         # Get a set of keys for all points that have already been tested
 #         tested_grid_keys = set([tuple(np.round(row, self.round_decimals)) for row in X])

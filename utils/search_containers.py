@@ -30,11 +30,16 @@ def find_container(
     amount: int = 0,
     conc = None,
     location = None,
-    checked=[],
-    match=[]
+    checked=None,
+    match=None
 ):
     x = True
+    if checked is None:
+        checked = []
+    if match is None:
+        match = []
 # Does not give error when less containers than requested are present 
+# Ask why this happens, 
     while x:
         exceptions = match + checked
         # print("exceptions: ",exceptions)

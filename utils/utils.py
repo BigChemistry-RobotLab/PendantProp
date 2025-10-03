@@ -16,7 +16,7 @@ def calculate_equillibrium_value(x: list, n_eq_points: int, column_index: int):
         print(f"less than {n_eq_points} points.")
     return calculate_average_in_column(x=x, column_index=column_index)
 
-def get_well_id_from_index(well_index: int, plate_location: int):
+def get_well_id_from_index(well_index: int, plate_location: int, amount=0):
     """
     Assumes 96 well plate
     """
@@ -25,7 +25,8 @@ def get_well_id_from_index(well_index: int, plate_location: int):
         for i in range(1, 13):
             well_id = f"{plate_location}{letter}{i}"
             list_of_wells.append(well_id)
-    return list_of_wells[well_index]
+    amount_well=well_index+amount
+    return list_of_wells[well_index:amount_well], amount
 
 def get_wash_well_id_from_index(well_index: int, plate_location: int):
     """

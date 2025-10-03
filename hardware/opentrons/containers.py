@@ -117,6 +117,30 @@ class Container:
                 self.container_logger.warning(f"The case of adding {source.solution_name} of {source.concentration} mM from source, to a container with {self.solution_name} of {self.concentration} mM is not captured. Leads to wrong updated attributes in containers")
             else:
                 pass
+        # else:
+        #             # make dictionary to store concentrations of mixtures
+        #             if not isinstance(self.concentration, dict):
+        #                 # Convert existing single concentration to a dictionary
+        #                 temp_conc = self.concentration
+        #                 self.concentration = {self.solution_name: temp_conc}
+
+        #             if not isinstance(source.concentration, dict):
+        #                 # Handle cases where source is a single solution
+        #                 source_concentration = {source.solution_name: float(source.concentration)}
+        #             else:
+        #                 source_concentration = source.concentration
+
+        #             for source_sol_name, source_conc in source_concentration.items():
+        #                 # Calculate moles of the incoming solution component
+        #                 n_source_mM = source_conc * volume * 1e-3
+
+        #                 # Update the concentration of this component in the container
+        #                 n_container_mM = self.concentration.get(source_sol_name, 0) * (self.volume_mL - volume * 1e-3)
+                        
+        #                 self.concentration[source_sol_name] = (n_source_mM + n_container_mM) / self.volume_mL
+
+        #             # Update solution_name to reflect the new mixture
+        #             self.solution_name = "mixture"
 
         if log:
             self.container_logger.info(

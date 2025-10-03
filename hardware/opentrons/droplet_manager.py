@@ -62,11 +62,15 @@ class DropletManager:
         for i in range(1, self.MAX_RETRIES + 1):
             self.drop_count = i
             self.wortington_number_limit = round(self.WORTINGTON_NUMBER_LIMIT - ((self.drop_count-1) * (0.03)), 2)
+            
+            self.current_check_time = self.CHECK_TIME + (0.7*(self.drop_count-1)) 
+            self.current_deltaV = self.DROP_VOLUME_INCREASE_RESOLUTION - ((self.DROP_VOLUME_INCREASE_RESOLUTION/2)*(self.drop_count-1))
             self.logger.info(f"Attempt {self.drop_count} for pendant drop measurement.")
             # Prepare and dispense pendant drop
             self._prepare_pendant_drop()
             self._initialise_camera()
             valid_droplet, drop_volume, init_wt_number = self._dispense_pendant_drop()
+            init_drop_volume = 0
             if not valid_droplet:
                 valid_measurement = False
                 self.logger.warning(
@@ -74,7 +78,8 @@ class DropletManager:
                 )
                 self._return_pendant_drop(drop_volume=drop_volume)
                 dynamic_surface_tension = []  # failed measurement
-                return dynamic_surface_tension, drop_volume, self.drop_count, 0, 0
+                return dynamic_surface_tension, drop_volume, self.drop_count, 0, 0, 0
+            init_drop_volume = drop_volume
 
             # reduce drop volume if retry
             if self.drop_count > 1:
@@ -90,7 +95,6 @@ class DropletManager:
                 max_measure_time=max_measure_time, drop_volume=drop_volume, init_wt_number=init_wt_number
             )
             self._return_pendant_drop(drop_volume=drop_volume)
-            
 
             if valid_measurement:
                 self.logger.info(f"Successful measurement for {self.source.WELL_ID} on attempt {self.drop_count}.")
@@ -105,7 +109,7 @@ class DropletManager:
                 f"No valid measurement was performed for {self.source.WELL_ID} after {self.MAX_RETRIES} attempts."
             )
             dynamic_surface_tension = 0
-        return dynamic_surface_tension, drop_volume, self.drop_count, measure_time, wt_number
+        return dynamic_surface_tension, drop_volume, self.drop_count, measure_time, wt_number, init_drop_volume
 
     def _prepare_pendant_drop(self, ):
 
@@ -141,6 +145,8 @@ class DropletManager:
 
     def _dispense_pendant_drop(self):
         wortington_number = 0
+        if not hasattr(self, "wortington_number_limit"):
+            self.wortington_number_limit = self.WORTINGTON_NUMBER_LIMIT
 
         self.logger.info(
             f"Dispensing initial pendant drop volume of {self.INITIAL_DROP_VOLUME}."
@@ -197,7 +203,6 @@ class DropletManager:
                 wortington_number = np.mean(wortington_numbers)
             else:
                 wortington_number = 0
-                print("No wt yet")
 
             print(f"Wortington number: {wortington_number:2f}")
             if break_after:

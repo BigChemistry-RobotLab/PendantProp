@@ -216,8 +216,6 @@ class PendantDropCamera:
                 target=self._check, args=(vol_droplet,), daemon=True
             )
             self.check_thread.start()
-            print("Started check")
-            # self.logger.info("Camera: checking started")
 
     def stop_check(self):
         self.checking = False
