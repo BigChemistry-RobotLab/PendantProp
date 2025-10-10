@@ -27,8 +27,6 @@ class Configuration:
             file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
         )
 
-
-
     def load_pipettes(self):
         try:
             self.RIGHT_PIPETTE_ID = self.opentrons_api.load_pipette(
@@ -111,33 +109,42 @@ class Configuration:
 
                 if function == "drop_stage":
                     containers[labware_name] = DropStage(labware_info=labware_info)
-
                 elif function == "light_holder":
                     containers[labware_name] = LightHolder(labware_info=labware_info)
-
                 elif function == "sponge":
                     containers[labware_name] = Sponge(labware_info=labware_info)
-
                 elif function == "container":
                     container_class = self._find_type(labware_name=labware_name)
                     if container_class:
                         well_id = f"{location}{well}"
+                        
+                        solutes = {}
+                        
+                        if name_solution and not pd.isna(name_solution) and initial_volume > 0:
+                            try:
+                                amount_umol = float(concentration) * float(initial_volume)
+                                solutes[name_solution] = amount_umol
+                            except (ValueError, TypeError):
+                                # This handles cases where concentration might be non-numeric (e.g., 'pure')
+                                # or the solution is just 'water'. In these cases, solutes remains {}.
+                                self.logger.info(f"Container {well_id} with solution '{name_solution}' has no initial amount.")
+                        
                         containers[well_id] = container_class(
                             labware_info=labware_info,
                             well=well,
                             initial_volume_mL=initial_volume,
-                            solution_name=name_solution,
-                            concentration=concentration,
+                            solutes=solutes, 
                         )
-
+                        
             self.logger.info("Containers loaded successfully.")
             self.CONTAINERS = containers
             return containers
 
         except Exception as e:
             self.logger.error(f"Error loading containers: {e}")
-            return None
-        
+            # Reraise the exception to see the full traceback during debugging
+            raise e
+
     def _load_config_file(self):
         try:
             return pd.read_csv(self.FILE_PATH_CONFIG)

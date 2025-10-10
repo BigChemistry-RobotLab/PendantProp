@@ -118,7 +118,6 @@ class PendantDropCamera:
             if self.max_measurement_time > 1801:
                 self.photo_step_time = round(self.max_measurement_time/600)
             else:
-                print("infinite photos")
                 self.photo_step_time = 1
             self.stream_thread = threading.Thread(target=self._stream, daemon=True)
             self.stream_thread.start()

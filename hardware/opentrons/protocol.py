@@ -34,9 +34,11 @@ from utils.load_save_functions import (
     load_settings,
     save_calibration_data,
     initialize_results,
+    initialize_sigma,
     load_info,
     append_results,
     save_results,
+    append_sigma
 )
 from utils.logger import Logger
 from utils.utils import play_sound, calculate_average_in_column
@@ -69,6 +71,7 @@ class Protocol:
         self.left_pipette = pipettes["left"]
         self.n_measurement_in_eq = 100  # number of data points which is averaged for equillibrium surface tension
         self.results = initialize_results()
+        self.results_sigma = initialize_sigma()
         self.learner = ActiveLearner(
             model=szyszkowski_model,
             parameters=["cmc", "gamma_max", "Kad"],
@@ -244,7 +247,7 @@ class Protocol:
     #         solution=solution2,
     #         dilution_factor=dilution_factor,
     #     )
-  
+
     # def _perform_grid_measurement(
     #     self, solutions, form_scheme, concentrations, max_measure_time, well_volume
     #     ):
@@ -254,9 +257,9 @@ class Protocol:
     #     ]
 
     #     for idx, batch_df in enumerate(batches, start=1):
-    #         print(f"Processing batch {idx} with {len(batch_df)} wells")
-    #         print(batch_df)
-    #         print("-" * 40)
+    #         self.logger.info(f"Processing batch {idx} with {len(batch_df)} wells")
+    #         self.logger.info(batch_df)
+    #         self.logger.info("-" * 40)
 
     #         self.formulater.formulate_batches(
     #             batch_df=batch_df,
@@ -295,64 +298,459 @@ class Protocol:
     #                 solutions=solutions,
     #                 concentrations=concentrations,
     #             )
-    
-    # def grid_search_loop(self):
-        # pass
 
-    def active_learning_loop(self,solutions, dilution_range=100, upper_bounds=None, clearance=0.08):
-        al_iteration = 0
+    def active_learning_loop(
+        self, solutions, dilution_range=100, upper_bounds=None, clearance=0.08
+    ) -> None:
+        """Runs the entire active learning experiment over multiple iterations.
+
+        Args:
+            solutions (list): A list of identifiers for the stock solutions being used.
+            dilution_range (int, optional): Factor to determine the lower concentration
+                bound from the upper bound. Defaults to 100.
+            upper_bounds (list, optional): A list of floats specifying the maximum
+                concentration for each solution. Defaults to None, which triggers
+                a default of [1, 1].
+            clearance (float, optional): The percentage of the boundary to avoid when
+                generating the initial sample points. Defaults to 0.08.
+
+        Returns:
+            tuple: A tuple containing:
+                - space (np.ndarray): The complete grid of all possible experimental points.
+                - batch (list): The list of points from the final iteration of the loop.
+        """
+
+        # Initializing all variables
+        max_measure_time = self.settings["MAX_MEASUREMENT_TIME"]
+        self.well_vol = self.settings["WELL_VOLUME"]
+        self.min_pip_vol = self.settings["MINIMUM_PIPETTING_VOLUME"]
+
         num_dimensions = len(solutions)
         if upper_bounds == None:
             upper_bounds_x = 1
             upper_bounds_y = 1
             upper_bounds = [upper_bounds_x, upper_bounds_y]
         lower_bounds = [ub / dilution_range for ub in upper_bounds]
-        
-        space = self._build_accessible_space(upper_bounds=upper_bounds, lower_bounds=lower_bounds)
-        batch = self.generate_constrained_lhs(num_points=self.batch_size, num_dimensions=num_dimensions, lower_bound=lower_bounds, upper_bound=upper_bounds, space=space, boundary_percent=clearance)
+        self.min_conc = lower_bounds
+        al_iteration = 0
+
+        # Building space, both fully functional
+        space = self._build_accessible_space(
+            upper_bounds=upper_bounds, lower_bounds=lower_bounds
+        )
+        batch = self.generate_constrained_qmc(
+            num_points=self.batch_size,
+            num_dimensions=num_dimensions,
+            lower_bound=lower_bounds,
+            upper_bound=upper_bounds,
+            space=space,
+            boundary_percent=clearance,
+        )
+        # Fully functional
+        stock_x = find_container(containers=self.containers, content=solutions[0], type="tube 50")  
+        stock_y = find_container(containers=self.containers, content=solutions[1], type="tube 50")
+
+        stock_x.sort(reverse=True)
+        stock_y.sort(reverse=True)
+
+        new_stock_x = self.formulater.formulate_new_master_stock(upper_bounds=upper_bounds[0], master_stock=stock_x[0], solution=solutions[0])
+        new_stock_y = self.formulater.formulate_new_master_stock(upper_bounds=upper_bounds[1], master_stock=stock_y[0], solution=solutions[1])
+
+        dil_series_x, dil_series_y = self.find_optimal_dilution_series(
+            stock1=self.containers[new_stock_x].get_concentration(solute_name=solutions[0]),
+            stock2=self.containers[new_stock_y].get_concentration(solute_name=solutions[1]),
+            grid=space,
+        )
+
+        dilution_count= len(dil_series_x+dil_series_y)
+        empty_list = find_container(containers=self.containers, content="empty", type="tube", amount=dilution_count)
+        assert dilution_count <= len(empty_list), f"There are less tubes then required, {dilution_count} vs. {len(empty_list)}."
+
+        self.formulater.formulate_serial_dilution(goals=dil_series_x, vials=empty_list, solution=solutions[0], stock_location=new_stock_x)
+        self.formulater.formulate_serial_dilution(goals=dil_series_x, vials=empty_list, solution=solutions[1], stock_location=new_stock_y)
+
+        # Changing the type, since it throws an error otherwise
         batch = [row.tolist() if isinstance(row, np.ndarray) else row for row in batch]
-        numbers = np.random.uniform(low=20, high=70, size=8)
-        numbers = numbers.tolist()
-        for sublist, num in zip(batch, numbers):
-            sublist.append(num)
 
+        # FINDING REQUIRED VOLUMES AND DILUTION VIALS FOR FORMULATION
+        initial_batch, initial_volume_data_list = (
+            self.calculate_optimal_volumes_for_batch(
+                batch=batch, d1_list=dil_series_x, d2_list=dil_series_y
+            )
+        )
 
-        while al_iteration < 20:
-            numbers = np.random.uniform(low=20, high=70, size=8)
-            numbers = numbers.tolist()
-            for sublist, num in zip(batch, numbers):
-                sublist.append(num)
+        for (final_c1, final_c2), init_volumes in zip(
+            initial_batch, initial_volume_data_list
+        ):
+            source_well = self.formulater.formulate_single_point(
+                surfactant_1=solutions[0],
+                concentration_1=final_c1,
+                stock_conc_1=init_volumes["stock_1_vols"],
+                volume_1=init_volumes["vol1_uL"],
 
-            X_next, sigma, pred = self.suggest_next_points(space=space, n_dimensions=num_dimensions, data=batch)
-            print(X_next, sigma, pred)
-            # for i, point in enumerate(batch):
-            #     calculation_details = designer.calculate_and_verify_volumes(
-            #         target_conc_sol1=target_x,
-            #         target_conc_sol2=target_y,
-            #         dilution_series_sol1=final_series_x,
-            #         dilution_series_sol2=final_series_y
-            #     )
-            for row in batch:
-                well_id = self.formulater.formulate_single_point(surfactant_1=solutions[0], surfactant_2=solutions[1], )      # Make a formulate batch at some point
-                # self._measure_single_well(well_id=well_id)
+                surfactant_2=solutions[1],
+                concentration_2=final_c2,
+                stock_conc_2=init_volumes["stock_2_vols"],
+                volume_2=init_volumes["vol2_uL"],
+
+                total_well_volume=self.well_vol,
+            )
+            # Start of measurement, should be fully functional
+            (
+                dynamic_surface_tension,
+                drop_volume,
+                drop_count,
+                measure_time,
+                wt_number,
+                init_drop_vol,
+            ) = self.droplet_manager.measure_pendant_drop(
+                source=source_well, max_measure_time=max_measure_time
+            )
+            drop_parameters = self._create_drop_parameters(
+                drop_volume=drop_volume,
+                measure_time=measure_time,
+                drop_count=drop_count,
+                wt_number=wt_number,
+                init_drop_vol=init_drop_vol,
+            )
+            self._append_and_save_results(
+                dynamic_surface_tension=dynamic_surface_tension,
+                well_id=source_well,
+                drop_parameters=drop_parameters,
+            )
+
+        while al_iteration < 20:  # Placeholder
+
+            X_next, sigma, pred = self.suggest_next_points(
+                space=space, n_dimensions=num_dimensions, data=batch
+            )
+
+            new_batch, volume_data_list = self.calculate_optimal_volumes_for_batch(
+                batch=batch, d1_list=dil_series_x, d2_list=dil_series_y
+            )
+
+            # Check extensively
+            for (final_c1, final_c2), volumes in zip(new_batch, volume_data_list):
+                source_well = self.formulater.formulate_single_point(
+                    surfactant_1=solutions[0],
+                    concentration1=final_c1,
+                    volume_1=volumes["vol1_uL"],
+                    surfactant_2=solutions[1],
+                    concentration2=final_c2,
+                    volume_2=volumes["vol2_uL"],
+                    total_well_volume=self.well_vol,
+                )
+
+                # Start of measurement, should be fully functional
+                (
+                    dynamic_surface_tension,
+                    drop_volume,
+                    drop_count,
+                    measure_time,
+                    wt_number,
+                    init_drop_vol,
+                ) = self.droplet_manager.measure_pendant_drop(
+                    source=source_well, max_measure_time=max_measure_time
+                )
+                drop_parameters = self._create_drop_parameters(
+                    drop_volume=drop_volume,
+                    measure_time=measure_time,
+                    drop_count=drop_count,
+                    wt_number=wt_number,
+                    init_drop_vol=init_drop_vol,
+                )
+                self._append_and_save_results(
+                    dynamic_surface_tension=dynamic_surface_tension,
+                    well_id=source_well,
+                    drop_parameters=drop_parameters,
+                )
+
+                append_sigma(
+                results=self.results_sigma,
+                well_id=source_well,
+                containers=self.containers,
+                pred=pred,
+                sigma=sigma,
+            )
+
             al_iteration += 1
             batch = X_next
-            batch = [row.tolist() if isinstance(row, np.ndarray) else row for row in batch]
+            batch = [
+                row.tolist() if isinstance(row, np.ndarray) else row for row in batch
+            ]
 
-        return space, batch
-            
-    def generate_constrained_lhs(
+        self.logger.info("Finished grid search protocol.\n\n\n")
+
+    def _check_all_points_feasible(self, stock1: float, stock2: float, grid: list[list[float]], factor_x: float, factor_y: float) -> bool:
+        """Helper to check if a specific factor pair is feasible for the entire grid."""
+        # This reuses the logic from the original loops, but is now clearly separated.
+        dil1 = self.generate_dilution_series(stock1, self.min_conc[0], factor_x)
+        dil2 = self.generate_dilution_series(stock2, self.min_conc[1], factor_y)
+
+        # Check all grid points. If any is infeasible, return False immediately.
+        for c1, c2 in grid:
+            if not self.is_point_feasible(c1, c2, dil1, dil2):
+                return False
+        return True
+
+    def _find_max_factor_univariately_binary(
+        self,
+        stock_to_optimize: float,
+        min_conc_to_optimize: float,
+        fixed_stock: float,
+        fixed_min_conc: float,
+        fixed_factor: float, # Factor for the *other* component
+        grid: list[list[float]],
+        is_x_optimization: bool,
+        min_allowed_factor: float,
+        max_factor: float,
+        step: float,
+    ) -> float:
+        """Uses binary search to find the highest feasible dilution factor for one component."""
+
+        def check_fn(factor_opt):
+            # Pass the factors in the correct order to the feasibility check
+            if is_x_optimization:
+                return self._check_all_points_feasible(stock_to_optimize, fixed_stock, grid, factor_opt, fixed_factor)
+            else:
+                return self._check_all_points_feasible(fixed_stock, stock_to_optimize, grid, fixed_factor, factor_opt)
+
+        low = min_allowed_factor
+        high = max_factor
+        best_factor = min_allowed_factor
+
+        # Use a fixed number of iterations for precision (e.g., 50 is typically enough)
+        for _ in range(50):
+            mid = (low + high) / 2
+            if check_fn(mid):
+                best_factor = mid
+                low = mid # Try a higher factor
+            else:
+                high = mid # Too high, search lower
+
+        # Round down the result to the nearest multiple of 'step' to align with the
+        # original search granularity and ensure feasibility.
+        best_factor = math.floor(best_factor / step) * step
+
+        # Ensure result is within the explicit bounds
+        return max(min_allowed_factor, min(max_factor, best_factor))
+
+    def find_optimal_dilution_series(
+        self,
+        stock1: float,
+        stock2: float,
+        grid: list[list[float]],
+        min_allowed_factor: float = 1.2,
+        step: float = 0.1,
+        max_factor: float = 20.0,
+    ) -> tuple[list[float], list[float]]:
+        """
+        Finds the highest feasible dilution factors for both components that still
+        allow formulation of all points in a discrete grid, returning the dilution series.
+        Optimized using binary search for efficiency.
+        """
+        # 1. Optimize Factor X (fixed_factor_y starts at minimum allowed)
+        fixed_factor_y = min_allowed_factor
+        best_factor_x = self._find_max_factor_univariately_binary(
+            stock1, self.min_conc[0], stock2, self.min_conc[1],
+            fixed_factor_y, grid, is_x_optimization=True,
+            min_allowed_factor=min_allowed_factor, max_factor=max_factor, step=step
+        )
+        
+
+        
+        
+        # 2. Optimize Factor Y (fixed_factor_x is the newly found optimal factor)
+        best_factor_y = self._find_max_factor_univariately_binary(
+            stock2, self.min_conc[1], stock1, self.min_conc[0],
+            best_factor_x, grid, is_x_optimization=False,
+            min_allowed_factor=min_allowed_factor, max_factor=max_factor, step=step
+        )
+
+       
+
+        
+        # 3. Final Result Generation
+        dil_series_x = self.generate_dilution_series(
+            stock1, self.min_conc[0], best_factor_x
+        )
+
+
+        dil_series_y = self.generate_dilution_series(
+            stock2, self.min_conc[1], best_factor_y
+        )
+
+        return dil_series_x, dil_series_y
+
+    def generate_dilution_series(self, stock_conc, min_required, factor):
+        dilutions = [stock_conc]
+        while dilutions[-1] / factor >= min_required:
+            dilutions.append(dilutions[-1] / factor)
+        return dilutions
+
+    def is_point_feasible(
+        self,
+        target_conc_sol1,
+        target_conc_sol2,
+        dilution_series_sol1,
+        dilution_series_sol2,
+    ):
+
+        for dilution_factor_sol1 in dilution_series_sol1:
+
+            for dilution_factor_sol2 in dilution_series_sol2:
+                
+                vol_sol1 = (target_conc_sol1 / dilution_factor_sol1) * self.well_vol
+                vol_sol2 = (target_conc_sol2 / dilution_factor_sol2) * self.well_vol
+                vol_water = self.well_vol - vol_sol1 - vol_sol2
+                if all(
+                    [
+                        vol_sol1 >= self.min_pip_vol or np.isclose(vol_sol1, 0),
+                        vol_sol2 >= self.min_pip_vol or np.isclose(vol_sol2, 0),
+                        vol_water >= self.min_pip_vol or np.isclose(vol_water, 0),
+                        self.well_vol == round(vol_sol1 + vol_sol2 + vol_water, 0),
+                    ]
+                ):
+                    return True
+
+        return False
+
+    def calculate_optimal_volumes_for_batch(
+        self, batch: list[list[float]], d1_list: list[float], d2_list: list[float]
+    ) -> tuple[list[list[float]], list[dict[str]]]:
+        """
+        Calculates the required volumes and verified concentrations for a batch of
+        target concentration pairs, choosing the stock dilutions (d1/d2)
+        that minimize the volume spread.
+
+        Args:
+            batch (list[list[float]]): Target concentration pairs [[c1, c2], ...].
+            d1_list (list[float]): The optimal stock dilution series for component 1.
+            d2_list (list[float]): The optimal stock dilution series for component 2.
+
+        Returns:
+            tuple[list[list[float]], list[dict[str]]]:
+                - Verified final concentrations [[final_c1, final_c2], ...].
+                - list of volume dictionaries for pipetting.
+        """
+        new_batch = []
+        volume_data_list = []
+
+        sorted_d1_list = sorted(d1_list)
+        sorted_d2_list = sorted(d2_list)
+        for target_c1, target_c2 in batch:
+            candidates = []
+            for d1 in sorted_d1_list:
+                for d2 in sorted_d2_list:
+                    if (
+                        target_c1 > 0
+                        and d1 < target_c1
+                        and not np.isclose(target_c1, 0)
+                    ):
+                        continue
+                    if (
+                        target_c2 > 0
+                        and d2 < target_c2
+                        and not np.isclose(target_c2, 0)
+                    ):
+                        continue
+
+                    vol1 = (
+                        round((target_c1 / d1) * self.well_vol)
+                        if not np.isclose(target_c1, 0)
+                        else 0
+                    )
+                    vol2 = (
+                        round((target_c2 / d2) * self.well_vol)
+                        if not np.isclose(target_c2, 0)
+                        else 0
+                    )
+                    self.logger.info("vol1 and 2", vol1, vol2)
+                    if (vol1 + vol2) > self.well_vol:
+                        continue
+
+                    vol_water = self.well_vol - vol1 - vol2
+                    if vol_water < 0:
+                        continue
+                    vol_water = round(vol_water)
+
+                    vol1_ok = np.isclose(vol1, 0) or vol1 >= self.min_pip_vol
+                    vol2_ok = np.isclose(vol2, 0) or vol2 >= self.min_pip_vol
+                    water_ok = np.isclose(vol_water, 0) or vol_water >= self.min_pip_vol
+
+                    if not (vol1_ok and vol2_ok and water_ok):
+                        continue
+
+                    final_c1 = round((vol1 * d1) / self.well_vol, 6)
+                    final_c2 = round((vol2 * d2) / self.well_vol, 6)
+                    spread = max(vol1, vol2, vol_water) - min(vol1, vol2, vol_water)
+                    candidates.append(
+                        {
+                            "stock1_conc": d1,
+                            "stock2_conc": d2,
+                            "vol1_uL": vol1,
+                            "vol2_uL": vol2,
+                            "water_uL": vol_water,
+                            "final_conc1": final_c1,
+                            "final_conc2": final_c2,
+                            "spread": spread,
+                        }
+                    )
+
+            if candidates:
+                best = min(candidates, key=lambda x: x["spread"])
+                new_batch.append([best["final_conc1"], best["final_conc2"]])
+                volume_data_list.append(
+                    {
+                        "stock1_conc": best["stock1_conc"],
+                        "vol1_uL": best["vol1_uL"],
+                        "stock2_conc": best["stock2_conc"],
+                        "vol2_uL": best["vol2_uL"],
+                        "water_uL": best["water_uL"],
+                    }
+                )
+            else:
+                new_batch.append([np.nan, np.nan])
+                volume_data_list.append(
+                    {
+                        "stock1_conc": np.nan,
+                        "vol1_uL": np.nan,
+                        "stock2_conc": np.nan,
+                        "vol2_uL": np.nan,
+                        "water_uL": np.nan,
+                    }
+                )
+
+        return new_batch, volume_data_list
+
+    def generate_constrained_qmc(
         self,
         num_points,  # Number of points to generate (e.g., 8)
         num_dimensions,  # Number of dimensions (number of concentrations)
-        lower_bound,  # Array or list of lower bounds for each dimension        Do I need bounds and space here? TODO
+        lower_bound,  # Array or list of lower bounds for each dimension 		Do I need bounds and space here? TODO
         upper_bound,  # Array or list of upper bounds for each dimension
         space,
-        boundary_percent=0.08  # Percentage to stay away from the outer boundary
+        boundary_percent=0.08,  # Percentage to stay away from the outer boundary
     ):
-        """
-        Generates space-filling points within a specified inner boundary
-        using a constrained Latin Hypercube Sampling method.
+        """Generates space-filling points using a constrained Latin Hypercube Sample.
+
+        This method creates an initial set of experimental points that are well-distributed
+        across the parameter space but avoids the extreme edges. It first generates
+        points in a continuous space using LHS and then "snaps" each point to the
+        nearest available point on the discrete experimental grid (`space`).
+
+        Args:
+            num_points (int): The number of sample points to generate.
+            num_dimensions (int): The number of variables (e.g., concentrations).
+            lower_bound (list or np.ndarray): The minimum value for each dimension.
+            upper_bound (list or np.ndarray): The maximum value for each dimension.
+            space (np.ndarray): The discrete grid of all possible experimental points.
+            boundary_percent (float, optional): The percentage of the space to avoid
+                at the boundaries. Defaults to 0.08.
+
+        Returns:
+            list: A list of lists, where each inner list represents a unique,
+                selected point from the discrete `space`.
         """
         lower_bound = np.array(lower_bound, dtype=float)
         upper_bound = np.array(upper_bound, dtype=float)
@@ -367,9 +765,7 @@ class Protocol:
 
         # 3. Scale the generated points to the inner bounds
         scaled_points = qmc.scale(
-            sample,
-            l_bounds=inner_lower_bound,
-            u_bounds=inner_upper_bound
+            sample, l_bounds=inner_lower_bound, u_bounds=inner_upper_bound
         )
         tree = cKDTree(space)
         used_indices = set()
@@ -385,42 +781,80 @@ class Protocol:
                     break
         return qmc_space_points
 
-    def _build_accessible_space(self, upper_bounds, lower_bounds):
-        """
-        Creates a discrete grid of all possible experimental points within the defined
-        bounds and resolution. This serves as the search space for the algorithm.
+    def _build_accessible_space(self, upper_bounds, lower_bounds, points_per_axis=9):
+        """Creates a discrete grid of all possible experimental points.
+
+        This function defines the complete search space for the algorithm. It generates
+        logarithmically spaced values for each dimension between the specified bounds
+        and then creates a mesh grid of all possible combinations.
+
+        Args:
+            upper_bounds (list): A list of floats for the max value of each dimension.
+            lower_bounds (list): A list of floats for the min value of each dimension.
+            points_per_axis (int): The number of points on a single axis, total number will be ^2.
+
+        Returns:
+            np.ndarray: An array of shape (N, D) where N is the total number of
+                        possible points and D is the number of dimensions.
         """
         x_vals = np.round(
-            np.logspace(start=np.log10(upper_bounds[0]), stop=np.log10(lower_bounds[0]) + 1e-12, num=int(upper_bounds[0]/lower_bounds[0])),
-            10,
+            np.logspace(
+                start=np.log10(upper_bounds[0]),
+                stop=np.log10(lower_bounds[0]) + 1e-12,
+                num=points_per_axis,
+            ),
+            2,
         )
         y_vals = np.round(
-            np.logspace(start=np.log10(upper_bounds[1]), stop=np.log10(lower_bounds[1]) + 1e-12, num=int(upper_bounds[1]/lower_bounds[1])),
-            10,
+            np.logspace(
+                start=np.log10(upper_bounds[1]),
+                stop=np.log10(lower_bounds[1]) + 1e-12,
+                num=points_per_axis,
+            ),
+            2,
         )
         xx, yy = np.meshgrid(x_vals, y_vals)
         return np.c_[xx.ravel(), yy.ravel()]
-    
-    def suggest_next_points(self, space, n_dimensions, data=None, round_decimals=3, threshold=1):
-        """
-        The main function to suggest the next set of experimental points.
+
+    def suggest_next_points(
+        self, space, n_dimensions, data=None, round_decimals=3, threshold=1
+    ):
+        """Suggests the next batch of points to measure using a Gaussian Process model.
+
+        This is the core of the active learning algorithm. It trains a Gaussian Process
+        (GP) Regressor on all data collected so far. It then uses the trained model to
+        predict the outcome and uncertainty (sigma) for every point in the entire
+        `space`. Finally, it selects a diverse batch of new points from the regions of
+        highest uncertainty to be measured next.
 
         Args:
-            data (pd.DataFrame, optional): A DataFrame containing the 'X' and 'y'
-                                           data from previous experiments.
-                                           If None, initial points are suggested.
+            space (np.ndarray): The grid of all possible experimental points.
+            n_dimensions (int): The number of experimental variables (dimensions).
+            data (list, optional): A list of lists, where each inner list contains
+                the coordinates and the measured result of a past experiment,
+                e.g., `[[x1, y1, result1], [x2, y2, result2]]`. Defaults to None.
+            round_decimals (int, optional): The number of decimal places to use when
+                checking for previously tested points. Defaults to 3.
+            threshold (float, optional): The uncertainty (sigma) value below which
+                the algorithm may consider the space to be fully explored, stopping
+                the process. Defaults to 1.
 
         Returns:
-            np.ndarray: An array of shape (batch_size, 2) with the suggested points.
-            None: If the optimization has converged (highest uncertainty is below threshold).
+            tuple: A tuple containing:
+                - X_next (np.ndarray): An array of shape (batch_size, D) with the
+                suggested points for the next experiment.
+                - max_sigma (float): The highest uncertainty value found among the
+                candidate points.
+                - pred (np.ndarray): The model's prediction for all points in `space`.
+            Returns `None` if the stopping criteria (e.g., max_sigma < threshold) are met.
         """
         if data is None:
             self.logger.error("No data given, quitting...")
             return
 
         data_np = np.array(data)
-        X = data_np[:, :2]  # first 2 columns
-        y = data_np[:, 2]   # last column
+        X = data_np[:, :n_dimensions]  # first 2 columns
+        y = data_np[:, 2]  # last column
 
         # Get a set of keys for all points that have already been tested
         tested_grid_keys = set([tuple(np.round(row, round_decimals)) for row in X])
@@ -440,15 +874,13 @@ class Protocol:
 
         # Filter out points that have already been tested
         all_grid_keys = [tuple(np.round(row, 3)) for row in space]
-        mask_candidates = np.array(
-            [k not in tested_grid_keys for k in all_grid_keys]
-        )
+        mask_candidates = np.array([k not in tested_grid_keys for k in all_grid_keys])
         candidates = space[mask_candidates]
         sigma_candidates = sigma[mask_candidates]
 
         # Check for stopping criteria
         max_sigma = float(np.max(sigma_candidates)) if len(sigma_candidates) else 0.0
-        print(f"Max sigma among candidates: {max_sigma:.4f}")
+        self.logger.info(f"Max sigma among candidates: {max_sigma:.4f}")
         if (len(candidates) == 0) or (max_sigma < threshold):
             return None
 
@@ -457,39 +889,62 @@ class Protocol:
         X_next = candidates[sel_idx_local]
 
         return X_next, max_sigma, pred
-    
-    def _select_diverse_batch(self, points, sigmas, min_separation):
-        """
-        Selects a new batch of points by prioritizing those with high uncertainty (sigma)
-        while enforcing a minimum separation distance to ensure diversity.
-        """
 
+    def _select_diverse_batch(self, points, sigmas, min_separation):
+        """Selects a batch of points that are both highly uncertain and spatially diverse.
+
+        This function implements a greedy algorithm. It sorts candidate points by their
+        uncertainty (sigma) and iteratively selects points. A point is only chosen if
+        it is at least `min_separation` distance away from all other points already
+        selected for the batch. This prevents the algorithm from clustering all new
+        measurements in a single high-uncertainty region.
+
+        Args:
+            points (np.ndarray): An array of candidate points to choose from.
+            sigmas (np.ndarray): The array of uncertainties corresponding to each point.
+            min_separation (float): The minimum Euclidean distance required between any
+                two points in the selected batch.
+
+        Returns:
+            np.ndarray: An array of integer indices corresponding to the selected
+                        points from the input `points` array.
+        """
         # 1. Sort the candidate points by descending uncertainty (highest sigma first)
         order = np.argsort(-sigmas)
         selected_indices = []
+        excluded_indices = set()
+
+        log_points = np.log10(points)
+        all_dists = cdist(log_points, log_points)
 
         # 2. Iterate through the points in order of decreasing uncertainty
         for idx in order:
-            p = points[idx]
-            
+            if idx in excluded_indices:
+                continue
+
+            p = log_points[idx]
+
             # Always select the very first point (it has the highest uncertainty)
             if len(selected_indices) == 0:
                 selected_indices.append(idx)
             else:
-                # Check the distance to all already selected points
-                # points[selected_indices] will be the already-selected coordinates
-                dists = cdist(points[selected_indices], p[None, :]).ravel()
-                
-                # 3. Only select the point if it is far enough from *all* previously selected points
+                dists = cdist(log_points[selected_indices], p[None, :]).ravel()
                 if np.all(dists >= min_separation):
                     selected_indices.append(idx)
-            
+                else:
+                    continue
+
+            # Exclude 8 nearest neighbours
+            neighbor_indices = np.argsort(all_dists[idx])[1:9]
+            excluded_indices.update(neighbor_indices)
+
             # Stop once the desired batch size is reached
             if len(selected_indices) == self.batch_size:
                 break
-                
-        # Return the indices of the selected, diverse points
-        return np.array(selected_indices, dtype=int)
+
+        selected_points = np.array(selected_indices, dtype=int)
+        # Return the indices of the selected diverse points
+        return selected_points
 
     def characterize_surfactant(self) -> None:
         """
@@ -504,7 +959,7 @@ class Protocol:
         exploit_points = int(self.settings["EXPLOIT_POINTS"])
 
         # self._check_needle_position()
-        self.formulater.wash(repeat=self.repeat)
+        # self.formulater.wash(repeat=self.repeat)
         for i, surfactant in enumerate(characterization_info["surfactant"]):
             self.logger.info(f"Start characterization of {surfactant}.\n\n")
             row_id = characterization_info["row id"][i]
@@ -553,7 +1008,7 @@ class Protocol:
             well_id_explore = f"{row_id}{i+1}"
             source_well = self.containers[well_id_explore]
             self.logger.info(
-                f"Start pendant drop measurement of {source_well.WELL_ID}, containing {source_well.concentration} mM {source_well.solution_name}.\n"
+                f"Start pendant drop measurement of {source_well.WELL_ID}, containing {source_well.get_concentration()} mM {source_well.get_solution()}.\n"
             )
             (
                 dynamic_surface_tension,
@@ -573,12 +1028,9 @@ class Protocol:
                 init_drop_vol=init_drop_vol
             )
             self._append_and_save_results(
-                point_type="explore",
                 dynamic_surface_tension=dynamic_surface_tension,
                 well_id=well_id_explore,
                 drop_parameters=drop_parameters,
-                solution_name=surfactant,
-                plot_type="concentrations",
             )
 
     def _perform_exploit_phase(
@@ -654,32 +1106,35 @@ class Protocol:
 
     def _append_and_save_results(
         self,
-        point_type: str,
         dynamic_surface_tension: list,
         well_id: str,
         drop_parameters: dict,
-        solution_name: str,
-        plot_type: str,
     ) -> None:
         """
-        Append results, save them, and plot the results. Plots based on the specified plot type (either well or concentration)
+        Append results, save them, and plot the results. Plots based on the specified plot type.
         """
+        all_solutes_sorted = sorted(self.containers[well_id].get_solution())
+        if not all_solutes_sorted:
+            all_solutes_sorted = ["water"] 
         self.results = append_results(
             results=self.results,
-            point_type=point_type,
             dynamic_surface_tension=dynamic_surface_tension,
             well_id=well_id,
             drop_parameters=drop_parameters,
             n_eq_points=self.n_measurement_in_eq,
             containers=self.containers,
             sensor_api=self.sensor_api,
+            all_solutes_sorted=all_solutes_sorted
         )
         save_results(self.results)
-        if plot_type == "wells":
-            self.plotter.plot_results_well_id(df=self.results)
-        elif plot_type == "concentrations":
-            self.plotter.plot_results_concentration(
-                df=self.results, solution_name=solution_name
+        container = self.containers[well_id]
+        solutes_in_well = sorted(list(container.solutes.keys()))
+
+        # If the list is empty, it's water; otherwise, join with '_'
+        solution_name_for_plot = "water" if not solutes_in_well else "_".join(solutes_in_well)
+
+        self.plotter.plot_results_concentration(
+            df=self.results, solution_name=solution_name_for_plot
             )
 
     def _check_needle_position(self):
@@ -721,7 +1176,7 @@ class Protocol:
 # for i, well_id in enumerate(wells_ids):
 #     row = df.iloc[i]
 #     conc_dict = row.dropna().to_dict()
-#     print(f"Row {i}: {conc_dict}")
+#     self.logger.info(f"Row {i}: {conc_dict}")
 # for i, well_id in enumerate(wells_ids):
 #     row = df.iloc[i]
 #     conc_dict = row.dropna().to_dict()
@@ -888,7 +1343,7 @@ class Protocol:
 # # TODO save results correctly!
 # self.logger.info("Starting measure whole plate protocol...")
 # self.droplet_manager.set_max_retries = 1
-# print(self.droplet_manager.MAX_RETRIES)
+# self.logger.info(self.droplet_manager.MAX_RETRIES)
 # self.settings = load_settings()  # update settings
 # well_info = load_info(file_name=self.settings["WELL_INFO_FILENAME"])
 # wells_ids = well_info["location"].astype(str) + well_info["well"].astype(str)

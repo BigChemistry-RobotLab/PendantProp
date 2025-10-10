@@ -241,7 +241,8 @@ class Pipette:
         flow_rate=100,
         log=True,
         update_info=True,
-        side=None
+        side=None,
+        mixing=False,
     ):
         if not self.has_tip and not self.has_needle:
             self.logger.error(
@@ -249,20 +250,19 @@ class Pipette:
             )
             return
 
-        # TODO this gives a weird error with mixing
-        # if self.volume - volume < 0:
-        #     self.protocol_logger.error(
-        #         f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have enough volume to dispense {volume} uL! Cancelled dispensing step."
-        #     )
-        #     return
-
         if mix:
             mix_order = mix[0]
             if mix_order not in ["before", "after", "both"]:
                 self.logger.warning(f"mix_order {mix_order} not recognized.")
+            print("reached")
 
         if mix and (mix_order == "before" or mix_order == "both"):
             self.mixing(container=destination, mix=mix)
+
+        if (volume > self.volume + 0.001) and not mixing:    # Tolerance
+            self.logger.warning(f"Too little volume in pipette, {self.volume} uL vs {volume} uL. Skipping dispensing step.")    # TODO PIM Should this be a dispense all or nothing?
+            return
+
         
         if destination.CONTAINER_TYPE == "Plate well":
             if destination.volume_mL == 0.:
@@ -479,7 +479,7 @@ class Pipette:
         mix_order, volume_mix, repeat_mix = mix         # where 20 is the volume and 5 the amount of repeats 
         for n in range(repeat_mix):
             self.aspirate(volume=volume_mix, source=container, log=False, update_info=False, depth_offset=0.7)
-            self.dispense(volume=volume_mix, destination=container, log=False, update_info=False, depth_offset=0.7)
+            self.dispense(volume=volume_mix, destination=container, log=False, update_info=False, depth_offset=0.7, mixing=True)
         self.logger.info(
             f"Done with mixing in {container.WELL_ID} with order {mix_order}, with volume {volume_mix} uL, repeated {repeat_mix} times"
         )
