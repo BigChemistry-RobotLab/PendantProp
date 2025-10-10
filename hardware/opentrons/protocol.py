@@ -353,8 +353,8 @@ class Protocol:
         stock_x.sort(reverse=True)
         stock_y.sort(reverse=True)
 
-        new_stock_x = self.formulater.formulate_new_master_stock(upper_bounds=upper_bounds[0], master_stock=stock_x[0], solution=solutions[0])
-        new_stock_y = self.formulater.formulate_new_master_stock(upper_bounds=upper_bounds[1], master_stock=stock_y[0], solution=solutions[1])
+        new_stock_x = self.formulater.formulate_new_master_stock(upper_bounds=upper_bounds[0]*2, master_stock=stock_x[0], solution=solutions[0])
+        new_stock_y = self.formulater.formulate_new_master_stock(upper_bounds=upper_bounds[1]*2, master_stock=stock_y[0], solution=solutions[1])
 
         dil_series_x, dil_series_y = self.find_optimal_dilution_series(
             stock1=self.containers[new_stock_x].get_concentration(solute_name=solutions[0]),

@@ -496,7 +496,7 @@ class Formulater:
 
         # Perform transfers
         # Add stock first for better mixing
-
+        self.right_pipette.pick_up_tip()
         self._transfer_in_chunks(
             volume=stock_to_transfer_uL,
             source=self.containers[current_source_loc],
