@@ -1,10 +1,1 @@
-*.pyc
-*.jpg
-*.log
-*.png
-*.txt
-legacy/
-settings/
-experiments/
-config/
-playbook.ipynb
+backup/
