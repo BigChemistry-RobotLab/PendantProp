@@ -1,0 +1,58 @@
+{
+    "ordering": [
+        [
+            "A1"
+        ]
+    ],
+    "brand": {
+        "brand": "dropstage",
+        "brandId": []
+    },
+    "metadata": {
+        "displayName": "Dropstage 1 Reservoir 5000 µL",
+        "displayCategory": "reservoir",
+        "displayVolumeUnits": "µL",
+        "tags": []
+    },
+    "dimensions": {
+        "xDimension": 127.6,
+        "yDimension": 85.2,
+        "zDimension": 50.25
+    },
+    "wells": {
+        "A1": {
+            "depth": 45.5,
+            "totalLiquidVolume": 5000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 63.55,
+            "y": 43,
+            "z": 4.75
+        }
+    },
+    "groups": [
+        {
+            "metadata": {
+                "wellBottomShape": "flat"
+            },
+            "wells": [
+                "A1"
+            ]
+        }
+    ],
+    "parameters": {
+        "format": "irregular",
+        "quirks": [],
+        "isTiprack": false,
+        "isMagneticModuleCompatible": false,
+        "loadName": "dropstage_1_reservoir_5000ul"
+    },
+    "namespace": "custom_beta",
+    "version": 1,
+    "schemaVersion": 2,
+    "cornerOffsetFromSlot": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+    }
+}

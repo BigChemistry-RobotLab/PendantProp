@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pendantprop"
+version = "0.1.0"
+description = "An autonomous platform for efficient surfactant characterization"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Pim Dankloff"}
+]
+keywords = ["opentrons", "robotics", "surface tension", "pendant drop", "automation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+dependencies = [
+    "jax>=0.6.1",
+    "jaxlib>=0.6.1",
+    "matplotlib>=3.10.0",
+    "numpy>=2.0.0",
+    "numpyro>=0.18.0",
+    "pandas>=2.3.0",
+    "scikit-learn>=1.7.0",
+    "seaborn>=0.13.0",
+    "opencv-python>=4.12.0",
+    "flask>=3.0.0",
+    "pypylon>=4.1.0",
+    "imutils>=0.5.4",
+    "requests>=2.31.0",
+    "pyserial>=3.5",
+    "opentrons-api @ git+https://github.com/BigChemistry-RobotLab/opentrons_api.git",
+]
+
+[project.urls]
+Homepage = "https://github.com/BigChemistry-RobotLab/PendantProp"
+Repository = "https://github.com/BigChemistry-RobotLab/PendantProp"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

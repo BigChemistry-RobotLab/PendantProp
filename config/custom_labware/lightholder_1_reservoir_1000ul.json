@@ -1,0 +1,58 @@
+{
+    "ordering": [
+        [
+            "A1"
+        ]
+    ],
+    "brand": {
+        "brand": "light_holder",
+        "brandId": []
+    },
+    "metadata": {
+        "displayName": "Light_holder 1 Reservoir 1000 µL",
+        "displayCategory": "reservoir",
+        "displayVolumeUnits": "µL",
+        "tags": []
+    },
+    "dimensions": {
+        "xDimension": 127.76,
+        "yDimension": 85.5,
+        "zDimension": 105
+    },
+    "wells": {
+        "A1": {
+            "depth": 100,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 10,
+            "x": 63.5,
+            "y": 42.75,
+            "z": 5
+        }
+    },
+    "groups": [
+        {
+            "metadata": {
+                "wellBottomShape": "flat"
+            },
+            "wells": [
+                "A1"
+            ]
+        }
+    ],
+    "parameters": {
+        "format": "irregular",
+        "quirks": [],
+        "isTiprack": false,
+        "isMagneticModuleCompatible": false,
+        "loadName": "lightholder_1_reservoir_1000ul"
+    },
+    "namespace": "custom_beta",
+    "version": 1,
+    "schemaVersion": 2,
+    "cornerOffsetFromSlot": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+    }
+}

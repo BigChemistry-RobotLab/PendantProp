@@ -1,0 +1,9 @@
+labware name,labware file,function,deck position,well,initial volume (mL),compound 1,concentration 1,compound 2,concentration 2
+"tips P20, 1",sarstedt10_96_tiprack_20ul,tips,3,,,,,,
+"tips P300, 1",sarstedt_96_tiprack_300ul,tips,1,,,,,,
+tube rack 50 mL,3dprinted_50_tuberack_50000ul,container,8,A3,50,water,pure,,
+tube rack 15 mL,3dprinted_15_tuberack_15000ul,container,6,A1,10,SDS,10,,
+tube rack 15 mL,3dprinted_15_tuberack_15000ul,container,6,A2,10,CTAB,1,,
+tube rack 15 mL,3dprinted_15_tuberack_15000ul,container,6,A3,10,C12E3,1,,
+eppendorf rack,eppendorf_24_reservoir_1500ul,container,2,B1,1,water,pure,,
+formulation plate,greinerblackwalls_96_wellplate_392ul,container,5,,,,,,

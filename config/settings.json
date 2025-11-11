@@ -1,0 +1,26 @@
+{
+    "ROBOT_IP": "169.254.164.30",
+    "ROBOT_TYPE": "OT2",
+    "LEFT_PIPETTE_NAME": "p20_single_gen2",
+    "RIGHT_PIPETTE_NAME": "p1000_single_gen2",
+    "LEFT_PIPETTE_OFFSET": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+    },
+    "RIGHT_PIPETTE_OFFSET": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+    },
+    "WELL_DEPTH_MM": 0.8,
+    "CONFIG_FILEPATH": "config/layouts/layout.csv",
+    "OUTPUT_FOLDER": "output",
+    "EXP_TAG": "example",
+    "META_DATA_FOLDER": "meta_data",
+    "CONTAINER_DATA_FOLDER": "container_data",
+    "CUSTOM_LABWARE_FOLDER": "config/custom_labware",
+    "STOCK_INFO_FILEPATH": "config/formulation_csv/stock_info_example.csv",
+    "FORMULATION_INFO_FILEPATH": "config/formulation_csv/formulation_info_example.csv",
+    "SIMULATE": false
+}
