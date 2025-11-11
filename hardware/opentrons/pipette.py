@@ -1,3 +1,8 @@
+# Imports
+
+## Packages
+
+## Custom code
 from utils.logger import Logger
 from utils.load_save_functions import load_settings
 from hardware.opentrons.containers import *
@@ -29,11 +34,15 @@ class Pipette:
         # set max volume and offset pipettes (pipette specific)
         if self.PIPETTE_NAME == "p20_single_gen2":
             self.MAX_VOLUME = 20
-            self.OFFSET = settings["LEFT_PIPETTE_OFFSET"]
+            self.OFFSET = settings["LEFT_PIPETTE_OFFSET_P20"]
 
         elif self.PIPETTE_NAME == "p1000_single_gen2":
             self.MAX_VOLUME = 1000
-            self.OFFSET = settings["RIGHT_PIPETTE_OFFSET"]
+            self.OFFSET = settings["RIGHT_PIPETTE_OFFSET_P1000"]
+        
+        elif self.PIPETTE_NAME == "p300_single_gen2":
+            self.MAX_VOLUME = 300
+            self.OFFSET = settings["RIGHT_PIPETTE_OFFSET_P300"]
 
         # dynamic attributes
         self.has_tip = False
@@ -99,6 +108,9 @@ class Pipette:
         if self.has_tip:
             self.logger.error("tried to pick up needle, while pipette has tip.")
             return
+        if self.has_needle:
+            self.logger.warning("tried to pick up needle, but pipette already has needle")
+            return
 
         # adjust offset to pick the needle up a bit more gently
         offset = self.OFFSET.copy()
@@ -115,25 +127,57 @@ class Pipette:
         self.logger.info("Picked up needle.")
 
     def return_needle(self):
-        if not self.has_needle:
-            self.logger.info("No needle to return!")
+        pass
+        # if not self.has_needle:
+        #     self.logger.info("No needle to return!")
+        #     return
+
+        # # bit deeper to plunge the needle in the tip rack
+        # offset = self.OFFSET.copy()
+        # offset['z'] -= 40
+
+        # self.opentrons_api.drop_tip(
+        #     pipette_id=self.PIPETTE_ID,
+        #     labware_id=self.NEEDLE_INFO["labware_id"],
+        #     well="A1",
+        #     offset=offset,
+        # )
+        # self.has_needle = False
+        # self.volume = 0
+        # self.logger.info("Returned needle.")
+
+    def return_tip(self, well: str = None):
+        '''
+        Returns the tip to the tip rack.
+
+        '''
+
+        if not self.has_tip:
+            self.logger.info("No tip to return!")
             return
 
-        # bit deeper to plunge the needle in the tip rack
+        if well == None:
+            tips_id, well = self._find_well_and_tips_id(return_well=True)
+            if tips_id == None:
+                self.logger.error("Well index is out of bounds.")
+        else:
+            tips_id =  self.TIPS_INFO[next(iter(self.TIPS_INFO))]["labware_id"] # takes from the first tip rack
+        
+        # bit deeper to plunge the tip in the tip rack
         offset = self.OFFSET.copy()
-        offset['z'] -= 40
+        offset['z'] -= 20
 
         self.opentrons_api.drop_tip(
             pipette_id=self.PIPETTE_ID,
-            labware_id=self.NEEDLE_INFO["labware_id"],
-            well="A1",
+            labware_id=tips_id,
+            well=well,
             offset=offset,
         )
-        self.has_needle = False
+        self.has_tip = False
         self.volume = 0
-        self.logger.info("Returned needle.")
+        self.logger.info("Returned tip.")
 
-    def _find_well_and_tips_id(self):
+    def _find_well_and_tips_id(self, return_well=False):
         tips_ids = []
         tips_orderings = []
         for tip_name in self.TIPS_INFO.keys():
@@ -145,7 +189,10 @@ class Pipette:
         for i, tips_id in enumerate(tips_ids):
             if self.well_index < (i + 1) * total_wells:
                 tips_id = tips_ids[i]
-                well = tips_orderings[i][self.well_index - i * total_wells]
+                if return_well:
+                    well = tips_orderings[i][self.well_index-1 - i * total_wells]
+                else:
+                    well = tips_orderings[i][self.well_index - i * total_wells]
                 return tips_id, well
 
     def aspirate(
@@ -328,11 +375,20 @@ class Pipette:
         if not self.has_tip and not self.has_needle:
             self.logger.error("No tip or needle attached to perform touch_tip!")
             return
-        depth = (
-            0.05 * container.DEPTH
-        )  # little depth to ensure the tip touches the wall of the container
-        initial_offset = self.OFFSET.copy()
-        initial_offset["z"] -= 0.05 * container.DEPTH
+        if container.CONTAINER_TYPE != "Plate well":
+            percentage = 0.05
+            depth = (
+                percentage * container.DEPTH
+            )
+            initial_offset = self.OFFSET.copy()
+            initial_offset["z"] -= percentage * container.DEPTH  
+        else:
+            percentage = 0.3  # for plate wells, we use a larger percentage
+            depth = percentage * container.DEPTH
+            initial_offset = self.OFFSET.copy()
+            initial_offset["z"] -= percentage * container.DEPTH  
+        
+
         self.opentrons_api.move_to_well(
             pipette_id=self.PIPETTE_ID,
             labware_id=container.LABWARE_ID,

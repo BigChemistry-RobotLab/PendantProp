@@ -1,3 +1,6 @@
+# Imports
+
+## Packages
 import os
 import glob
 import threading
@@ -6,7 +9,6 @@ import logging
 import numpy as np
 import cv2
 import time
-
 from flask import (
     Flask,
     render_template,
@@ -16,8 +18,10 @@ from flask import (
     session,
     Response,
     jsonify,
+    send_from_directory
 )
 
+## Custom code
 from utils.load_save_functions import (
     save_csv_file,
     load_settings,
@@ -25,10 +29,12 @@ from utils.load_save_functions import (
     save_settings_meta_data,
     load_commit_hash,
 )
-from hardware.cameras import OpentronCamera, PendantDropCamera
+from hardware.cameras.opentrons_camera import OpentronCamera
+from hardware.cameras.pendant_drop_camera import PendantDropCamera
 from hardware.opentrons.opentrons_api import OpentronsAPI
 from hardware.sensor.sensor_api import SensorAPI
 from hardware.opentrons.protocol import Protocol
+
 
 # initialize the Flask app
 app = Flask(__name__)
@@ -248,12 +254,10 @@ def opentron_video_feed():
         )
 
 
-@app.route("/pendant_drop_video_feed")
-def pendant_drop_video_feed():
-    return Response(
-        pendant_drop_camera.generate_frames(),
-        mimetype="multipart/x-mixed-replace; boundary=frame",
-    )
+
+@app.route("/pendant_drop_latest_image")
+def pendant_drop_latest_image():
+    return send_from_directory("static/plots_cache", "pendant_drop_latest.png")
 
 
 @app.route("/toggle_pendant_drop_camera", methods=["POST"])
@@ -275,11 +279,3 @@ def status():
     print(f"Status: {status}")
     return jsonify({"status": status})
 
-
-@app.route("/pendant_drop_plot_feed")
-def pendant_drop_plot_feed():
-    pendant_drop_camera.start_plot_frame_thread()
-    return Response(
-        pendant_drop_camera.generate_plot_frame(),
-        mimetype="multipart/x-mixed-replace; boundary=frame",
-    )

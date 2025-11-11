@@ -1,15 +1,11 @@
+# Imports
+
+## Packages
 import warnings
 import pandas as pd
 import numpy as np
 
-# Suppress the specific FutureWarning of Pandas
-warnings.filterwarnings(
-    "ignore",
-    category=FutureWarning,
-    message="The behavior of DataFrame concatenation with empty or all-NA entries is deprecated",
-)
-
-
+## Custom code
 from analysis.plots import Plotter
 from analysis.active_learning import ActiveLearner
 from analysis.models import szyszkowski_model
@@ -18,19 +14,23 @@ from hardware.opentrons.droplet_manager import DropletManager
 from hardware.opentrons.formulater import Formulater
 from hardware.opentrons.configuration import Configuration
 from hardware.opentrons.containers import Container
-from hardware.cameras import PendantDropCamera
+from hardware.cameras.pendant_drop_camera import PendantDropCamera
 from hardware.sensor.sensor_api import SensorAPI
 from utils.load_save_functions import (
     load_settings,
-    save_calibration_data,
     initialize_results,
     load_info,
     append_results,
     save_results,
 )
 from utils.logger import Logger
-from utils.utils import play_sound, calculate_average_in_column
 
+## Surpress warning pandas
+warnings.filterwarnings(
+    "ignore",
+    category=FutureWarning,
+    message="The behavior of DataFrame concatenation with empty or all-NA entries is deprecated",
+)
 
 class Protocol:
     def __init__(
@@ -76,8 +76,8 @@ class Protocol:
             labware=self.labware,
         )
         self.opentrons_api.home()
+        self.left_pipette.pick_up_needle()
         self.logger.info("Initialization finished.\n\n\n")
-        # play_sound("Lets go.")
 
     def measure_wells(self) -> None:
         """
@@ -93,16 +93,17 @@ class Protocol:
 
         self.left_pipette.return_needle()
         self.logger.info("Finished measure wells protocol.\n\n\n")
-        play_sound("Knietje?") 
+        self.opentrons_api.home()
 
     def _measure_single_well(self, well_id: str) -> None:
         """
         Measure pendant drop for a single well and process the results.
         """
         self.logger.info(f"Start pendant drop measurement of {well_id}.\n")
+        container = self.containers[well_id]
         dynamic_surface_tension, drop_volume, drop_count = (
             self.droplet_manager.measure_pendant_drop(
-                source=self.containers[well_id],
+                source=container,
                 max_measure_time=float(self.settings["EQUILIBRATION_TIME"]),
             )
         )
@@ -113,14 +114,13 @@ class Protocol:
             drop_count=drop_count,
         )
 
-        self.formulater.wash(repeat=self.settings["WASH_REPEATS"])
+        # self.formulater.wash(repeat=self.settings["WASH_REPEATS"]) #! for now
 
-        self._append_and_save_results(
+        self._append_save_plot_results(
             point_type="None",
             dynamic_surface_tension=dynamic_surface_tension,
-            well_id=well_id,
+            container=container,
             drop_parameters=drop_parameters,
-            solution_name=self.containers[well_id].solution_name,
             plot_type="wells",
         )
 
@@ -167,9 +167,8 @@ class Protocol:
                 exploit_points=exploit_points,
                 measure_time=measure_time,
             )
-
+        self.opentrons_api.home()
         self.logger.info("Finished characterization protocol.\n\n\n")
-        play_sound("DATA DATA.")
 
     def _perform_explore_phase(
         self, surfactant: str, row_id: str, explore_points: int, measure_time: float
@@ -182,13 +181,10 @@ class Protocol:
             range(explore_points)
         ):  # Reverse order for low to high concentration
             well_id_explore = f"{row_id}{i+1}"
-            source_well = self.containers[well_id_explore]
-            self.logger.info(
-                f"Start pendant drop measurement of {source_well.WELL_ID}, containing {source_well.concentration} mM {source_well.solution_name}.\n"
-            )
+            container = self.containers[well_id_explore]
             dynamic_surface_tension, drop_volume, drop_count = (
                 self.droplet_manager.measure_pendant_drop(
-                    source=source_well, max_measure_time=measure_time
+                    source=container, max_measure_time=measure_time
                 )
             )
             drop_parameters = self._create_drop_parameters(
@@ -196,10 +192,10 @@ class Protocol:
                 measure_time=measure_time,
                 drop_count=drop_count,
             )
-            self._append_and_save_results(
+            self._append_save_plot_results(
                 point_type="explore",
                 dynamic_surface_tension=dynamic_surface_tension,
-                well_id=well_id_explore,
+                container=container,
                 drop_parameters=drop_parameters,
                 solution_name=surfactant,
                 plot_type="concentrations",
@@ -219,40 +215,42 @@ class Protocol:
         self.logger.info(f"Start exploit phase for surfactant {surfactant}.\n")
         for i in range(exploit_points):
             well_id_exploit = f"{row_id}{explore_points+i+1}"
-
+            container = self.containers[well_id_exploit]
             suggest_concentration, st_at_suggestion = self.learner.suggest(
                 results=self.results, solution_name=surfactant
             )
             self.formulater.wash(return_needle=True)
-            self.formulater.formulate_exploit_point(
-                suggest_concentration=suggest_concentration,
-                solution_name=surfactant,
-                well_volume=float(self.settings["WELL_VOLUME"]),
-                well_id_exploit=well_id_exploit,
-            )
-            self.logger.info(
-                f"Start pendant drop measurement of {well_id_exploit}, containing {self.containers[well_id_exploit].concentration} mM {surfactant}.\n"
-            )
-            self.left_pipette.mixing(container=self.containers[well_id_exploit], mix=("before", 20, 5))
-            dynamic_surface_tension, drop_volume, drop_count = (
-                self.droplet_manager.measure_pendant_drop(
-                    source=self.containers[well_id_exploit],
-                    max_measure_time=measure_time,
+            if suggest_concentration is None:
+                self.logger.warning(
+                    f"Suggestion for {surfactant} is None. Skipping this point.\n"
                 )
-            )
-            drop_parameters = self._create_drop_parameters(
-                drop_volume=drop_volume,
-                measure_time=measure_time,
-                drop_count=drop_count,
-            )
-            self._append_and_save_results(
-                point_type="exploit",
-                dynamic_surface_tension=dynamic_surface_tension,
-                well_id=well_id_exploit,
-                drop_parameters=drop_parameters,
-                solution_name=surfactant,
-                plot_type="concentrations",
-            )
+            else:
+                self.formulater.formulate_exploit_point(
+                    suggest_concentration=suggest_concentration,
+                    solution_name=surfactant,
+                    well_volume=float(self.settings["WELL_VOLUME"]),
+                    well_id_exploit=well_id_exploit,
+                )
+                # self.left_pipette.mixing(container=self.containers[well_id_exploit], mix=("before", 20, 5))
+                dynamic_surface_tension, drop_volume, drop_count = (
+                    self.droplet_manager.measure_pendant_drop(
+                        source=container,
+                        max_measure_time=measure_time,
+                    )
+                )
+                drop_parameters = self._create_drop_parameters(
+                    drop_volume=drop_volume,
+                    measure_time=measure_time,
+                    drop_count=drop_count,
+                )
+                self._append_save_plot_results(
+                    point_type="exploit",
+                    dynamic_surface_tension=dynamic_surface_tension,
+                    container=container,
+                    drop_parameters=drop_parameters,
+                    solution_name=surfactant,
+                    plot_type="concentrations",
+                )
         self.formulater.wash(return_needle=True)
 
     def _create_drop_parameters(
@@ -268,13 +266,12 @@ class Protocol:
             "drop_count": drop_count,
         }
 
-    def _append_and_save_results(
+    def _append_save_plot_results(
         self,
         point_type: str,
         dynamic_surface_tension: list,
-        well_id: str,
+        container: Container,
         drop_parameters: dict,
-        solution_name: str,
         plot_type: str
     ) -> None:
         """
@@ -284,10 +281,9 @@ class Protocol:
             results=self.results,
             point_type=point_type,
             dynamic_surface_tension=dynamic_surface_tension,
-            well_id=well_id,
+            container=container,
             drop_parameters=drop_parameters,
             n_eq_points=self.n_measurement_in_eq,
-            containers=self.containers,
             sensor_api=self.sensor_api,
         )
         save_results(self.results)
@@ -297,198 +293,5 @@ class Protocol:
             )
         elif plot_type == "concentrations":
             self.plotter.plot_results_concentration(
-                df=self.results, solution_name=solution_name
+                df=self.results, container=container
             )
-
-
-### legacy ###
-
-# def calibrate(self):
-# self.logger.info("Starting calibration...")
-# drop_parameters = {
-# "drop_volume": 12,
-# "max_measure_time": 60,
-# "flow_rate": 1,
-# }  # standard settings for calibration
-# scale_t, drop_parameters = self.droplet_manager.measure_pendant_drop(
-# source=self.containers["7A1"],
-# drop_parameters=drop_parameters,
-# calibrate=True,
-# )
-# save_calibration_data(scale_t)
-# average_scale = calculate_average_in_column(x=scale_t, column_index=1)
-# self.logger.info(f"Finished calibration, average scale is: {average_scale}")
-# play_sound("Calibration done.")
-
-# def characterize_surfactant_old(self):
-#     self.logger.info("Starting characterization protocol...")
-
-#     # general information
-#     self.settings = load_settings()  # update settings
-#     characterization_info = load_info(
-#         file_name=self.settings["CHARACTERIZATION_INFO_FILENAME"]
-#     )
-#     explore_points = int(self.settings["EXPLORE_POINTS"])
-#     exploit_points = int(self.settings["EXPLOIT_POINTS"])
-
-#     for i, surfactant in enumerate(characterization_info["surfactant"]):
-#         row_id = characterization_info["row id"][i]
-#         measure_time = float(characterization_info["measure time"][i])
-#         self.formulater.serial_dilution(
-#             row_id=row_id,
-#             solution_name=surfactant,
-#             n_dilutions=explore_points,
-#             well_volume=float(self.settings["WELL_VOLUME"]),
-#         )
-#         for i in reversed(
-#             range(explore_points)
-#         ):  # reverse order to go from low to high concentration
-#             well_id_explore = f"{row_id}{i+1}"
-#             drop_volume_suggestion = suggest_volume(
-#                 results=self.results,
-#                 next_concentration=float(
-#                     self.containers[well_id_explore].concentration
-#                 ),
-#                 solution_name=surfactant,
-#             )
-#             drop_parameters = {
-#                 "drop_volume": drop_volume_suggestion,
-#                 "max_measure_time": measure_time,
-#                 "flow_rate": float(self.settings["FLOW_RATE"]),
-#             }
-#             dynamic_surface_tension, drop_parameters = (
-#                 self.droplet_manager.measure_pendant_drop(
-#                     source=self.containers[well_id_explore],
-#                     drop_parameters=drop_parameters,
-#                 )
-#             )
-#             self.results = append_results(
-#                 results=self.results,
-#                 point_type="explore",
-#                 dynamic_surface_tension=dynamic_surface_tension,
-#                 well_id=well_id_explore,
-#                 drop_parameters=drop_parameters,
-#                 n_eq_points=self.n_measurement_in_eq,
-#                 containers=self.containers,
-#                 sensor_api=self.sensor_api,
-#             )
-#             save_results(self.results)
-#             self.plotter.plot_results_concentration(
-#                 df=self.results, solution_name=surfactant
-#             )
-
-#         self.formulater.wash(repeat=3, return_needle=True)
-
-#         for i in range(exploit_points):
-#             well_id_exploit = f"{row_id}{explore_points+i+1}"
-#             suggest_concentration, st_at_suggestion = self.learner.suggest(
-#                 results=self.results, solution_name=surfactant
-#             )
-#             drop_volume_suggestion = volume_for_st(st_at_suggestion)
-#             self.formulater.formulate_exploit_point(
-#                 suggest_concentration=suggest_concentration,
-#                 solution_name=surfactant,
-#                 well_volume=float(self.settings["WELL_VOLUME"]),
-#                 well_id_exploit=well_id_exploit,
-#             )
-#             drop_parameters = {
-#                 "drop_volume": drop_volume_suggestion,
-#                 "max_measure_time": float(self.settings["EQUILIBRATION_TIME"]),
-#                 "flow_rate": float(self.settings["FLOW_RATE"]),
-#             }
-#             dynamic_surface_tension, drop_parameters = (
-#                 self.droplet_manager.measure_pendant_drop(
-#                     source=self.containers[well_id_exploit],
-#                     drop_parameters=drop_parameters,
-#                 )
-#             )
-#             self.results = append_results(
-#                 results=self.results,
-#                 point_type="exploit",
-#                 dynamic_surface_tension=dynamic_surface_tension,
-#                 well_id=well_id_exploit,
-#                 drop_parameters=drop_parameters,
-#                 n_eq_points=self.n_measurement_in_eq,
-#                 containers=self.containers,
-#                 sensor_api=self.sensor_api,
-#             )
-#             save_results(self.results)
-#             self.plotter.plot_results_concentration(
-#                 df=self.results, solution_name=surfactant
-#             )
-#             self.formulater.wash(repeat=3, return_needle=True)
-
-#     self.logger.info("Finished characterization protocol.")
-#     play_sound("DATA DATA.")
-
-# def measure_same_well(self, well_id: str, repeat: int = 3):
-#     drop_parameters = {"drop_volume": 6, "max_measure_time": 60, "flow_rate": 1}
-#     for i in range(repeat):
-#         dynamic_surface_tension, drop_parameters = (
-#             self.droplet_manager.measure_pendant_drop(
-#                 source=self.containers[well_id], drop_parameters=drop_parameters
-#             )
-#         )
-#         # self.left_pipette.wash()
-#         df = pd.DataFrame(
-#             dynamic_surface_tension, columns=["time (s)", "surface tension (mN/m)"]
-#         )
-#         df.to_csv(
-#             f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension_{i}.csv"
-#         )
-#     if self.left_pipette.has_needle:
-#         self.left_pipette.return_needle()
-
-# def measure_same_well_cali(self, well_id: str, repeat: int = 3):
-#     drop_parameters = {"drop_volume": 11, "max_measure_time": 30, "flow_rate": 1}
-#     for i in range(repeat):
-#         scale = (
-#             self.droplet_manager.measure_pendant_drop(
-#                 source=self.containers[well_id], drop_parameters=drop_parameters, calibrate=True
-#             )
-#         )
-#         # self.left_pipette.wash()
-#         df = pd.DataFrame(
-#             scale, columns=["time (s)", "scale"]
-#         )
-#         df.to_csv(
-#             f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/scale{i}.csv"
-#         )
-
-#     if self.left_pipette.has_needle:
-#         self.left_pipette.return_needle()
-
-# def measure_plate(self, well_volume: float, solution_name: str, plate_location: int):
-# # TODO save results correctly!
-# self.logger.info("Starting measure whole plate protocol...")
-# self.droplet_manager.set_max_retries = 1
-# print(self.droplet_manager.MAX_RETRIES)
-# self.settings = load_settings()  # update settings
-# well_info = load_info(file_name=self.settings["WELL_INFO_FILENAME"])
-# wells_ids = well_info["location"].astype(str) + well_info["well"].astype(str)
-# # self.formulater.fill_plate(well_volume=well_volume, solution_name=solution_name, plate_location=plate_location)
-
-# for i, well_id in enumerate(wells_ids):
-#     drop_parameters = {
-#         "drop_volume": float(well_info["drop volume (uL)"][i]),
-#         "max_measure_time": float(self.settings["EQUILIBRATION_TIME"]),
-#         "flow_rate": float(well_info["flow rate (uL/s)"][i]),
-#     }
-#     dynamic_surface_tension, drop_parameters = self.droplet_manager.measure_pendant_drop(
-#         source=self.containers[well_id], drop_parameters=drop_parameters
-#     )
-#     self.results = append_results(
-#         results=self.results,
-#         point_type="None",
-#         dynamic_surface_tension=dynamic_surface_tension,
-#         well_id=well_id,
-#         drop_parameters=drop_parameters,
-#         n_eq_points=self.n_measurement_in_eq,
-#         containers=self.containers,
-#         sensor_api=self.sensor_api,
-#     )
-#     save_results(self.results)
-#     self.plotter.plot_results_well_id(df=self.results)
-
-# self.logger.info("Done measuring plate.")
-# play_sound("DATA DATA.")

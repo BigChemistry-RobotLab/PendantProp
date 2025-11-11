@@ -1,3 +1,6 @@
+# Import
+
+## Packages
 import cv2
 import imutils
 import numpy as np
@@ -6,14 +9,12 @@ from tkinter import Tk
 from scipy.spatial.distance import euclidean
 from tkinter.filedialog import askopenfilename
 import numpy as np
-from scipy.spatial import KDTree
 import cv2
 import itertools
 from scipy.spatial.distance import euclidean
-import os
 
+## Custom code
 from utils.load_save_functions import load_settings
-from utils.logger import Logger
 
 
 class PendantDropAnalysis:
@@ -51,8 +52,9 @@ class PendantDropAnalysis:
 
         blur = cv2.GaussianBlur(self.raw_image, (9, 9), 0)
         canny = cv2.Canny(blur, 10, 10)
-        edged = cv2.dilate(canny, None, iterations=1)
-        self.processed_image = cv2.erode(edged, None, iterations=1)
+        dilated = cv2.dilate(canny, None, iterations=1)
+        eroded = cv2.erode(dilated, None, iterations=1)
+        self.processed_image = eroded
 
     def analyse(self):
 
@@ -155,17 +157,17 @@ class PendantDropAnalysis:
         )
 
         # Draw the double-arrow line for the needle diameter on the analysis image
-        self._draw_double_arrow_line(
-            image=self.analysis_image,
-            point1=left_point_needle_transposed,
-            point2=right_point_needle_transposed,
-            color=(44, 160, 44), 
-            thickness=5,
-            tip_length=0.05,
-            fontscale=0.5,
-            text=f"Needle D: {self.needle_diameter_px}px",
-            thickness_font=2
-        )
+        # self._draw_double_arrow_line(
+        #     image=self.analysis_image,
+        #     point1=left_point_needle_transposed,
+        #     point2=right_point_needle_transposed,
+        #     color=(44, 160, 44), 
+        #     thickness=5,
+        #     tip_length=0.05,
+        #     fontscale=0.5,
+        #     text=f"Needle D: {self.needle_diameter_px}px",
+        #     thickness_font=2
+        # )
 
         # Calculate the horizontal distance between the two farthest points of the contours
         Lx, Ly, Lw, Lh = cv2.boundingRect(contourleft)
@@ -322,29 +324,31 @@ class PendantDropAnalysis:
         taken from https://doi.org/10.1016/j.jcis.2015.05.012.
         units cancel out if st given in mN/m and needle_diameter in mm and vol droplet in uL
         """
-        
+
         Wo = (self.density*self.gravity_constant* vol_droplet) / (np.pi * st* self.needle_diameter_mm )
         return Wo
 
-    
     def check_diameter(self):
         diameter_needle_px_given = self.settings["NEEDLE_DIAMETER_PX"]
-        if 0.95*diameter_needle_px_given < self.needle_diameter_px < 1.05*diameter_needle_px_given:
+        if 0.98*diameter_needle_px_given < self.needle_diameter_px < 1.02*diameter_needle_px_given:
             return True
         else:
-            # print(f"too large of diameter ({self.needle_diameter_px} px), droplet probably sticking to needle.")
             return False
-    
+
     def image2wortington(self, img, vol_droplet):
         self.raw_image = img    
         self.process_image()
         st = self.analyse()
         if st > 20:
             if self.check_diameter():
-                return self._calculate_wortington(vol_droplet=vol_droplet, st=st)
+                wo = self._calculate_wortington(vol_droplet=vol_droplet, st=st)
+                print(f"dia: {self.needle_diameter_px} px, wo: {wo:.2f}, st: {st:.2f}".ljust(30), end="\r")
+                return wo
             else:
+                print(f"dia: {self.needle_diameter_px} px, too big probably droplet sticking.".ljust(30), end="\r")
                 return 0
         else:
+            print(f"surface tension ({st:.2f}) too low, no droplet observer")
             return 0
 
     def image2st(self, img):
@@ -385,3 +389,9 @@ class PendantDropAnalysis:
         if file_path == None:
             file_path = f"experiments/{self.settings['EXPERIMENT_NAME']}/data/analysis.jpg"
         cv2.imwrite(file_path, self.analysis_image)
+
+
+    def save_process_image(self, file_path=None):
+        if file_path == None:
+            file_path = f"experiments/{self.settings['EXPERIMENT_NAME']}/data/processed.jpg"
+        cv2.imwrite(file_path, self.processed_image)

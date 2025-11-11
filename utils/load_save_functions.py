@@ -1,11 +1,16 @@
+# Imports
+
+## Packages
 import os
 import json
 import csv
 import subprocess
 import pandas as pd
 
+## Custom code
 from utils.utils import calculate_equillibrium_value
 from hardware.sensor.sensor_api import SensorAPI
+from hardware.opentrons.containers import Container
 
 def save_csv_file(exp_name: str, subdir_name: str, csv_file, app):
     """
@@ -21,7 +26,7 @@ def save_csv_file(exp_name: str, subdir_name: str, csv_file, app):
 
     exp_dir = os.path.join(
         app.config["UPLOAD_FOLDER"], f"{exp_name}/{subdir_name}"
-    )  # TODO check
+    )
     os.makedirs(exp_dir, exist_ok=True)
     file_path = os.path.join(exp_dir, csv_file.filename)
     csv_file.save(file_path)
@@ -107,14 +112,13 @@ def append_results(
     results: pd.DataFrame,
     point_type: str,
     dynamic_surface_tension: list,
-    well_id: str,
+    container: Container,
     drop_parameters: dict,
     n_eq_points: int,
-    containers: list,
     sensor_api: SensorAPI,
 ):
     if dynamic_surface_tension:
-        save_dynamic_surface_tension(dynamic_surface_tension, well_id)
+        save_dynamic_surface_tension(dynamic_surface_tension, container=container)
         st_eq = calculate_equillibrium_value(
             x=dynamic_surface_tension,
             n_eq_points=n_eq_points,
@@ -123,10 +127,9 @@ def append_results(
         results = add_data_to_results(
             results=results,
             point_type=point_type,
-            well_id=well_id,
+            container=container,
             surface_tension_eq=st_eq,
             drop_parameters=drop_parameters,
-            containers=containers,
             sensor_api=sensor_api,
         )
     else:
@@ -134,30 +137,32 @@ def append_results(
     return results
 
 
-def save_dynamic_surface_tension(dynamic_surface_tension, well_id):
+def save_dynamic_surface_tension(dynamic_surface_tension, container: Container):
     settings = load_settings()
+    well_id = container.WELL_ID
+    labware_name = container.LABWARE_NAME
     df = pd.DataFrame(
         dynamic_surface_tension, columns=["time (s)", "surface tension (mN/m)"]
     )
     df.to_csv(
-        f"experiments/{settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension.csv"
+        f"experiments/{settings['EXPERIMENT_NAME']}/data/{labware_name}/{well_id}/dynamic_surface_tension.csv"
     )
 
 
 def add_data_to_results(
     results: pd.DataFrame,
     point_type: str,
-    well_id: str,
+    container: Container,
     surface_tension_eq: float,
     drop_parameters: dict,
-    containers=list,
     sensor_api=SensorAPI,
 ):
+
     sensor_data = sensor_api.capture_sensor_data()
-    container = containers[well_id]
+
     new_row = pd.DataFrame(
         {
-            "well id": [well_id],
+            "well id": [container.WELL_ID],
             "solution": [container.solution_name],
             "concentration": [container.concentration],
             "point type": [point_type],

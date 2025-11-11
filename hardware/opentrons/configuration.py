@@ -1,13 +1,18 @@
+# Imports
+
+## Packages
 import pandas as pd
 import os
+
+## Custom code
 from hardware.opentrons.containers import *
 from hardware.opentrons.pipette import Pipette
 from utils.load_save_functions import load_settings
 from utils.logger import Logger
 from hardware.opentrons.opentrons_api import OpentronsAPI
 
-class Configuration:
 
+class Configuration:
     def __init__(self, opentrons_api: OpentronsAPI):
         settings = load_settings()
         self.settings = settings
@@ -16,18 +21,16 @@ class Configuration:
         self.ROBOT_TYPE = settings["ROBOT_TYPE"]
         self.FILE_PATH_CONFIG = f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data/{settings["CONFIG_FILENAME"]}'
         self.LAYOUT = self._load_config_file()
-        self.RIGHT_PIPETTE_NAME = "p1000_single_gen2"
-        self.LEFT_PIPETTE_NAME = "p20_single_gen2"
+        self.RIGHT_PIPETTE_NAME = settings["RIGHT_PIPETTE_NAME"]
+        self.LEFT_PIPETTE_NAME = settings["LEFT_PIPETTE_NAME"]
         self.RIGHT_PIPETTE_ID = None
         self.LEFT_PIPETTE_ID = None
         self.LABWARE = None
-        self.CONTAINERS = None 
+        self.CONTAINERS = None
         self.logger = Logger(
             name="protocol",
             file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
         )
-
-
 
     def load_pipettes(self):
         try:
@@ -39,8 +42,8 @@ class Configuration:
                 mount="right",
                 pipette_name=self.RIGHT_PIPETTE_NAME,
                 pipette_id=self.RIGHT_PIPETTE_ID,
-                tips_info=self._find_tips_info("tips P1000"),
-                containers=self.CONTAINERS
+                tips_info=self._find_tips_info("tips P300"),  # TODO: make dynamic
+                containers=self.CONTAINERS,
             )
 
             self.LEFT_PIPETTE_ID = self.opentrons_api.load_pipette(
@@ -51,9 +54,9 @@ class Configuration:
                 mount="left",
                 pipette_name=self.LEFT_PIPETTE_NAME,
                 pipette_id=self.LEFT_PIPETTE_ID,
-                tips_info=self._find_tips_info("tips P20"),
+                tips_info=self._find_tips_info("tips P20"),  # TODO: make dynamic
                 containers=self.CONTAINERS,
-                needle_info=self._find_needle_info("needle")
+                needle_info=self._find_needle_info("needle"),
             )
             self.logger.info("Pipettes loaded successfully.")
             return {"right": right_pipette, "left": left_pipette}
@@ -106,6 +109,7 @@ class Configuration:
                 location = labware_info["location"]
                 name_solution = layout.loc[i, "solution"]
                 concentration = layout.loc[i, "concentration (mM)"]
+                content = {name_solution: concentration}
                 well = layout.loc[i, "well"]
                 initial_volume = layout.loc[i, "initial volume (mL)"]
 
@@ -126,8 +130,7 @@ class Configuration:
                             labware_info=labware_info,
                             well=well,
                             initial_volume_mL=initial_volume,
-                            solution_name=name_solution,
-                            concentration=concentration,
+                            content=content
                         )
 
             self.logger.info("Containers loaded successfully.")
@@ -137,7 +140,7 @@ class Configuration:
         except Exception as e:
             self.logger.error(f"Error loading containers: {e}")
             return None
-        
+
     def _load_config_file(self):
         try:
             return pd.read_csv(self.FILE_PATH_CONFIG)
@@ -161,6 +164,8 @@ class Configuration:
             return GlassVial
         elif "tube rack 50 mL" in labware_name:
             return FalconTube50
+        elif "eppendorf rack" in labware_name:
+            return Eppendorf
         elif "plate" in labware_name:
             return PlateWell
         else:

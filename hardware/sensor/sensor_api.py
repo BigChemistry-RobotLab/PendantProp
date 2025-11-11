@@ -1,38 +1,35 @@
-import os
-import pandas as pd
+"""
+sensor_api.py
+
+This file provides the API for the sensor (OT712), which measures temperature, pressure and humidity.
+It starts a local sensor server and provides a method to fetch the latest sensor data via HTTP.
+
+Classes:
+    SensorAPI: Interface for starting the sensor server and retrieving sensor data.
+"""
+
+# Imports
+
+## Packages
+import requests
+
+## Custom code
+from hardware.sensor.sensor_server import start_server
 
 
 class SensorAPI:
+    """
+    
+    """
     def __init__(self):
-        self.sensor_name = "OT712 T, P, humidity sensor" 
+        start_server()  # Start the sensor server where the sensor data is printed to
 
     def capture_sensor_data(self):
-        file_path = "hardware/sensor/sensor_data.txt"
-        with open(file_path, "r") as file:
-            data = file.read()
-
-        # Replace double newlines with a unique separator
-        data = data.replace("\n\n", "<NEW_ROW>")
-
-        # Split the data into rows
-        rows = data.split("<NEW_ROW>")
-
-        # Create a DataFrame from the rows
-        df = pd.DataFrame([row.split("\t") for row in rows])
-
-        # Set the column names
-        df.columns = ["date & time", "Temperature (C)", "Pressure (Pa)", "Humidity (%)"]
-
-        # Retrieve the latest sensor data (second last row)
-        last_sensor_data = df.iloc[-2]
-
-        return last_sensor_data
-    
-    def __str__(self):
-        f"""
-        Sensor instance.
-
-        sensor name: {self.sensor_name}
-        last sensor data: {self.capture_sensor_data()}
-        """
-
+        """ """
+        try:
+            response = requests.get("http://localhost:5001/data", timeout=5)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            print(f"[Error] Could not fetch data: {e}")
+            return {"Temperature (C)": 0, "Humidity (%)": 0, "Pressure (Pa)": 0}

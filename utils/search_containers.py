@@ -1,9 +1,10 @@
 import numpy as np
 
-def get_well_id_solution(containers: dict, solution_name: str) -> str:
+def get_well_id_solution(containers: dict, solution: str) -> str:
     for key, container in containers.items():
-        if "tube" in container.CONTAINER_TYPE:
-            if container.solution_name == solution_name:
+        if "tube" in container.CONTAINER_TYPE or "Eppendorf" in container.CONTAINER_TYPE: #? No plate well needed in here?
+            compounds = container.content.keys()
+            if solution in compounds and len(compounds) == 1:
                 return container.WELL_ID
     raise ValueError(
         f"No container with type 'tube' and solution name '{solution_name}' found."
@@ -16,9 +17,10 @@ def get_well_id_concentration(containers: dict, solution: str, requested_concent
 
     # Collect differences and well IDs
     for key, container in containers.items():
-        if "tube" in container.CONTAINER_TYPE or "Plate" in container.CONTAINER_TYPE:
-            if container.solution_name == solution:
-                differences.append(float(container.concentration) - requested_concentration)
+        if "tube" in container.CONTAINER_TYPE or "Plate" in container.CONTAINER_TYPE or "Eppendorf" in container.CONTAINER_TYPE:
+            compounds = container.content.keys()
+            if solution in compounds and len(compounds) == 1:
+                differences.append(float(container.content[solution]) - requested_concentration)
                 well_ids.append(key)
 
     # Convert differences to a NumPy array and find positive differences
@@ -46,10 +48,11 @@ def get_list_of_well_ids_concentration(
 
     # Collect differences and well IDs
     for key, container in containers.items():
-        if "tube" in container.CONTAINER_TYPE or "Plate" in container.CONTAINER_TYPE:
-            if container.solution_name == solution:
+        if "tube" in container.CONTAINER_TYPE or "Plate" in container.CONTAINER_TYPE or "Eppendorf" in container.CONTAINER_TYPE:
+            compounds = container.content.keys()
+            if solution in compounds and len(compounds) == 1:
                 differences.append(
-                    float(container.concentration) - requested_concentration
+                    float(container.content[solution]) - requested_concentration
                 )
                 well_ids.append(key)
     if well_ids == []:
