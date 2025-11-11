@@ -1,2 +1,13 @@
-backup/
+old/
 output/
+
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+
+# Editable install / build artifacts
+*.egg-info/
+dist/
+build/
+
+.vscode
