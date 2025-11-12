@@ -6,6 +6,7 @@ This example demonstrates how to use LightHolder and DropStage in a protocol.
 from opentrons_api.load_save_functions import load_settings, save_settings
 from pendantprop.hardware.opentrons.config import Config  # Use PendantProp Config!
 from pendantprop.hardware.opentrons.washing import Washer
+
 # Import settings and set experiment tag
 settings = load_settings(file_path="config/settings.json")
 
@@ -23,7 +24,7 @@ washer = Washer(
     labware=config.labware
     )
 
-# # Example washing procedure using the Washer class
+# Example washing procedure using the Washer class
 washer.wash()
 
 

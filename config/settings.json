@@ -7,7 +7,6 @@
     "CONTAINER_DATA_FOLDER": "container_data",
     "CUSTOM_LABWARE_FOLDER": "config/custom_labware",
     "ROBOT_IP": "169.254.164.30",
-
     "ROBOT_TYPE": "OT2",
     "LEFT_PIPETTE_NAME": "p20_single_gen2",
     "RIGHT_PIPETTE_NAME": "p1000_single_gen2",
@@ -30,5 +29,15 @@
         "name_wash_plate": "wash plate",
         "mixing_volume_ul": 20,
         "mix_repeats": 5
+    },
+    "SENSOR_SETTINGS": {
+        "serial_port": "COM3",
+        "flask_port": 5001,
+        "baud_rate": 9600,
+        "read_interval_s": 2
+    },
+    "PENDANT_DROP_SETTINGS": {
+        "check_time": 60,
+        "explore_points": 5 
     }
 }
