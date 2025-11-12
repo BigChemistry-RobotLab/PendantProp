@@ -27,8 +27,7 @@
         "container_data_folder": "container_data",
         "config_filepath": "config/layouts/layout.csv",
         "custom_labware_folder": "config/custom_labware",
-        "stock_info_filepath": "config/formulation_csv/stock_info_example.csv",
-        "formulation_info_filepath": "config/formulation_csv/formulation_info_example.csv"
+        "plot_folder_server": "src/pendantprop/server/static/plots_cache"
     },
     "wash_settings": {
         "wash_volume_ul": 300,

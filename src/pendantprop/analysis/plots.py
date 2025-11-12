@@ -4,6 +4,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import os
 
 ## Custom code
 from opentrons_api.containers import Container
@@ -16,35 +17,36 @@ class Plotter:
         self.save_root = (
             f"{self.file_settings['output_folder']}/{self.file_settings['exp_tag']}"
         )
-        # TODO plots settings?
+        self.server_plot_folder = self.file_settings["plot_folder_server"]
+        os.makedirs(self.save_root, exist_ok=True)
+        os.makedirs(self.server_plot_folder, exist_ok=True)
         self.fontsize_labels = 15
         self.window_size = 20
 
-    def plot_results_well_id(self, df: pd.DataFrame):
-        # TODO well ID -> sample ID
+    def plot_results_sample_id(self, df: pd.DataFrame):
         try:
             if not df.empty:
-                wells_ids = df["well id"]
+                sample_ids = df["sample id"]
                 st_eq = df["surface tension eq. (mN/m)"]
 
                 fig, ax = plt.subplots()
-                ax.bar(wells_ids, st_eq, color="C0")
-                ax.set_xlabel("Well ID", fontsize=self.fontsize_labels)
+                ax.bar(sample_ids, st_eq, color="C0")
+                ax.set_xlabel("Sample ID", fontsize=self.fontsize_labels)
                 ax.set_ylabel(
                     "Surface Tension Eq. (mN/m)", fontsize=self.fontsize_labels
                 )
                 ax.set_title(
-                    f"{self.file_settings['EXPERIMENT_NAME']}",
+                    f"{self.file_settings['exp_tag']}",
                     fontsize=self.fontsize_labels,
                 )
                 ax.tick_params(axis="x", rotation=90)
                 plt.tight_layout()
 
                 # save in experiment folder and plots cache for web interface
-                # plt.savefig(
-                #         f"experiments/{self.file_settings['EXPERIMENT_NAME']}/results_plot.png"
-                # )
-                # plt.savefig("server/static/plots_cache/results_plot.png")
+                plt.savefig(
+                        f"{self.save_root}/results_plot.png"
+                )
+                plt.savefig(f"{self.server_plot_folder}/results_plot.png")
                 plt.close(fig)
 
         except Exception as e:
@@ -54,7 +56,7 @@ class Plotter:
             self._create_empty_plot("results_plot")
 
     def plot_dynamic_surface_tension(
-        self, dynamic_surface_tension: list, container: Container, drop_count: int
+        self, dynamic_surface_tension: list, sample_id: str, drop_count: int
     ):
         try:
             if dynamic_surface_tension:
@@ -83,18 +85,18 @@ class Plotter:
                 ax.set_xlabel("Time (s)", fontsize=self.fontsize_labels)
                 ax.set_ylabel("Surface Tension (mN/m)", fontsize=self.fontsize_labels)
                 ax.set_title(
-                    f"Well ID: {container.WELL_ID}, drop count: {drop_count}",
+                    f"Sample ID: {sample_id}, drop count: {drop_count}",
                     fontsize=self.fontsize_labels,
                 )
                 ax.grid(axis="y")
-
-                #TODO fix sample ID
-                # plt.savefig(
-                #     f"experiments/{self.file_settings['EXPERIMENT_NAME']}/data/{container.LABWARE_NAME}/{container.WELL_ID}/dynamic_surface_tension_plot_{drop_count}.png"
-                # )
-                # plt.savefig(
-                #     "server/static/plots_cache/dynamic_surface_tension_plot.png"
-                # )
+                dir = f"{self.save_root}/{self.file_settings['data_folder']}/{sample_id}"
+                os.makedirs(dir, exist_ok=True)
+                plt.savefig(
+                    f"{dir}/dynamic_surface_tension_plot_{drop_count}.png"
+                )
+                plt.savefig(
+                    f"{self.server_plot_folder}/dynamic_surface_tension_plot.png"
+                )
                 plt.close(fig)
                 
         except Exception as e:
@@ -149,7 +151,7 @@ class Plotter:
                 # plt.savefig(
                 #     f"experiments/{self.file_settings['EXPERIMENT_NAME']}/results_plot_{solution_name}.png"
                 # )
-                # plt.savefig("server/static/plots_cache/results_plot.png")
+                plt.savefig(f"{self.server_plot_folder}/results_plot.png")
                 plt.close(fig)
         except Exception as e:
             print(
@@ -160,8 +162,8 @@ class Plotter:
     def _create_empty_plot(self, plot_name: str):
         fig, ax = plt.subplots()
         ax.set_title("Empty Plot")
-        # plt.savefig(
-        #     f"{self.save_root}/{plot_name}.png"
-        # )
-        # plt.savefig(f"server/static/plots_cache/{plot_name}.png")
+        plt.savefig(
+            f"{self.save_root}/{plot_name}.png"
+        )
+        plt.savefig(f"{self.server_plot_folder}/{plot_name}.png")
         plt.close(fig)
