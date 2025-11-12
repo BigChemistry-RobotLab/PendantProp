@@ -1,12 +1,13 @@
 {
     "EXP_TAG": "example",
     "CONFIG_FILEPATH": "config/layouts/layout.csv",
-    "SIMULATE": true,
+    "SIMULATE": false,
     "OUTPUT_FOLDER": "output",
     "META_DATA_FOLDER": "meta_data",
     "CONTAINER_DATA_FOLDER": "container_data",
     "CUSTOM_LABWARE_FOLDER": "config/custom_labware",
     "ROBOT_IP": "169.254.164.30",
+
     "ROBOT_TYPE": "OT2",
     "LEFT_PIPETTE_NAME": "p20_single_gen2",
     "RIGHT_PIPETTE_NAME": "p1000_single_gen2",
@@ -20,5 +21,14 @@
         "y": 0,
         "z": 0
     },
-    "WELL_DEPTH_MM": 0.8
+    "WELL_DEPTH_MM": 0.8,
+    "WASH_SETTINGS": {
+        "wash_volume_ul": 300,
+        "wash_repeats": 3,
+        "name_wash_container": "water_wash",
+        "name_trash_container": "trash",
+        "name_wash_plate": "wash plate",
+        "mixing_volume_ul": 20,
+        "mix_repeats": 5
+    }
 }
