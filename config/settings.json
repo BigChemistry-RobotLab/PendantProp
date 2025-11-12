@@ -1,27 +1,35 @@
 {
-    "EXP_TAG": "example",
-    "CONFIG_FILEPATH": "config/layouts/layout.csv",
-    "SIMULATE": false,
-    "OUTPUT_FOLDER": "output",
-    "META_DATA_FOLDER": "meta_data",
-    "CONTAINER_DATA_FOLDER": "container_data",
-    "CUSTOM_LABWARE_FOLDER": "config/custom_labware",
-    "ROBOT_IP": "169.254.164.30",
-    "ROBOT_TYPE": "OT2",
-    "LEFT_PIPETTE_NAME": "p20_single_gen2",
-    "RIGHT_PIPETTE_NAME": "p1000_single_gen2",
-    "LEFT_PIPETTE_OFFSET": {
-        "x": 0,
-        "y": 0,
-        "z": 0
+    "general_settings": {
+        "simulate": true
     },
-    "RIGHT_PIPETTE_OFFSET": {
-        "x": 0,
-        "y": 0,
-        "z": 0
+    "robot_settings": {
+        "robot_ip": "169.254.164.30",
+        "robot_type": "OT2",
+        "left_pipette_name": "p20_single_gen2",
+        "right_pipette_name": "p1000_single_gen2",
+        "left_pipette_offset": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        },
+        "right_pipette_offset": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        },
+        "well_depth_mm": 0.8
     },
-    "WELL_DEPTH_MM": 0.8,
-    "WASH_SETTINGS": {
+    "file_settings": {
+        "exp_tag": "example",
+        "output_folder": "output",
+        "meta_data_folder": "meta_data",
+        "container_data_folder": "container_data",
+        "config_filepath": "config/layouts/layout.csv",
+        "custom_labware_folder": "config/custom_labware",
+        "stock_info_filepath": "config/formulation_csv/stock_info_example.csv",
+        "formulation_info_filepath": "config/formulation_csv/formulation_info_example.csv"
+    },
+    "wash_settings": {
         "wash_volume_ul": 300,
         "wash_repeats": 3,
         "name_wash_container": "water_wash",
@@ -30,14 +38,31 @@
         "mixing_volume_ul": 20,
         "mix_repeats": 5
     },
-    "SENSOR_SETTINGS": {
+    "sensor_settings": {
         "serial_port": "COM3",
         "flask_port": 5001,
         "baud_rate": 9600,
         "read_interval_s": 2
     },
-    "PENDANT_DROP_SETTINGS": {
+    "pendant_drop_settings": {
         "check_time": 60,
-        "explore_points": 5 
+        "explore_points": 5,
+        "worthington_limit_lower": 0.65,
+        "worthington_limit_upper": 0.9,
+        "initial_drop_volume": 3.0,
+        "equilibration_time": 1500,
+        "max_retries": 5,
+        "drop_volume_decrease_after_retry": 0.35
+    },
+    "camera_settings": {
+        "capture_interval": 1 
+    },
+    "image_analysis_settings": {
+        "diameter_needle_mm": 0.9,
+        "diameter_needle_px": 248,
+        "diameter_tolerance_percent": 2,
+        "st_water": 72.37,
+        "density": 0.789,
+        "gravity_constant": 9.80665
     }
 }

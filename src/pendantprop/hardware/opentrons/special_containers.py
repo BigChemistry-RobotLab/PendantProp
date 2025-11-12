@@ -21,6 +21,7 @@ class LightHolder:
         self.DEPTH = labware_info["depth"]
         self.height_mm = labware_info["depth"]
         self.MAX_VOLUME = labware_info["max_volume"]
+        self.volume_mL = initial_volume_mL
 
     def __str__(self):
         return f"""
@@ -54,6 +55,7 @@ class DropStage:
         self.MAX_VOLUME = labware_info["max_volume"]
         self.solution_name = "empty"
         self.concentration = "pure"
+        self.volume_mL = initial_volume_mL
 
     def __str__(self):
         return f"""

@@ -15,20 +15,21 @@ class Washer:
         containers: Dict[str, Container],
         labware: Dict,
     ):
-        self.settings = settings
+        self.file_settings = settings["file_settings"]
+        self.wash_settings = settings["wash_settings"]
         self.left_pipette = left_pipette
         self.right_pipette = right_pipette
         self.containers = containers
         self.labware = labware
         self.logger = Logger(
             name="protocol",
-            file_path=f'{settings["OUTPUT_FOLDER"]}/{self.settings["EXP_TAG"]}/{self.settings["META_DATA_FOLDER"]}',
+            file_path=f'{self.file_settings["output_folder"]}/{self.file_settings["exp_tag"]}/{self.file_settings["meta_data_folder"]}',
         )
         self.wash_index = 0
 
     def wash(self, wash_settings: Dict = None):
         if wash_settings is None:
-            wash_settings = self.settings["WASH_SETTINGS"]
+            wash_settings = self.wash_settings
 
         self.logger.info(
             f"Starting needle wash procedure - "

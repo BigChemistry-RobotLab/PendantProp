@@ -4,7 +4,7 @@ Example: Using the Sensor API in your protocols
 Shows how to initialize and use the sensor in both real and mock modes.
 """
 
-from pendantprop.hardware.sensor.sensor_api import SensorAPI
+from pendantprop.hardware.sensor_api import SensorAPI
 from opentrons_api.load_save_functions import load_settings
 
 # Example 1: Real sensor (default)

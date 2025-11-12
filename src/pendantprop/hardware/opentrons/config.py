@@ -53,7 +53,7 @@ class Config(BaseConfig):
         if ("light" in labware_lower and "holder" in labware_lower):
             return LightHolder
         
-        # Drop stage / cuvette detection
+        # Drop stage
         if ("drop" in labware_lower and "stage" in labware_lower):
             return DropStage
         
@@ -69,6 +69,7 @@ class Config(BaseConfig):
         elif "plate" in labware_name:
             return PlateWell
         else:
+            print("reached!")
             self.logger.warning(
                 f"labware {labware_name} is container, but type is not found!"
             )

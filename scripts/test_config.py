@@ -1,9 +1,9 @@
 from opentrons_api.load_save_functions import load_settings, save_settings
-from opentrons_api.config import Config
+from pendantprop.hardware.opentrons.config import Config
 
 # import settings and set exp tag 
 settings = load_settings(file_path="config/settings.json")
-settings['EXP_TAG'] = "example1"
+settings['file_settings']['exp_tag'] = "test_opentrons_api"
 
 # initialise platform
 config = Config(settings=settings)

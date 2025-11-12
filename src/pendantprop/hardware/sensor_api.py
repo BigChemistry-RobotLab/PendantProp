@@ -64,8 +64,9 @@ class SensorAPI:
         settings: dict
     ):
         # Handle settings dict (preferred method)
-        self.simulate = settings.get('SIMULATE')
-        sensor_settings = settings.get('SENSOR_SETTINGS')
+        file_settings = settings["file_settings"]
+        self.simulate = settings["general_settings"]["simulate"]
+        sensor_settings = settings['sensor_settings']
         self.serial_port = sensor_settings.get('serial_port')
         self.baud_rate = sensor_settings.get('baud_rate')
         self.flask_port = sensor_settings.get('flask_port')
@@ -75,7 +76,7 @@ class SensorAPI:
 
         self.logger = Logger(
             name="protocol",
-            file_path=f'{settings["OUTPUT_FOLDER"]}/{settings["EXP_TAG"]}/{settings["META_DATA_FOLDER"]}',
+            file_path=f'{file_settings["output_folder"]}/{file_settings["exp_tag"]}/{file_settings["meta_data_folder"]}',
         )
         
         if self.simulate:
