@@ -1,0 +1,30 @@
+from opentrons_api.load_save_functions import load_settings, save_settings
+from pendantprop.hardware.opentrons.config import Config
+from pendantprop.hardware.droplet_management import DropletManager
+
+# import settings and set exp tag 
+settings = load_settings(file_path="config/settings.json")
+settings['file_settings']['exp_tag'] = "test_droplet_manager"
+
+# initialise platform
+config = Config(settings=settings)
+left_pipette, right_pipette, containers = config.load_all()
+droplet_manager = DropletManager(
+    settings=settings,
+    left_pipette=left_pipette,
+    containers=containers,
+)
+
+source = containers["5A1"]
+
+# home robot
+config.home()
+
+droplet_manager.measure_pendant_drop(source=source)
+
+# # save meta data
+# config.save_layout_final()
+# save_settings(settings)
+
+# # Log the protocol summary at the end
+# config.log_protocol_summary()

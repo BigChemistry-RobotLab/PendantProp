@@ -5,12 +5,14 @@ from threading import Event
 from datetime import datetime
 from pypylon import pylon
 import time
+
 from pendantprop.analysis.image_analysis import PendantDropAnalysis
 from opentrons_api.logger import Logger
 
 class PendantDropCamera:
     def __init__(self, settings: dict):
         self.settings = settings
+        self.file_settings = settings["file_settings"]
         self.camera_settings = settings["camera_settings"]
         self.capture_interval = float(self.camera_settings["capture_interval"])
         self._initialize_camera()
@@ -41,22 +43,20 @@ class PendantDropCamera:
         self.stream_thread = None
         self.process_thread = None
         self.check_thread = None
-        self.well_id = None
+        self.sample_id = None
         self.st_t = []  # Surface tension measurements
-        self.wortington_numbers = []  
-        self.capturing_before_measurement = False        
+        self.wortington_numbers = []
+        self.capturing_before_measurement = False
         self.capture_before_measurement_thread = None
 
-    def initialize_measurement(self, well_id: str, drop_count: int):
-        self.max_measurement_time = float(self.settings["MAX_MEASUREMENT_TIME"])
-        self.experiment_name = self.settings["EXPERIMENT_NAME"]
-        self.save_dir = f"experiments/{self.experiment_name}/data"
+    def initialize_measurement(self, sample_id: str, drop_count: int):
+        self.save_root = f"{self.file_settings['output_folder']}/{self.file_settings['exp_tag']}/{self.file_settings['data_folder']}"
         self.analyzer = PendantDropAnalysis(settings=self.settings)
         self.logger = Logger(
             name="protocol",
-            file_path=f'{self.settings["OUTPUT_FOLDER"]}/{self.settings["EXP_TAG"]}/{self.settings["META_DATA_FOLDER"]}',
+            file_path=f'{self.file_settings["output_folder"]}/{self.file_settings["exp_tag"]}/{self.file_settings["meta_data_folder"]}',
         )
-        self.well_id = well_id
+        self.sample_id = sample_id
         self.drop_count = drop_count
         self.start_stream()
 
@@ -99,7 +99,7 @@ class PendantDropCamera:
                 target=self._process_thread, daemon=True
             )
             self.process_thread.start()
-            self.logger.info(f"Camera: start capturing {self.well_id}.")
+            self.logger.info(f"Camera: start capturing sample {self.sample_id}.")
 
     def stop_capture(self):
         self.capturing = False
@@ -183,14 +183,14 @@ class PendantDropCamera:
 
     # Image Processing
     def _save_image(self, img):
-        directory = f"{self.save_dir}/{self.well_id}/images/droplet_{self.drop_count}"
+        directory = f"{self.save_root}/{self.sample_id}/images/droplet_{self.drop_count}"
         os.makedirs(directory, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{directory}/{timestamp}.png"
         cv2.imwrite(filename, img)
 
     def _save_image_before_capture(self, img):
-        directory = f"{self.save_dir}/{self.well_id}/images/droplet_{self.drop_count}/before_measurement"
+        directory = f"{self.save_root}/{self.sample_id}/images/droplet_{self.drop_count}/before_measurement"
         os.makedirs(directory, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{directory}/{timestamp}.png"
@@ -201,17 +201,18 @@ class PendantDropCamera:
             time_stamp = datetime.now()
             relative_time = (time_stamp - self.start_time).total_seconds()
 
-            st, analysis_image = self.analyzer.image2st(img)
+            st, analysis_image = self.analyzer.img2st(img)
 
             self.st_t.append([relative_time, st])
             self.analysis_image = analysis_image
 
         except Exception as e:
+            # print(f"Camera: Error analyzing image: {e}")
             self.analysis_image = None
 
     def _check_image(self, img, vol_droplet):
         try:
-            return self.analyzer.image2wortington(img=img, vol_droplet=vol_droplet) 
+            return self.analyzer.img2wo(img=img, vol_droplet=vol_droplet)
         except Exception:
             return None
 

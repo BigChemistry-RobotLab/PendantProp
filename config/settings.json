@@ -23,6 +23,7 @@
         "exp_tag": "example",
         "output_folder": "output",
         "meta_data_folder": "meta_data",
+        "data_folder": "data",
         "container_data_folder": "container_data",
         "config_filepath": "config/layouts/layout.csv",
         "custom_labware_folder": "config/custom_labware",
@@ -45,14 +46,19 @@
         "read_interval_s": 2
     },
     "pendant_drop_settings": {
-        "check_time": 60,
         "explore_points": 5,
         "worthington_limit_lower": 0.65,
         "worthington_limit_upper": 0.9,
         "initial_drop_volume": 3.0,
-        "equilibration_time": 1500,
+        "check_time": 2,
+        "equilibration_time": 60,
+        "max_measure_time": 120,
         "max_retries": 5,
-        "drop_volume_decrease_after_retry": 0.35
+        "drop_volume_decrease_after_retry": 0.35,
+        "drop_volume_increase_resolution": 0.1,
+        "flow_rate": 0.1,
+        "pendant_drop_depth_offset": -5,
+        "well_id_drop_stage": "10A1"
     },
     "camera_settings": {
         "capture_interval": 1 
