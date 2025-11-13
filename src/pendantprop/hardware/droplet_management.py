@@ -140,7 +140,7 @@ class DropletManager:
         if not self.left_pipette.has_tip:
             self.left_pipette.pick_up_tip()
 
-        self.left_pipette.mixing(container=self.source, volume_mix=15, repeat=3) #? in settings?
+        self.left_pipette.mixing(container=self.source, volume_mix=15, repeat=3, touch_tip=False) #? in settings?
         self.left_pipette.aspirate(volume=17, source=self.source, flow_rate=15)
         self.left_pipette.air_gap(air_volume=3)
         self.left_pipette.remove_air_gap(container=self.containers[self.WELL_ID_DROP_STAGE])
@@ -201,7 +201,7 @@ class DropletManager:
             # else:
             #     wortington_number = 0
 
-            print(f"Wortington number: {wortington_number:2f}".ljust(30), end="\r")
+            # print(f"Wortington number: {wortington_number:2f}".ljust(30), end="\r")
 
         if wortington_number < self.WORTINGTON_NUMBER_LIMIT_LOWER:
             self.logger.warning(

@@ -27,6 +27,8 @@ pd_cam.start_capture()
 
 show_analysis = False
 scale_percent = 50  # Reduce to 50% of original size
+last_print_time = time.time()
+print_interval = 2.0  # Print surface tension every 2 seconds
 
 try:
     while True:
@@ -45,6 +47,13 @@ try:
             height = int(frame.shape[0] * scale_percent / 100)
             resized = cv2.resize(frame, (width, height), interpolation=cv2.INTER_AREA)
             cv2.imshow('Pendant Drop Camera', resized)
+        
+        # Print surface tension periodically
+        current_time = time.time()
+        if current_time - last_print_time >= print_interval and pd_cam.st_t:
+            last_st = pd_cam.st_t[-1]
+            print(f"t={last_st[0]:6.1f}s | ST={last_st[1]:6.2f} mN/m | n={len(pd_cam.st_t)} samples")
+            last_print_time = current_time
         
         # Handle keyboard input
         key = cv2.waitKey(1) & 0xFF

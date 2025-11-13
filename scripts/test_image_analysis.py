@@ -15,7 +15,7 @@ print(f"Needle diameter within tolerance: {analyzer.check_diameter()}")
 print(f"measured needle diameter (px): {analyzer.needle_diameter_px_measured}")
 print(f"given needle diameter (px): {analyzer.needle_diameter_px}")
 
-wo = analyzer.img2wo(img=analyzer.raw_image, vol_droplet=8)
+wo = analyzer.img2wo(img=analyzer.raw_image, vol_droplet=20)
 print(f"Calculated Wo number: {wo}")
 
 # analyzer.show_analysis_image()

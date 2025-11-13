@@ -347,7 +347,7 @@ class PendantDropAnalysis:
             if self.check_diameter():
                 wo = self._calculate_wortington(vol_droplet=vol_droplet, st=st)
                 print(
-                    f"dia: {self.needle_diameter_px_measured} px, wo: {wo:.2f}, st: {st:.2f}".ljust(
+                    f"dia: {self.needle_diameter_px_measured} px, wo: {wo:.2f}, st: {st:.2f}, drop V: {vol_droplet:.1f}".ljust(
                         30
                     ),
                     end="\r",

@@ -1,9 +1,9 @@
 labware name,labware file,function,deck position,well,initial volume (mL),compound 1,concentration 1,compound 2,concentration 2
-"tips P20, 1",needle_1_tiprack_20ul,tips,4,,,,,,
-"tips P1000, 1",sarstedt_77_tiprack_1000ul,tips,1,,,,,,
+"tips P20, 1",needlecoated_1_tiprack_20ul,tips,1,,,,,,
+"tips P1000, 1",sarstedt_77_tiprack_1000ul,tips,2,,,,,,
 tube rack 50 mL,3dprinted_50_tuberack_50000ul,container,6,A1,50,water_wash,pure,,
 tube rack 50 mL,3dprinted_50_tuberack_50000ul,container,6,A2,30,trash,pure,,
 tube rack 50 mL,3dprinted_50_tuberack_50000ul,container,6,A3,50,water,pure,,
-sample plate,greinerblackwalls_96_wellplate_392ul,container,5,,,,,,
-wash plate,greinerblackwalls_96_wellplate_392ul,container,7,,,,,,
+sample plate,greinerblackwalls_96_wellplate_392ul,container,7,,,,,,
+wash plate,greinerblackwalls_96_wellplate_392ul,container,3,,,,,,
 drop_stage,dropstage_1_reservoir_5000ul,container,10,A1,,,,,

@@ -9,11 +9,7 @@ settings['file_settings']['exp_tag'] = "test_droplet_manager"
 # initialise platform
 config = Config(settings=settings)
 left_pipette, right_pipette, containers = config.load_all()
-droplet_manager = DropletManager(
-    settings=settings,
-    left_pipette=left_pipette,
-    containers=containers,
-)
+
 
 source = containers["3A1"]
 source.sample_id = "TestSample001"
@@ -21,9 +17,10 @@ source.sample_id = "TestSample001"
 # home robot
 config.home()
 
-droplet_manager.measure_pendant_drop(source=source)
+left_pipette.aspirate(17, source=source)
 
-config.home()
+
+# config.home()
 # # save meta data
 # config.save_layout_final()
 # save_settings(settings)
