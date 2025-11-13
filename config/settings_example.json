@@ -1,6 +1,6 @@
 {
     "general_settings": {
-        "simulate": true
+        "simulate": false
     },
     "robot_settings": {
         "robot_ip": "169.254.164.30",

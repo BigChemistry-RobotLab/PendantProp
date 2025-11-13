@@ -1,5 +1,6 @@
 old/
 output/
+config/settings.json
 
 # Byte-compiled / cache
 __pycache__/
