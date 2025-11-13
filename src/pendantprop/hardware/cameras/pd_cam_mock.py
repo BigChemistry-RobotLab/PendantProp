@@ -61,7 +61,7 @@ class MockPendantDropCamera:
         self.capture_before_measurement_thread = None
 
     def initialize_measurement(self, sample_id: str, drop_count: int):
-        self.save_root = f"{self.file_settings['output_folder']}/{self.file_settings['exp_tag']}/{self.file_settings['data_folder']}"
+        self.save_root = f"{self.file_settings['output_folder_pictures']}/{self.file_settings['exp_tag']}/{self.file_settings['data_folder']}"
         self.analyzer = PendantDropAnalysis(settings=self.settings)
         self.logger = Logger(
             name="protocol",

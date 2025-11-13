@@ -56,8 +56,9 @@ class Plotter:
             self._create_empty_plot("results_plot")
 
     def plot_dynamic_surface_tension(
-        self, dynamic_surface_tension: list, sample_id: str, drop_count: int
+        self, dynamic_surface_tension: list, container: Container, drop_count: int
     ):
+        sample_id = container.sample_id
         try:
             if dynamic_surface_tension:
                 # Ensure consistent lengths for time and surface tension
@@ -101,7 +102,7 @@ class Plotter:
                 
         except Exception as e:
             print(
-                f"Plotter: could not create dynamic surface tension plot for well ID: {container.WELL_ID}, drop count: {drop_count}. Error: {e}"
+                f"Plotter: could not create dynamic surface tension plot for sample ID: {container.sample_id}, drop count: {drop_count}. Error: {e}"
             )
             self._create_empty_plot(f"dynamic_surface_tension_plot_{drop_count}")
 

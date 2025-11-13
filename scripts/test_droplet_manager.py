@@ -16,6 +16,7 @@ droplet_manager = DropletManager(
 )
 
 source = containers["5A1"]
+source.sample_id = "TestSample001"
 
 # home robot
 config.home()

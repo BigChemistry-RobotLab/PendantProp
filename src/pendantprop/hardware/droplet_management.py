@@ -67,6 +67,10 @@ class DropletManager:
         """
         Measure pendant drop with retries if the initial measurement fails.
         """
+        # set sample id if not set
+        if source.sample_id is None:
+            source.sample_id = source.WELL_ID
+
         # log start
         content_str = ", ".join(
             [f"{compound}: {conc} mM" for compound, conc in source.content.items()]
@@ -231,7 +235,7 @@ class DropletManager:
         self._close_camera()
 
     def _initialise_camera(self):
-        sample_id = f"{self.source.WELL_ID}" #! for now, should change
+        sample_id = f"{self.source.sample_id}"
         self.pd_cam.initialize_measurement(
             sample_id=sample_id, drop_count=self.drop_count
         )

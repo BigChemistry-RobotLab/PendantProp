@@ -22,6 +22,7 @@
     "file_settings": {
         "exp_tag": "example",
         "output_folder": "output",
+        "output_folder_pictures": "output/pictures",
         "meta_data_folder": "meta_data",
         "data_folder": "data",
         "container_data_folder": "container_data",
