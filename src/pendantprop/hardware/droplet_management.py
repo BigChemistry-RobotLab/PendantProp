@@ -57,8 +57,8 @@ class DropletManager:
         if simulate:
             self.logger.info("Using Mock Pendant Drop Camera (simulate mode enabled)")
             self.pd_cam = MockPendantDropCamera(settings=settings)
-            self.CHECK_TIME = 0.0001  # speed up checks in simulate mode
-            self.MAX_MEASURE_TIME = 0.1  # speed up measurements in simulate mode
+            self.CHECK_TIME = 0.00001  # speed up checks in simulate mode
+            self.MAX_MEASURE_TIME = 0.001  # speed up measurements in simulate mode
         else:
             self.logger.info("Using Real Pendant Drop Camera")
             self.pd_cam = PendantDropCamera(settings=settings)
@@ -131,11 +131,9 @@ class DropletManager:
             self.logger.warning(
                 f"No valid measurement was performed for {self.source.WELL_ID} after {self.MAX_RETRIES} attempts."
             )
-
-        return dynamic_surface_tension, drop_volume, self.drop_count
+        return dynamic_surface_tension, drop_volume, self.MAX_MEASURE_TIME, self.drop_count #TODO later dynamic measure time
 
     def _prepare_pendant_drop(self):
-
         self.logger.info("Preparing pendant drop.")
         # initialize left pipette
 
@@ -183,7 +181,7 @@ class DropletManager:
         )
         while (
             not (self.WORTINGTON_NUMBER_LIMIT_LOWER <= wortington_number)
-            # and drop_volume < 17 #? settings?
+            and drop_volume < 17
         ):
             self.left_pipette.dispense(
                 volume=self.DROP_VOLUME_INCREASE_RESOLUTION,

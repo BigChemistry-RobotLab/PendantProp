@@ -25,6 +25,7 @@
         "output_folder_pictures": "output/pictures",
         "meta_data_folder": "meta_data",
         "data_folder": "data",
+        "sample_info_filepath": "config/info/sample_info.csv",
         "container_data_folder": "container_data",
         "config_filepath": "config/layouts/layout.csv",
         "custom_labware_folder": "config/custom_labware",
@@ -58,7 +59,8 @@
         "drop_volume_increase_resolution": 0.1,
         "flow_rate": 0.1,
         "pendant_drop_depth_offset": -5,
-        "well_id_drop_stage": "10A1"
+        "well_id_drop_stage": "10A1",
+        "n_equilibration_points": 100
     },
     "camera_settings": {
         "capture_interval": 1 
