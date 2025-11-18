@@ -106,59 +106,59 @@ class Plotter:
             )
             self._create_empty_plot(f"dynamic_surface_tension_plot_{drop_count}")
 
-    def plot_results_concentration(self, df: pd.DataFrame, solution_name: str):
-        try:
-            if not df.empty:
-                df_solution = df.loc[df["solution"] == solution_name]
-                # concentrations = df_solution["concentration"]
-                # st_eq = df_solution["surface tension eq. (mN/m)"]
-                point_types = df_solution["point type"]
+    # def plot_results_concentration(self, df: pd.DataFrame, solution_name: str):
+    #     try:
+    #         if not df.empty:
+    #             df_solution = df.loc[df["solution"] == solution_name]
+    #             # concentrations = df_solution["concentration"]
+    #             # st_eq = df_solution["surface tension eq. (mN/m)"]
+    #             point_types = df_solution["point type"]
 
-                fig, ax = plt.subplots()
+    #             fig, ax = plt.subplots()
 
-                # Plot explore points in blue (C0)
-                explore_points = df_solution[point_types == "explore"]
-                ax.scatter(
-                    explore_points["concentration"],
-                    explore_points["surface tension eq. (mN/m)"],
-                    color="C0",
-                    label="Explore",
-                )
+    #             # Plot explore points in blue (C0)
+    #             explore_points = df_solution[point_types == "explore"]
+    #             ax.scatter(
+    #                 explore_points["concentration"],
+    #                 explore_points["surface tension eq. (mN/m)"],
+    #                 color="C0",
+    #                 label="Explore",
+    #             )
 
-                # Plot exploit points in orange (C1)
-                exploit_points = df_solution[point_types == "exploit"]
-                ax.scatter(
-                    exploit_points["concentration"],
-                    exploit_points["surface tension eq. (mN/m)"],
-                    color="C1",
-                    label="Exploit",
-                )
+    #             # Plot exploit points in orange (C1)
+    #             exploit_points = df_solution[point_types == "exploit"]
+    #             ax.scatter(
+    #                 exploit_points["concentration"],
+    #                 exploit_points["surface tension eq. (mN/m)"],
+    #                 color="C1",
+    #                 label="Exploit",
+    #             )
 
-                ax.set_ylim(20, 80)
-                ax.set_xscale("log")
-                ax.set_xlabel("Concentration", fontsize=self.fontsize_labels)
-                ax.set_ylabel(
-                    "Surface Tension Eq. (mN/m)", fontsize=self.fontsize_labels
-                )
-                #TODO fix
-                # ax.set_title(
-                #     f"{self.file_settings['EXPERIMENT_NAME']}, solution: {solution_name}",
-                #     fontsize=self.fontsize_labels,
-                # )
-                # ax.legend()
-                plt.tight_layout()
+    #             ax.set_ylim(20, 80)
+    #             ax.set_xscale("log")
+    #             ax.set_xlabel("Concentration", fontsize=self.fontsize_labels)
+    #             ax.set_ylabel(
+    #                 "Surface Tension Eq. (mN/m)", fontsize=self.fontsize_labels
+    #             )
+    #             #TODO fix
+    #             # ax.set_title(
+    #             #     f"{self.file_settings['EXPERIMENT_NAME']}, solution: {solution_name}",
+    #             #     fontsize=self.fontsize_labels,
+    #             # )
+    #             # ax.legend()
+    #             plt.tight_layout()
 
-                # save in experiment folder and plots cache for web interface
-                # plt.savefig(
-                #     f"experiments/{self.file_settings['EXPERIMENT_NAME']}/results_plot_{solution_name}.png"
-                # )
-                plt.savefig(f"{self.server_plot_folder}/results_plot.png")
-                plt.close(fig)
-        except Exception as e:
-            print(
-                f"Plotter: could not create plot results with concentrations for solution: {solution_name}. Error: {e}"
-            )
-            self._create_empty_plot(f"results_plot_{solution_name}")
+    #             # save in experiment folder and plots cache for web interface
+    #             # plt.savefig(
+    #             #     f"experiments/{self.file_settings['EXPERIMENT_NAME']}/results_plot_{solution_name}.png"
+    #             # )
+    #             plt.savefig(f"{self.server_plot_folder}/results_plot.png")
+    #             plt.close(fig)
+    #     except Exception as e:
+    #         print(
+    #             f"Plotter: could not create plot results with concentrations for solution: {solution_name}. Error: {e}"
+    #         )
+    #         self._create_empty_plot(f"results_plot_{solution_name}")
 
     def _create_empty_plot(self, plot_name: str):
         fig, ax = plt.subplots()

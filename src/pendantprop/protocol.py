@@ -114,14 +114,15 @@ class Protocol:
             type = type
         )
         save_results(self.results, settings=self.settings)
-        # if type == "wells":
-        #     self.plotter.plot_results_well_id(
-        #         df=self.results
-        #     )
-        # elif type == "characterization":
-        #     self.plotter.plot_results_concentration(
-        #         df=self.results, container=container
-        #     )
+        if type == "wells":
+            self.plotter.plot_results_sample_id(
+                df=self.results
+            )
+        elif type == "characterization":
+            pass
+            # self.plotter.plot_results_concentration(
+            #     df=self.results, container=container
+            # )
 
     def _set_sampleID_in_container(self, sample_info: pd.DataFrame):
         well_ids = sample_info["well ID"].tolist()
