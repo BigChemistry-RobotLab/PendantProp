@@ -2,6 +2,18 @@
     "general_settings": {
         "simulate": false
     },
+        "file_settings": {
+        "exp_tag": "example_protocol",
+        "output_folder": "output",
+        "output_folder_pictures": "output/pictures",
+        "meta_data_folder": "meta_data",
+        "data_folder": "data",
+        "sample_info_filepath": "config/info/sample_info.csv",
+        "container_data_folder": "container_data",
+        "config_filepath": "config/layouts/layout.csv",
+        "custom_labware_folder": "config/custom_labware",
+        "plot_folder_server": "src/pendantprop/server/static/plots_cache"
+    },
     "robot_settings": {
         "robot_ip": "169.254.164.30",
         "robot_type": "OT2",
@@ -13,23 +25,11 @@
             "z": 0
         },
         "right_pipette_offset": {
-            "x": 0,
-            "y": 0,
+            "x": -0.2,
+            "y": 1,
             "z": 0
         },
-        "well_depth_mm": 0.8
-    },
-    "file_settings": {
-        "exp_tag": "example",
-        "output_folder": "output",
-        "output_folder_pictures": "output/pictures",
-        "meta_data_folder": "meta_data",
-        "data_folder": "data",
-        "sample_info_filepath": "config/info/sample_info.csv",
-        "container_data_folder": "container_data",
-        "config_filepath": "config/layouts/layout.csv",
-        "custom_labware_folder": "config/custom_labware",
-        "plot_folder_server": "src/pendantprop/server/static/plots_cache"
+        "well_depth_mm": 1
     },
     "wash_settings": {
         "wash_volume_ul": 300,
@@ -48,17 +48,17 @@
     },
     "pendant_drop_settings": {
         "explore_points": 5,
-        "worthington_limit_lower": 0.65,
+        "worthington_limit_lower": 0.4,
         "worthington_limit_upper": 0.9,
-        "initial_drop_volume": 3.0,
-        "check_time": 2,
+        "initial_drop_volume": 5,
+        "check_time": 1,
         "equilibration_time": 60,
         "max_measure_time": 120,
         "max_retries": 5,
         "drop_volume_decrease_after_retry": 0.35,
-        "drop_volume_increase_resolution": 0.1,
+        "drop_volume_increase_resolution": 0.2,
         "flow_rate": 0.1,
-        "pendant_drop_depth_offset": -5,
+        "pendant_drop_depth_offset": -10.5,
         "well_id_drop_stage": "10A1",
         "n_equilibration_points": 100
     },
@@ -66,9 +66,9 @@
         "capture_interval": 1 
     },
     "image_analysis_settings": {
-        "diameter_needle_mm": 0.9,
-        "diameter_needle_px": 248,
-        "diameter_tolerance_percent": 2,
+        "diameter_needle_mm": 1.45,
+        "diameter_needle_px": 360,
+        "diameter_tolerance_percent": 5,
         "st_water": 72.37,
         "density": 0.789,
         "gravity_constant": 9.80665

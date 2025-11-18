@@ -97,11 +97,11 @@ class DropletManager:
             if not valid_droplet:
                 valid_measurement = False
                 self.logger.warning(
-                    f"No valid droplet was created for {self.source.WELL_ID}. Stoppped measurement for this well."
+                    f"No valid droplet was created for {self.source.WELL_ID}. Stopped measurement for this well."
                 )
                 self._return_pendant_drop(drop_volume=drop_volume)
                 dynamic_surface_tension = []  # failed measurement
-                return dynamic_surface_tension, drop_volume, self.drop_count
+                return dynamic_surface_tension, drop_volume, self.MAX_MEASURE_TIME, self.drop_count
 
             # reduce drop volume if retry
             if self.drop_count > 1:
@@ -141,9 +141,9 @@ class DropletManager:
             self.left_pipette.pick_up_tip()
 
         self.left_pipette.mixing(container=self.source, volume_mix=15, repeat=3, touch_tip=False) #? in settings?
-        self.left_pipette.aspirate(volume=17, source=self.source, flow_rate=15)
-        self.left_pipette.air_gap(air_volume=3)
-        self.left_pipette.remove_air_gap(container=self.containers[self.WELL_ID_DROP_STAGE])
+        self.left_pipette.aspirate(volume=20, source=self.source, flow_rate=1)
+        # self.left_pipette.air_gap(air_volume=3)
+        # self.left_pipette.remove_air_gap(container=self.containers[self.WELL_ID_DROP_STAGE])
 
     def _reduce_pendant_drop_volume(self, drop_volume_decrease: float):
         self.logger.info(
@@ -228,7 +228,7 @@ class DropletManager:
             update_info=False,
         )  # aspirate drop in tip
         self.logger.info("Re-aspirated the pendant drop into the tip.")
-        self.left_pipette.dispense(volume=17, destination=self.source)
+        self.left_pipette.dispense(volume=20, destination=self.source)
         self.logger.info("Returned volume in needle to source.")
         self._close_camera()
 
