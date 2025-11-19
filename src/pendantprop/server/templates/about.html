@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>About - PendantProp</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-droplet"></i> PendantProp</h1>
+        <h2>About</h2>
+    </div>
+
+    <div class="about-container">
+        <div class="about-section">
+            <h3><i class="fas fa-microscope"></i> What is PendantProp?</h3>
+            <p>
+                PendantProp is an automated system for measuring surface tension using the 
+                pendant drop method. It integrates with Opentrons liquid handling robots to 
+                enable high-throughput characterization of surfactants and formulations.
+            </p>
+        </div>
+
+        <div class="about-section">
+            <h3><i class="fas fa-cog"></i> Features</h3>
+            <ul>
+                <li>Automated pendant drop formation and imaging</li>
+                <li>Real-time surface tension analysis</li>
+                <li>Dynamic surface tension measurements</li>
+                <li>Integration with Opentrons OT-2 robot</li>
+                <li>Environmental monitoring (temperature, pressure, humidity)</li>
+                <li>Web-based interface for experiment control</li>
+            </ul>
+        </div>
+
+        <div class="about-section">
+            <h3><i class="fas fa-flask"></i> Measurement Workflow</h3>
+            <ol>
+                <li><strong>Initialize:</strong> Upload deck layout and configure experiment</li>
+                <li><strong>Measure:</strong> Upload sample information and start measurements</li>
+                <li><strong>Analyze:</strong> View real-time results and plots</li>
+            </ol>
+        </div>
+
+        <div class="about-section">
+            <h3><i class="fas fa-university"></i> Credits</h3>
+            <p>
+                Developed at BigChemistry Robotics Lab<br>
+                PendantProp v2.0 - 2025
+            </p>
+        </div>
+
+        <div class="button-group">
+            <a href="/" class="btn btn-primary">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+        </div>
+    </div>
+
+    <footer>
+        <p>PendantProp v2.0 | Surface Tension Measurement System</p>
+    </footer>
+</body>
+</html>

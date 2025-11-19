@@ -22,7 +22,7 @@ warnings.filterwarnings(
 )
 
 class Protocol:
-    def __init__(self):
+    def __init__(self, pd_camera=None):
         self.settings = load_settings(file_path="config/settings.json")
         self.file_settings = self.settings["file_settings"]
         self.config = Config(settings=self.settings)
@@ -33,6 +33,7 @@ class Protocol:
             settings=self.settings,
             left_pipette=self.left_pipette,
             containers=self.containers,
+            pd_camera=pd_camera,  # Pass shared camera instance
         )
         self.logger = Logger(
             name="protocol",
@@ -40,6 +41,7 @@ class Protocol:
         )
 
         self.results = None
+        self.config.home()
         self.left_pipette.pick_up_tip()
         self.logger.info("Protocol initialized successfully.")
     

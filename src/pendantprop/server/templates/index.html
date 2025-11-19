@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PendantProp</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script>
+        // Auto-refresh images using plot_update_interval from settings
+        var refreshInterval = {{ plot_update_interval * 1000 }}; // Convert seconds to milliseconds
+        
+        function refreshImage(imageId, imageUrl) {
+            var img = document.getElementById(imageId);
+            if (img) {
+                var timestamp = new Date().getTime();
+                img.src = imageUrl + "?t=" + timestamp;
+            }
+        }
+        
+        setInterval(function() {
+            refreshImage('pendant-drop-latest', "{{ url_for('static', filename='pendant_drop_latest.png') }}");
+            refreshImage('dynamic-st-plot', "{{ url_for('get_plot', plot_name='dynamic_surface_tension_plot.png') }}");
+            refreshImage('results-plot', "{{ url_for('get_plot', plot_name='results_plot.png') }}");
+        }, refreshInterval);
+
+        // Tab switching functionality
+        function showPlot(plotType) {
+            var dynamicPlot = document.getElementById('dynamic-st-plot');
+            var resultsPlot = document.getElementById('results-plot');
+            var dynamicBtn = document.getElementById('btn-dynamic');
+            var resultsBtn = document.getElementById('btn-results');
+
+            if (plotType === 'dynamic') {
+                dynamicPlot.style.display = 'block';
+                resultsPlot.style.display = 'none';
+                dynamicBtn.classList.add('active');
+                resultsBtn.classList.remove('active');
+            } else {
+                dynamicPlot.style.display = 'none';
+                resultsPlot.style.display = 'block';
+                dynamicBtn.classList.remove('active');
+                resultsBtn.classList.add('active');
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-droplet"></i> PendantProp</h1>
+        <div class="status-bar">
+            <span>Status: <strong>{{ protocol_status }}</strong></span>
+            <span class="separator">|</span>
+            <span>Last Action: <strong>{{ last_action }}</strong></span>
+        </div>
+    </div>
+
+    <div class="button-container">
+        <form action="/input_settings" method="post">
+            <button type="submit" class="btn btn-secondary">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+        </form>
+        
+        <form action="/input_initialisation" method="post">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-play"></i> Initialize Protocol
+            </button>
+        </form>
+        
+        <form action="/input_measure_wells" method="post">
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-flask"></i> Measure Wells
+            </button>
+        </form>
+        
+        <form action="/about" method="get">
+            <button type="submit" class="btn btn-info">
+                <i class="fas fa-info-circle"></i> About
+            </button>
+        </form>
+    </div>
+
+    <div class="content-grid">
+        <!-- Pendant Drop Camera Stream -->
+        <div class="grid-item">
+            <h3><i class="fas fa-camera"></i> Pendant Drop Camera</h3>
+            <div class="video-container">
+                <img id="pendant-drop-latest" src="{{ url_for('static', filename='pendant_drop_latest.png') }}" alt="Pendant Drop">
+            </div>
+        </div>
+
+        <!-- Plots with Tabs -->
+        <div class="grid-item">
+            <h3><i class="fas fa-chart-line"></i> Analysis Plots</h3>
+            
+            <div class="tab-buttons">
+                <button id="btn-dynamic" class="tab-btn active" onclick="showPlot('dynamic')">
+                    Dynamic Surface Tension
+                </button>
+                <button id="btn-results" class="tab-btn" onclick="showPlot('results')">
+                    Results Plot
+                </button>
+            </div>
+            
+            <div class="plot-container">
+                <img id="dynamic-st-plot" 
+                     src="{{ url_for('get_plot', plot_name='dynamic_surface_tension_plot.png') }}" 
+                     alt="Dynamic Surface Tension"
+                     style="display: block;">
+                
+                <img id="results-plot" 
+                     src="{{ url_for('get_plot', plot_name='results_plot.png') }}" 
+                     alt="Results Plot"
+                     style="display: none;">
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>PendantProp v2.0 | Surface Tension Measurement System</p>
+    </footer>
+</body>
+</html>

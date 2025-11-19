@@ -1,6 +1,8 @@
 # Imports
 
 ## Packages
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for thread safety
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np

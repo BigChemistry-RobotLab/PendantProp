@@ -18,10 +18,12 @@ class DropletManager:
         settings: dict,
         left_pipette: Pipette,
         containers: Dict[str, Container],
+        pd_camera=None,  # Optional: use shared camera instance
     ):
         self.settings = settings
         self.file_settings = settings["file_settings"]
         self.pendant_drop_settings = settings["pendant_drop_settings"]
+        self.plot_settings = settings["plot_settings"]
 
         self.left_pipette = left_pipette
         self.containers = containers
@@ -51,17 +53,22 @@ class DropletManager:
         ])
         self.MAX_MEASURE_TIME = float(self.pendant_drop_settings["max_measure_time"])
         self.WELL_ID_DROP_STAGE = self.pendant_drop_settings["well_id_drop_stage"]
+        self.PLOT_UPDATE_INTERVAL = float(self.plot_settings["plot_update_interval"])
 
-        
-        simulate = self.settings["general_settings"]["simulate"]
-        if simulate:
-            self.logger.info("Using Mock Pendant Drop Camera (simulate mode enabled)")
-            self.pd_cam = MockPendantDropCamera(settings=settings)
-            self.CHECK_TIME = 0.00001  # speed up checks in simulate mode
-            self.MAX_MEASURE_TIME = 0.001  # speed up measurements in simulate mode
+        # Use provided camera instance or create new one
+        if pd_camera is not None:
+            self.pd_cam = pd_camera
+            self.logger.info("Using shared Pendant Drop Camera instance")
         else:
-            self.logger.info("Using Real Pendant Drop Camera")
-            self.pd_cam = PendantDropCamera(settings=settings)
+            simulate = self.settings["general_settings"]["simulate"]
+            if simulate:
+                self.logger.info("Using Mock Pendant Drop Camera (simulate mode enabled)")
+                self.pd_cam = MockPendantDropCamera(settings=settings)
+                self.CHECK_TIME = 0.00001  # speed up checks in simulate mode
+                self.MAX_MEASURE_TIME = 0.001  # speed up measurements in simulate mode
+            else:
+                self.logger.info("Using Real Pendant Drop Camera")
+                self.pd_cam = PendantDropCamera(settings=settings)
     
     def measure_pendant_drop(self, source: Container):
         """
@@ -141,7 +148,7 @@ class DropletManager:
             self.left_pipette.pick_up_tip()
 
         self.left_pipette.mixing(container=self.source, volume_mix=15, repeat=3, touch_tip=False) #? in settings?
-        self.left_pipette.aspirate(volume=20, source=self.source, flow_rate=1)
+        self.left_pipette.aspirate(volume=20, source=self.source, flow_rate=10)
         # self.left_pipette.air_gap(air_volume=3)
         # self.left_pipette.remove_air_gap(container=self.containers[self.WELL_ID_DROP_STAGE])
 
@@ -243,7 +250,7 @@ class DropletManager:
         start_time = time.time()
         prev_len_st = 0
         while time.time() - start_time < max_measure_time:
-            time.sleep(10) #? in settings?
+            time.sleep(self.PLOT_UPDATE_INTERVAL)
             dynamic_surface_tension = self.pd_cam.st_t
             self.plotter.plot_dynamic_surface_tension(
                 dynamic_surface_tension=dynamic_surface_tension,

@@ -23,7 +23,7 @@ else:
 
 # Initialize camera and start streaming
 pd_cam.initialize_measurement(sample_id="TestSample", drop_count=1)
-vol_droplet = 20  # Volume in microliters for Worthington number calculation
+vol_droplet = 19  # Volume in microliters for Worthington number calculation
 pd_cam.start_check(vol_droplet=vol_droplet)
 
 show_analysis = False
