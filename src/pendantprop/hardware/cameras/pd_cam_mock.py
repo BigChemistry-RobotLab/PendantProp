@@ -124,6 +124,7 @@ class MockPendantDropCamera:
             if self.current_image is not None:
                 if time.time() - last_save_time >= self.capture_interval:
                     self._save_image(self.current_image)
+                    self._save_img_for_stream(self.analysis_image)
                     last_save_time = time.time()
                 with self.lock:
                     self._analyze_image(self.current_image)
@@ -155,6 +156,7 @@ class MockPendantDropCamera:
             if self.current_image is not None:
                 if time.time() - last_save_time >= 1.0:
                     self._save_image_before_capture(self.current_image)
+                    self._save_img_for_stream(self.current_image)
                     last_save_time = time.time()
             time.sleep(0.1)
 
@@ -221,6 +223,14 @@ class MockPendantDropCamera:
             return self.analyzer.img2wo(img=img, vol_droplet=vol_droplet)
         except Exception:
             return None
+        
+    def _save_img_for_stream(self, img):
+        filename = "pendant_drop_latest.png"
+        filepath = self.file_settings["cache_images_folder"]
+        os.makedirs(filepath, exist_ok=True)
+        full_path = os.path.join(filepath, filename)
+        if img is not None:
+            cv2.imwrite(full_path, img)
 
     # Frame Generation
     def generate_frames(self):

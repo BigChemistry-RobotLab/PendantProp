@@ -19,9 +19,8 @@ class Plotter:
         self.save_root = (
             f"{self.file_settings['output_folder']}/{self.file_settings['exp_tag']}"
         )
-        self.server_plot_folder = self.file_settings["plot_folder_server"]
+        self.cache_images_folder = self.file_settings["cache_images_folder"]
         os.makedirs(self.save_root, exist_ok=True)
-        os.makedirs(self.server_plot_folder, exist_ok=True)
         self.fontsize_labels = 15
         self.window_size = 20
 
@@ -48,7 +47,7 @@ class Plotter:
                 plt.savefig(
                         f"{self.save_root}/results_plot.png"
                 )
-                plt.savefig(f"{self.server_plot_folder}/results_plot.png")
+                plt.savefig(f"{self.cache_images_folder}/results_plot.png")
                 plt.close(fig)
 
         except Exception as e:
@@ -98,7 +97,7 @@ class Plotter:
                     f"{dir}/dynamic_surface_tension_plot_{drop_count}.png"
                 )
                 plt.savefig(
-                    f"{self.server_plot_folder}/dynamic_surface_tension_plot.png"
+                    f"{self.cache_images_folder}/dynamic_surface_tension_plot.png"
                 )
                 plt.close(fig)
                 
@@ -168,5 +167,5 @@ class Plotter:
         plt.savefig(
             f"{self.save_root}/{plot_name}.png"
         )
-        plt.savefig(f"{self.server_plot_folder}/{plot_name}.png")
+        plt.savefig(f"{self.cache_images_folder}/{plot_name}.png")
         plt.close(fig)

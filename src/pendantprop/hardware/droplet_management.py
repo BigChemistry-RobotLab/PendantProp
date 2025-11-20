@@ -18,7 +18,6 @@ class DropletManager:
         settings: dict,
         left_pipette: Pipette,
         containers: Dict[str, Container],
-        pd_camera=None,  # Optional: use shared camera instance
     ):
         self.settings = settings
         self.file_settings = settings["file_settings"]
@@ -55,20 +54,16 @@ class DropletManager:
         self.WELL_ID_DROP_STAGE = self.pendant_drop_settings["well_id_drop_stage"]
         self.PLOT_UPDATE_INTERVAL = float(self.plot_settings["plot_update_interval"])
 
-        # Use provided camera instance or create new one
-        if pd_camera is not None:
-            self.pd_cam = pd_camera
-            self.logger.info("Using shared Pendant Drop Camera instance")
+        # Create camera instance
+        simulate = self.settings["general_settings"]["simulate"]
+        if simulate:
+            self.logger.info("Using Mock Pendant Drop Camera (simulate mode enabled)")
+            self.pd_cam = MockPendantDropCamera(settings=settings)
+            self.CHECK_TIME = 0.00001  # speed up checks in simulate mode
+            self.MAX_MEASURE_TIME = 0.001  # speed up measurements in simulate mode
         else:
-            simulate = self.settings["general_settings"]["simulate"]
-            if simulate:
-                self.logger.info("Using Mock Pendant Drop Camera (simulate mode enabled)")
-                self.pd_cam = MockPendantDropCamera(settings=settings)
-                self.CHECK_TIME = 0.00001  # speed up checks in simulate mode
-                self.MAX_MEASURE_TIME = 0.001  # speed up measurements in simulate mode
-            else:
-                self.logger.info("Using Real Pendant Drop Camera")
-                self.pd_cam = PendantDropCamera(settings=settings)
+            self.logger.info("Using Real Pendant Drop Camera")
+            self.pd_cam = PendantDropCamera(settings=settings)
     
     def measure_pendant_drop(self, source: Container):
         """
@@ -108,7 +103,15 @@ class DropletManager:
                 )
                 self._return_pendant_drop(drop_volume=drop_volume)
                 dynamic_surface_tension = []  # failed measurement
-                return dynamic_surface_tension, drop_volume, self.MAX_MEASURE_TIME, self.drop_count
+                
+                drop_parameters = {
+                    "drop_volume": drop_volume,
+                    "measure_time": self.MAX_MEASURE_TIME,
+                    "drop_count": self.drop_count,
+                    "valid_measurement": False,
+                }
+                
+                return dynamic_surface_tension, drop_parameters
 
             # reduce drop volume if retry
             if self.drop_count > 1:
@@ -138,7 +141,15 @@ class DropletManager:
             self.logger.warning(
                 f"No valid measurement was performed for {self.source.WELL_ID} after {self.MAX_RETRIES} attempts."
             )
-        return dynamic_surface_tension, drop_volume, self.MAX_MEASURE_TIME, self.drop_count #TODO later dynamic measure time
+        
+        drop_parameters = {
+            "drop_volume": drop_volume,
+            "measure_time": self.MAX_MEASURE_TIME,  #TODO later dynamic measure time
+            "drop_count": self.drop_count,
+            "valid_measurement": valid_measurement,
+        }
+        
+        return dynamic_surface_tension, drop_parameters
 
     def _prepare_pendant_drop(self):
         self.logger.info("Preparing pendant drop.")
@@ -267,7 +278,7 @@ class DropletManager:
                     f"No new data was captured. length {len(dynamic_surface_tension)}.")
 
             prev_len_st = len(dynamic_surface_tension)
-            if last_st < 20: #? in settings?
+            if last_st < 15:
                 drop_time = time.time() - start_time
                 self.logger.warning(f"Droplet dropped. Drop time: {drop_time:2f} seconds.")
                 valid_measurement = False

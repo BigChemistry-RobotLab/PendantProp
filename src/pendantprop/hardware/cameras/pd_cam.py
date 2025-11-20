@@ -46,6 +46,7 @@ class PendantDropCamera:
         self.sample_id = None
         self.st_t = []  # Surface tension measurements
         self.wortington_numbers = []
+        self.scales = []
         self.capturing_before_measurement = False
         self.capture_before_measurement_thread = None
 
@@ -117,6 +118,7 @@ class PendantDropCamera:
             if self.current_image is not None:
                 if time.time() - last_save_time >= self.capture_interval:
                     self._save_image(self.current_image)
+                    self._save_img_for_stream(self.analysis_image)
                     last_save_time = time.time()
                 with self.lock:
                     self._analyze_image(self.current_image)
@@ -148,6 +150,7 @@ class PendantDropCamera:
             if self.current_image is not None:
                 if time.time() - last_save_time >= 1.0:
                     self._save_image_before_capture(self.current_image)
+                    self._save_img_for_stream(self.current_image)
                     last_save_time = time.time()
             time.sleep(0.1)
 
@@ -215,6 +218,53 @@ class PendantDropCamera:
             return self.analyzer.img2wo(img=img, vol_droplet=vol_droplet)
         except Exception:
             return None
+    
+    def start_calibration(self):
+        if not self.capturing:
+            self.start_time = datetime.now()
+            self.calibrating = True
+            self.calibration_thread = threading.Thread(
+                target=self._calibration_process_thread, daemon=True
+            )
+            self.calibration_thread.start()
+            self.logger.info(f"Camera: start calibration sample {self.sample_id}.")
+
+    def _calibration_process_thread(self):
+        last_save_time = time.time()
+        while self.calibrating:
+            if self.current_image is not None:
+                if time.time() - last_save_time >= self.capture_interval:
+                    last_save_time = time.time()
+                with self.lock:
+                    scale = self._calibrate_image(self.current_image)
+                    if scale is not None:
+                        self.scales.append(scale)
+            time.sleep(0.1)
+    
+    def stop_calibration(self):
+        self.capturing = False
+        if self.process_thread is not None:
+            self.stop_background_threads.set()
+            self.process_thread.join()
+            self.logger.info("Camera: stopped calibration")
+        self.process_thread = None
+        self.analysis_image = None
+        self.current_image = None
+
+    def _calibrate_image(self, img):
+        try:
+            scale = self.analyzer.img2scale(img)
+            return scale
+        except Exception as e:
+            return None
+        
+    def _save_img_for_stream(self, img):
+        filename = "pendant_drop_latest.png"
+        filepath = self.file_settings["cache_images_folder"]
+        os.makedirs(filepath, exist_ok=True)
+        full_path = os.path.join(filepath, filename)
+        if img is not None:
+            cv2.imwrite(full_path, img)
 
     # Frame Generation
     def generate_frames(self):

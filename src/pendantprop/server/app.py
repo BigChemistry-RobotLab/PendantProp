@@ -15,15 +15,11 @@ from flask import (
     redirect,
     url_for,
     session,
-    Response,
-    jsonify,
     send_from_directory,
 )
 
 from opentrons_api.load_save_functions import load_settings, save_settings
 from pendantprop.protocol import Protocol
-from pendantprop.hardware.cameras.pd_cam import PendantDropCamera
-from pendantprop.hardware.cameras.pd_cam_mock import MockPendantDropCamera
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -36,40 +32,12 @@ log.setLevel(logging.WARNING)
 
 # Global variables
 protocol = None
-pd_camera = None
 settings = None
-
-
-def initialize_camera():
-    """Initialize the pendant drop camera (shared instance for server and protocol)"""
-    global pd_camera, settings
-    
-    if pd_camera is not None:
-        return pd_camera
-    
-    settings = load_settings(file_path="config/settings.json")
-    
-    # Create camera based on simulate setting
-    if settings.get("general_settings", {}).get("simulate", False):
-        print("[Server] Using Mock Pendant Drop Camera (simulate mode enabled)")
-        
-        # Speed up simulation by reducing timeouts
-        print("[Server] Reducing measurement times for simulation (1000x faster)")
-        settings["pendant_drop_settings"]["check_time"] = settings["pendant_drop_settings"].get("check_time", 1) / 1000
-        settings["pendant_drop_settings"]["max_measure_time"] = settings["pendant_drop_settings"].get("max_measure_time", 120) / 1000
-    
-        pd_camera = MockPendantDropCamera(settings=settings)
-    
-    else:
-        print("[Server] Using Real Pendant Drop Camera")
-        pd_camera = PendantDropCamera(settings=settings)
-    
-    return pd_camera
 
 
 def replace_plots_with_placeholders():
     """Replace plot images with placeholders on server start"""
-    plot_files = glob.glob("src/pendantprop/server/static/plots_cache/*.png")
+    plot_files = glob.glob("src/pendantprop/server/static/cache_images/*.png")
     placeholder_dir = "src/pendantprop/server/static/placehold_images"
     
     for file in plot_files:
@@ -80,14 +48,13 @@ def replace_plots_with_placeholders():
     if os.path.exists(placeholder_dir):
         for placeholder in glob.glob(f"{placeholder_dir}/*.png"):
             filename = os.path.basename(placeholder)
-            dest = f"src/pendantprop/server/static/plots_cache/{filename}"
+            dest = f"src/pendantprop/server/static/cache_images/{filename}"
             if os.path.exists(placeholder):
                 shutil.copy(placeholder, dest)
 
 
 # Initialize on startup
 replace_plots_with_placeholders()
-initialize_camera()
 
 
 @app.route("/")
@@ -187,18 +154,14 @@ def input_initialisation():
 
 def initialize_protocol_thread(layout_csv_path):
     """Initialize protocol in background thread"""
-    global protocol, pd_camera, settings
+    global protocol, settings
     
     try:
         # Reload settings to get updated config
         settings = load_settings(file_path="config/settings.json")
         
-        # Ensure camera is initialized
-        if pd_camera is None:
-            initialize_camera()
-        
-        # Create protocol instance with shared camera
-        protocol = Protocol(pd_camera=pd_camera)
+        # Create protocol instance
+        protocol = Protocol()
         
         print("[Server] Protocol initialized successfully")
         
@@ -303,25 +266,14 @@ def measure_wells():
     return redirect(url_for("index"))
 
 
-@app.route("/pendant_drop_feed")
-def pendant_drop_feed():
-    """Live video feed from pendant drop camera"""
-    global pd_camera
-    
-    if pd_camera is None:
-        initialize_camera()
-    
-    return Response(
-        pd_camera.generate_frames(),
-        mimetype="multipart/x-mixed-replace; boundary=frame",
-    )
+
 
 
 @app.route("/plots/<plot_name>")
 def get_plot(plot_name):
     """Serve plot images from cache with no-cache headers"""
     response = send_from_directory(
-        "static/plots_cache",
+        "static/cache_images",
         plot_name,
         mimetype="image/png",
     )

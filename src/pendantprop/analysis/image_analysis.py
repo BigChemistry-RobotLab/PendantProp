@@ -18,13 +18,13 @@ class PendantDropAnalysis:
         self.gravity_constant = float(self.settings["gravity_constant"])
         self.needle_diameter_mm = float(self.settings["diameter_needle_mm"])
         self.needle_diameter_px = float(self.settings["diameter_needle_px"])
+        self.scale = float(self.settings["scale"])
 
         self.file_path = None
         self.raw_image = None
         self.processed_image = None
         self.analysis_image = None
         self.de = None
-        self.scale = None
         self.Hin = None
 
     def select_image(self):
@@ -126,7 +126,6 @@ class PendantDropAnalysis:
         right_point_needle = contourright[-1][0]
         left_point_needle = contourleft[0][0]
         self.needle_diameter_px_measured = right_point_needle[0] - left_point_needle[0]
-        self.scale = self.needle_diameter_mm / self.needle_diameter_px_measured
         # Adjust the coordinates of the needle points to the original image
 
         offset_y = 40
@@ -372,12 +371,11 @@ class PendantDropAnalysis:
         return st, self.analysis_image
 
     def img2scale(self, img):
-        "legacy"
         # surface_tension = self.density * self.gravity_constant * (de_scaled**2) * Hin
         self.raw_image = img
         self.process_image()
         st = self.analyse()
-        st_water = self.settings['st_water']
+        st_water = self.settings["st_water"]
         de_scaled = np.sqrt(
             st_water / (self.density * self.gravity_constant * self.Hin)
         )

@@ -19,7 +19,7 @@
         }
         
         setInterval(function() {
-            refreshImage('pendant-drop-latest', "{{ url_for('static', filename='pendant_drop_latest.png') }}");
+            refreshImage('pendant-drop-latest', "{{ url_for('static', filename='cache_images/pendant_drop_latest.png') }}");
             refreshImage('dynamic-st-plot', "{{ url_for('get_plot', plot_name='dynamic_surface_tension_plot.png') }}");
             refreshImage('results-plot', "{{ url_for('get_plot', plot_name='results_plot.png') }}");
         }, refreshInterval);
@@ -86,7 +86,7 @@
         <div class="grid-item">
             <h3><i class="fas fa-camera"></i> Pendant Drop Camera</h3>
             <div class="video-container">
-                <img id="pendant-drop-latest" src="{{ url_for('static', filename='pendant_drop_latest.png') }}" alt="Pendant Drop">
+                <img id="pendant-drop-latest" src="{{ url_for('static', filename='cache_images/pendant_drop_latest.png') }}" alt="Pendant Drop">
             </div>
         </div>
 

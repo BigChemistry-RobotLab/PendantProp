@@ -22,7 +22,7 @@ warnings.filterwarnings(
 )
 
 class Protocol:
-    def __init__(self, pd_camera=None):
+    def __init__(self):
         self.settings = load_settings(file_path="config/settings.json")
         self.file_settings = self.settings["file_settings"]
         self.config = Config(settings=self.settings)
@@ -33,7 +33,6 @@ class Protocol:
             settings=self.settings,
             left_pipette=self.left_pipette,
             containers=self.containers,
-            pd_camera=pd_camera,  # Pass shared camera instance
         )
         self.logger = Logger(
             name="protocol",
@@ -49,12 +48,7 @@ class Protocol:
         if self.results is None:
             self.results = initialize_results(type=type)
         well_to_measure = self.containers[well_id]
-        st_t, drop_volume, measure_time, drop_count = self.droplet_manager.measure_pendant_drop(source=well_to_measure)
-        drop_parameters = self._create_drop_parameters(
-            drop_volume=drop_volume,
-            measure_time=measure_time,
-            drop_count=drop_count,
-        )
+        st_t, drop_parameters = self.droplet_manager.measure_pendant_drop(source=well_to_measure)
         self._append_save_plot_results(
             dynamic_surface_tension=st_t,
             container=well_to_measure,
@@ -79,21 +73,9 @@ class Protocol:
     def measure_plate(self):
         pass
 
-    def measure_serial_dilution(self):
+    def characterise(self):
         type = "characterization"
         pass
-
-    def _create_drop_parameters(
-        self, drop_volume: float, measure_time: float, drop_count: int
-    ) -> dict:
-        """
-        Create a dictionary of drop parameters.
-        """
-        return {
-            "drop_volume": drop_volume,
-            "measure_time": measure_time,
-            "drop_count": drop_count,
-        }
 
     def _append_save_plot_results(
         self,

@@ -11,34 +11,6 @@ from opentrons_api.containers import Container
 from pendantprop.hardware.sensor_api import SensorAPI
 from pendantprop.utils.utils import calculate_equillibrium_value
 
-def save_csv_file(exp_name: str, subdir_name: str, csv_file, app):
-    #TODO fix
-    """
-    Save csv file in experiment directory
-
-    :param exp_name: Experiment name
-    :param subdir_name: Subdirectory name (meta_data, experiment_data, etc)
-    :param csv_file: File to save
-    :param app: Flask app
-
-    :return: None
-    """
-
-    exp_dir = os.path.join(
-        app.config["UPLOAD_FOLDER"], f"{exp_name}/{subdir_name}"
-    )
-    os.makedirs(exp_dir, exist_ok=True)
-    file_path = os.path.join(exp_dir, csv_file.filename)
-    csv_file.save(file_path)
-
-
-
-# def save_calibration_data(scale_t: list):
-#     settings = load_settings()
-#     df = pd.DataFrame(scale_t, columns=["time (s)", "scale"])
-#     df.to_csv(f"experiments/{settings['EXPERIMENT_NAME']}/calibration.csv")
-
-
 def initialize_results(type: str) -> pd.DataFrame: 
     # Initialize an empty DataFrame with the required columns
     if type == "wells":
@@ -49,6 +21,7 @@ def initialize_results(type: str) -> pd.DataFrame:
                 "drop count",
                 "drop volume (uL)",
                 "measure time (s)",
+                "valid measurement",
                 "temperature (C)",
                 "humidity (%)",
                 "pressure (Pa)",
@@ -64,6 +37,7 @@ def initialize_results(type: str) -> pd.DataFrame:
                 "drop count",
                 "drop volume (uL)",
                 "measure time (s)",
+                "valid measurement",
                 "temperature (C)",
                 "humidity (%)",
                 "pressure (Pa)",
@@ -128,6 +102,7 @@ def add_data_to_results(
         new_row = pd.DataFrame(
             {
                 "sample id": [container.sample_id],
+                "valid measurement": [drop_parameters["valid_measurement"]],
                 "surface tension eq. (mN/m)": [surface_tension_eq],
                 "drop count": [drop_parameters["drop_count"]],
                 "drop volume (uL)": [drop_parameters["drop_volume"]],
@@ -139,24 +114,25 @@ def add_data_to_results(
         )
         results = pd.concat([results, new_row], ignore_index=True)
         return results
-    elif type == "serial_dilution":
-        new_row = pd.DataFrame(
-            {
-                "well id": [container.WELL_ID],
-                "solution": [container.solution_name],
-                "concentration": [container.concentration],
-                "surface tension eq. (mN/m)": [surface_tension_eq],
-                "drop count": [drop_parameters["drop_count"]],
-                "drop volume (uL)": [drop_parameters["drop_volume"]],
-                "measure time (s)": [drop_parameters["measure_time"]],
-                "flow rate (uL/s)": [drop_parameters["flow_rate"]],
-                "temperature (C)": [float(sensor_data["Temperature (C)"])],
-                "humidity (%)": [float(sensor_data["Humidity (%)"])],
-                "pressure (Pa)": [float(sensor_data["Pressure (Pa)"])],
-            }
-        )
-        results = pd.concat([results, new_row], ignore_index=True)
-        return results
+    # elif type == "serial_dilution":
+    #     new_row = pd.DataFrame(
+    #         {
+    #             "well id": [container.WELL_ID],
+    #             "valid measurement": [drop_parameters["valid_measurement"]],
+    #             "solution": [container.solution_name],
+    #             "concentration": [container.concentration],
+    #             "surface tension eq. (mN/m)": [surface_tension_eq],
+    #             "drop count": [drop_parameters["drop_count"]],
+    #             "drop volume (uL)": [drop_parameters["drop_volume"]],
+    #             "measure time (s)": [drop_parameters["measure_time"]],
+    #             "flow rate (uL/s)": [drop_parameters["flow_rate"]],
+    #             "temperature (C)": [float(sensor_data["Temperature (C)"])],
+    #             "humidity (%)": [float(sensor_data["Humidity (%)"])],
+    #             "pressure (Pa)": [float(sensor_data["Pressure (Pa)"])],
+    #         }
+    #     )
+    #     results = pd.concat([results, new_row], ignore_index=True)
+    #     return results
     else:
         print(f"Unknown results type: {type}")
 
@@ -169,17 +145,31 @@ def save_results(results: pd.DataFrame, settings: dict):
     )
     results.to_csv(file_name_results, index=False)
 
-def load_commit_hash():
-    try:
-        commit_hash = (
-            subprocess.check_output(["git", "rev-parse", "HEAD"])
-            .strip()
-            .decode("utf-8")
-        )
-        return commit_hash
-    except subprocess.CalledProcessError:
-        return None
+# def save_csv_file(exp_name: str, subdir_name: str, csv_file, app):
+#     """
+#     Save csv file in experiment directory
 
+#     :param exp_name: Experiment name
+#     :param subdir_name: Subdirectory name (meta_data, experiment_data, etc)
+#     :param csv_file: File to save
+#     :param app: Flask app
+
+#     :return: None
+#     """
+
+#     exp_dir = os.path.join(
+#         app.config["UPLOAD_FOLDER"], f"{exp_name}/{subdir_name}"
+#     )
+#     os.makedirs(exp_dir, exist_ok=True)
+#     file_path = os.path.join(exp_dir, csv_file.filename)
+#     csv_file.save(file_path)
+
+
+
+# def save_calibration_data(scale_t: list):
+#     settings = load_settings()
+#     df = pd.DataFrame(scale_t, columns=["time (s)", "scale"])
+#     df.to_csv(f"experiments/{settings['EXPERIMENT_NAME']}/calibration.csv")
 
 if __name__ == "__main__":
     pass
