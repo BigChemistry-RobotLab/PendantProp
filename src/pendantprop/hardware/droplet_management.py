@@ -166,6 +166,28 @@ class DropletManager:
                 container=self.source,
                 drop_count=self.drop_count
             )
+            if wo < self.WORTINGTON_NUMBER_LIMIT_LOWER:
+                self.logger.info(f"Wortington number {wo:6.3f} below lower limit. Increasing drop volume by {self.DROP_VOLUME_INCREASE_RESOLUTION} uL.")
+                self.left_pipette.dispense(
+                    volume=self.DROP_VOLUME_INCREASE_RESOLUTION,
+                    destination=self.containers[self.WELL_ID_DROP_STAGE],
+                    depth_offset=self.PENDANT_DROP_DEPTH_OFFSET,
+                    flow_rate=self.FLOW_RATE,
+                    log=False,
+                    update_info=False,
+                )
+                self.drop_volume += self.DROP_VOLUME_INCREASE_RESOLUTION
+            elif wo > self.WORTINGTON_NUMBER_LIMIT_UPPER:
+                self.logger.info(f"Wortington number {wo:6.3f} above upper limit. Decreasing drop volume by {self.DROP_VOLUME_INCREASE_RESOLUTION} uL.")
+                self.left_pipette.aspirate(
+                    volume=self.DROP_VOLUME_INCREASE_RESOLUTION,
+                    source=self.containers[self.WELL_ID_DROP_STAGE],
+                    depth_offset=self.PENDANT_DROP_DEPTH_OFFSET,
+                    flow_rate=self.FLOW_RATE,
+                    log=False,
+                    update_info=False,
+                )
+                self.drop_volume -= self.DROP_VOLUME_INCREASE_RESOLUTION
 
             # Check if surface tension is too low
             if st < 15:
