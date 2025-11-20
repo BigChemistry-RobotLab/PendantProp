@@ -13,12 +13,12 @@ from scipy.spatial.distance import euclidean
 
 class PendantDropAnalysis:
     def __init__(self, settings):
-        self.settings = settings["image_analysis_settings"]
-        self.density = float(self.settings["density"])
-        self.gravity_constant = float(self.settings["gravity_constant"])
-        self.needle_diameter_mm = float(self.settings["diameter_needle_mm"])
-        self.needle_diameter_px = float(self.settings["diameter_needle_px"])
-        self.scale = float(self.settings["scale"])
+        self.analysis_settings = settings["image_analysis_settings"]
+        self.density = float(self.analysis_settings["density"])
+        self.gravity_constant = float(self.analysis_settings["gravity_constant"])
+        self.needle_diameter_px = float(self.analysis_settings["diameter_needle_px"])
+        self.scale = float(self.analysis_settings["scale"])
+        self.needle_diameter_mm = self.needle_diameter_px * self.scale
 
         self.file_path = None
         self.raw_image = None
@@ -328,7 +328,7 @@ class PendantDropAnalysis:
         return Wo
 
     def check_diameter(self):
-        tolerance = self.settings['diameter_tolerance_percent'] / 100
+        tolerance = self.analysis_settings['diameter_tolerance_percent'] / 100
         if (
             (1 - tolerance) * self.needle_diameter_px
             < self.needle_diameter_px_measured
@@ -345,12 +345,12 @@ class PendantDropAnalysis:
         if st > 20:
             if self.check_diameter():
                 wo = self._calculate_wortington(vol_droplet=vol_droplet, st=st)
-                print(
-                    f"dia: {self.needle_diameter_px_measured} px, wo: {wo:.2f}, st: {st:.2f}, drop V: {vol_droplet:.1f}".ljust(
-                        30
-                    ),
-                    end="\r",
-                )
+                # print(
+                #     f"dia: {self.needle_diameter_px_measured} px, wo: {wo:.2f}, st: {st:.2f}, drop V: {vol_droplet:.1f}".ljust(
+                #         30
+                #     ),
+                #     end="\r",
+                # )
                 return wo
             else:
                 print(
@@ -375,12 +375,29 @@ class PendantDropAnalysis:
         self.raw_image = img
         self.process_image()
         st = self.analyse()
-        st_water = self.settings["st_water"]
+        st_water = self.analysis_settings["st_water"]
         de_scaled = np.sqrt(
             st_water / (self.density * self.gravity_constant * self.Hin)
         )
         scale = de_scaled / self.de
         return scale
+
+    def analyse_image(self, img, vol_droplet: float):
+        """
+        Analyzes the given image to calculate surface tension and Worthington number.
+        Args:
+            img (numpy.ndarray): The input image of the pendant drop.
+            vol_droplet (float): The volume of the droplet in microliters.
+        Returns:
+            tuple: A tuple containing surface tension (float), Worthington number (float),
+                and the analysis image (numpy.ndarray).
+
+        """
+        self.raw_image = img
+        self.process_image()
+        st = self.analyse()
+        wo = self.img2wo(img=img, vol_droplet=vol_droplet)
+        return st, wo, self.analysis_image
 
     def show_raw_image(self):
         cv2.imshow(winname=self.file_path, mat=self.raw_image)

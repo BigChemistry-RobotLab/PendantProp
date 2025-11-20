@@ -16,6 +16,15 @@
     <div class="settings-container">
         <form action="/update_settings" method="post">
             
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Settings
+                </button>
+                <a href="/" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </a>
+            </div>
+            
             <!-- General Settings -->
             <div class="settings-section">
                 <h3><i class="fas fa-sliders-h"></i> General Settings</h3>
@@ -26,6 +35,11 @@
                         <option value="false" {% if not settings.general_settings.simulate %}selected{% endif %}>Disabled</option>
                     </select>
                     <small>Use mock hardware for testing</small>
+                </div>
+                <div class="form-row">
+                    <label for="refresh_rate">Refresh Rate (s):</label>
+                    <input type="number" step="0.1" id="refresh_rate" name="refresh_rate" value="{{ settings.general_settings.refresh_rate }}">
+                    <small>How often images and plots refresh on the web interface</small>
                 </div>
             </div>
 
@@ -84,18 +98,6 @@
                     <label for="serial_port">Serial Port:</label>
                     <input type="text" id="serial_port" name="serial_port" value="{{ settings.sensor_settings.serial_port }}">
                     <small>COM port for sensor (e.g., COM3)</small>
-                </div>
-                <div class="form-row">
-                    <label for="baud_rate">Baud Rate:</label>
-                    <input type="number" id="baud_rate" name="baud_rate" value="{{ settings.sensor_settings.baud_rate }}">
-                </div>
-                <div class="form-row">
-                    <label for="flask_port">Flask Port:</label>
-                    <input type="number" id="flask_port" name="flask_port" value="{{ settings.sensor_settings.flask_port }}">
-                </div>
-                <div class="form-row">
-                    <label for="read_interval_s">Read Interval (s):</label>
-                    <input type="number" step="0.1" id="read_interval_s" name="read_interval_s" value="{{ settings.sensor_settings.read_interval_s }}">
                 </div>
             </div>
 
@@ -160,31 +162,13 @@
                 </div>
             </div>
 
-            <!-- Camera Settings -->
-            <div class="settings-section">
-                <h3><i class="fas fa-camera"></i> Camera Settings</h3>
-                <div class="form-row">
-                    <label for="capture_interval">Capture Interval (s):</label>
-                    <input type="number" step="0.1" id="capture_interval" name="capture_interval" value="{{ settings.camera_settings.capture_interval }}">
-                </div>
-            </div>
-
-            <!-- Plot Settings -->
-            <div class="settings-section">
-                <h3><i class="fas fa-chart-line"></i> Plot Settings</h3>
-                <div class="form-row">
-                    <label for="plot_update_interval">Plot Update Interval (s):</label>
-                    <input type="number" step="0.1" id="plot_update_interval" name="plot_update_interval" value="{{ settings.plot_settings.plot_update_interval }}">
-                    <small>How often plots are saved and refreshed during measurements</small>
-                </div>
-            </div>
-
             <!-- Image Analysis Settings -->
             <div class="settings-section">
                 <h3><i class="fas fa-image"></i> Image Analysis Settings</h3>
                 <div class="form-row">
-                    <label for="diameter_needle_mm">Needle Diameter (mm):</label>
-                    <input type="number" step="0.01" id="diameter_needle_mm" name="diameter_needle_mm" value="{{ settings.image_analysis_settings.diameter_needle_mm }}">
+                    <label for="scale">Scale (mm/pixel):</label>
+                    <input type="number" step="0.000001" id="scale" name="scale" value="{{ settings.image_analysis_settings.scale }}">
+                    <small>Conversion factor from pixels to millimeters</small>
                 </div>
                 <div class="form-row">
                     <label for="diameter_needle_px">Needle Diameter (px):</label>
@@ -208,19 +192,11 @@
                 </div>
             </div>
 
-            <div class="button-group">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Save Settings
-                </button>
-                <a href="/" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Cancel
-                </a>
-            </div>
         </form>
     </div>
 
     <footer>
-        <p>PendantProp v2.0 | Surface Tension Measurement System</p>
+        <p>PendantProp v2.0</p>
     </footer>
 </body>
 </html>

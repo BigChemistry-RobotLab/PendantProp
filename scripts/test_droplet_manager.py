@@ -22,10 +22,8 @@ source.sample_id = "TestSample001"
 # home robot
 config.home()
 
-dynamic_surface_tension, droplet_parameters = droplet_manager.measure_pendant_drop(source=source)
-print(droplet_parameters)
-equilibrium_surface_tension = calculate_equillibrium_value(dynamic_surface_tension, n_eq_points=100, column_index=1)
-config.home()
+droplet_manager.measure(source=source)
+
 # # save meta data
 # config.save_layout_final()
 # save_settings(settings)

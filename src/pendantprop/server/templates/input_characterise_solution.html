@@ -3,18 +3,18 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Measure Wells - PendantProp</title>
+    <title>Characterise Solution - PendantProp</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
     <div class="header">
         <h1><i class="fas fa-droplet"></i> PendantProp</h1>
-        <h2>Measure Wells</h2>
+        <h2>Characterise Solution</h2>
     </div>
 
     <div class="form-container">
-        <form action="/measure_wells" method="post" enctype="multipart/form-data">
+        <form action="/characterise_solution" method="post" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="csv_file">
                     <i class="fas fa-file-csv"></i> Sample Info CSV File:
@@ -24,21 +24,20 @@
                        name="csv_file" 
                        accept=".csv" 
                        required>
-                <small>Upload CSV file with sample information (well ID, sample ID, etc.)</small>
+                <small>Upload CSV file with sample information for characterisation</small>
             </div>
 
             <div class="info-box">
-                <h4><i class="fas fa-info-circle"></i> CSV Format</h4>
-                <p>Your CSV file should contain at least these columns:</p>
+                <p><strong>CSV Format:</strong></p>
                 <ul>
-                    <li><strong>well ID:</strong> Well identifier (e.g., A1, B2)</li>
-                    <li><strong>sample ID:</strong> Sample identifier</li>
+                    <li>Column headers: well_id, sample_id, etc.</li>
+                    <li>One row per solution to characterise</li>
                 </ul>
             </div>
 
             <div class="button-group">
                 <button type="submit" class="btn btn-success">
-                    <i class="fas fa-flask"></i> Start Measurements
+                    <i class="fas fa-play"></i> Start Characterisation
                 </button>
                 <a href="/" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Cancel

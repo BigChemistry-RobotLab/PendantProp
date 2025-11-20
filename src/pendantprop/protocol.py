@@ -48,7 +48,7 @@ class Protocol:
         if self.results is None:
             self.results = initialize_results(type=type)
         well_to_measure = self.containers[well_id]
-        st_t, drop_parameters = self.droplet_manager.measure_pendant_drop(source=well_to_measure)
+        st_t, drop_parameters = self.droplet_manager.measure(source=well_to_measure)
         self._append_save_plot_results(
             dynamic_surface_tension=st_t,
             container=well_to_measure,
@@ -59,22 +59,24 @@ class Protocol:
 
     def measure_wells(self):
         self.logger.info("Starting measure wells protocol...\n\n\n")
+        type = "wells"
         sample_info = pd.read_csv(f"{self.file_settings['sample_info_filepath']}")
+        sample_info.to_csv(f"{self.file_settings['output_folder']}/{self.file_settings['exp_tag']}/{self.file_settings["meta_data_folder"]}/sample_info.csv", index=False)
         self._set_sampleID_in_container(sample_info=sample_info)
         if self.results is None:
-            self.results = initialize_results(type="wells")
+            self.results = initialize_results(type=type)
         well_ids = sample_info["well ID"].tolist()
         for well_id in well_ids:
-            self.measure_well(well_id=well_id)
+            self.measure_well(well_id=well_id, type=type)
 
         self.logger.info("Finished measure wells protocol.\n\n\n")
         self.config.home()
 
-    def measure_plate(self):
-        pass
-
-    def characterise(self):
+    def characterise_solution(self):
+        self.logger.info("Starting measure wells protocol...\n\n\n")
         type = "characterization"
+        sample_info = pd.read_csv(f"{self.file_settings['sample_info_filepath']}")
+        sample_info.to_csv(f"{self.file_settings['output_folder']}/{self.file_settings['exp_tag']}/{self.file_settings["meta_data_folder"]}/sample_info.csv", index=False)
         pass
 
     def _append_save_plot_results(

@@ -1,5 +1,6 @@
 old/
 output/
+legacy/
 config/settings.json
 
 # Byte-compiled / cache

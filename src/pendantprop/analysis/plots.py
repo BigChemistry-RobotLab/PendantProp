@@ -22,7 +22,7 @@ class Plotter:
         self.cache_images_folder = self.file_settings["cache_images_folder"]
         os.makedirs(self.save_root, exist_ok=True)
         self.fontsize_labels = 15
-        self.window_size = 20
+        self.window_size = 1
 
     def plot_results_sample_id(self, df: pd.DataFrame):
         try:
@@ -31,7 +31,9 @@ class Plotter:
                 st_eq = df["surface tension eq. (mN/m)"]
 
                 fig, ax = plt.subplots()
-                ax.bar(sample_ids, st_eq, color="C0")
+                ax.bar(range(len(sample_ids)), st_eq, color="C0")
+                ax.set_xticks(range(len(sample_ids)))
+                ax.set_xticklabels(sample_ids, rotation=90)
                 ax.set_xlabel("Sample ID", fontsize=self.fontsize_labels)
                 ax.set_ylabel(
                     "Surface Tension Eq. (mN/m)", fontsize=self.fontsize_labels
@@ -40,7 +42,6 @@ class Plotter:
                     f"{self.file_settings['exp_tag']}",
                     fontsize=self.fontsize_labels,
                 )
-                ax.tick_params(axis="x", rotation=90)
                 plt.tight_layout()
 
                 # save in experiment folder and plots cache for web interface

@@ -7,9 +7,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script>
-        // Auto-refresh images using plot_update_interval from settings
+        // Auto-refresh images using refresh_rate from settings
         /* eslint-disable */
-        var refreshInterval = {{ plot_update_interval * 1000 }}; // Convert seconds to milliseconds
+        var refreshInterval = {{ refresh_rate * 1000 }}; // Convert seconds to milliseconds
         /* eslint-enable */
         
         function refreshImage(imageId, imageUrl) {
@@ -52,8 +52,6 @@
         <h1><i class="fas fa-droplet"></i> PendantProp</h1>
         <div class="status-bar">
             <span>Status: <strong>{{ protocol_status }}</strong></span>
-            <span class="separator">|</span>
-            <span>Last Action: <strong>{{ last_action }}</strong></span>
         </div>
     </div>
 
@@ -73,6 +71,12 @@
         <form action="/input_measure_wells" method="post">
             <button type="submit" class="btn btn-success">
                 <i class="fas fa-flask"></i> Measure Wells
+            </button>
+        </form>
+        
+        <form action="/input_characterise_solution" method="post">
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-vial"></i> Characterise Solution
             </button>
         </form>
         
@@ -120,7 +124,7 @@
     </div>
 
     <footer>
-        <p>PendantProp v2.0 | Surface Tension Measurement System</p>
+        <p>PendantProp v2.0</p>
     </footer>
 </body>
 </html>

@@ -60,18 +60,16 @@ replace_plots_with_placeholders()
 @app.route("/")
 def index():
     """Main page"""
-    last_action = session.get("last_action", "Ready")
     protocol_status = "Initialized" if protocol is not None else "Not Initialized"
     
-    # Load settings to get plot_update_interval
+    # Load settings to get refresh_rate
     current_settings = load_settings(file_path="config/settings.json")
-    plot_update_interval = current_settings.get("plot_settings", {}).get("plot_update_interval", 1.0)
+    refresh_rate = current_settings.get("general_settings", {}).get("refresh_rate", 1.0)
     
     return render_template(
         "index.html",
-        last_action=last_action,
         protocol_status=protocol_status,
-        plot_update_interval=plot_update_interval,
+        refresh_rate=refresh_rate,
     )
 
 
@@ -89,6 +87,7 @@ def update_settings():
     
     # Update general settings
     current_settings["general_settings"]["simulate"] = request.form.get("simulate") == "true"
+    current_settings["general_settings"]["refresh_rate"] = float(request.form.get("refresh_rate"))
     
     # Update robot settings
     current_settings["robot_settings"]["robot_ip"] = request.form.get("robot_ip")
@@ -105,9 +104,6 @@ def update_settings():
     
     # Update sensor settings
     current_settings["sensor_settings"]["serial_port"] = request.form.get("serial_port")
-    current_settings["sensor_settings"]["baud_rate"] = int(request.form.get("baud_rate"))
-    current_settings["sensor_settings"]["flask_port"] = int(request.form.get("flask_port"))
-    current_settings["sensor_settings"]["read_interval_s"] = float(request.form.get("read_interval_s"))
     
     # Update pendant drop settings
     current_settings["pendant_drop_settings"]["explore_points"] = int(request.form.get("explore_points"))
@@ -125,14 +121,8 @@ def update_settings():
     current_settings["pendant_drop_settings"]["well_id_drop_stage"] = request.form.get("well_id_drop_stage")
     current_settings["pendant_drop_settings"]["n_equilibration_points"] = int(request.form.get("n_equilibration_points"))
     
-    # Update camera settings
-    current_settings["camera_settings"]["capture_interval"] = float(request.form.get("capture_interval"))
-    
-    # Update plot settings
-    current_settings["plot_settings"]["plot_update_interval"] = float(request.form.get("plot_update_interval"))
-    
     # Update image analysis settings
-    current_settings["image_analysis_settings"]["diameter_needle_mm"] = float(request.form.get("diameter_needle_mm"))
+    current_settings["image_analysis_settings"]["scale"] = float(request.form.get("scale"))
     current_settings["image_analysis_settings"]["diameter_needle_px"] = float(request.form.get("diameter_needle_px"))
     current_settings["image_analysis_settings"]["diameter_tolerance_percent"] = float(request.form.get("diameter_tolerance_percent"))
     current_settings["image_analysis_settings"]["st_water"] = float(request.form.get("st_water"))
@@ -142,7 +132,6 @@ def update_settings():
     # Save updated settings
     save_settings(current_settings, file_path="config/settings.json")
     
-    session["last_action"] = "Settings updated successfully"
     return redirect(url_for("index"))
 
 
@@ -178,21 +167,17 @@ def initialisation():
     csv_file = request.files.get("csv_file")
     
     if not exp_tag or not csv_file:
-        session["last_action"] = "Error: Missing experiment tag or CSV file"
         return redirect(url_for("index"))
-    
-    # Update settings
-    settings = load_settings(file_path="config/settings.json")
-    settings["file_settings"]["exp_tag"] = exp_tag
-    save_settings(settings, file_path="config/settings.json")
     
     # Save layout CSV
     layout_dir = "config/layouts"
     os.makedirs(layout_dir, exist_ok=True)
-    layout_path = os.path.join(layout_dir, csv_file.filename)
+    layout_path = os.path.join(layout_dir, csv_file.filename).replace("\\", "/")
     csv_file.save(layout_path)
     
-    # Update config filepath in settings
+    # Update settings
+    settings = load_settings(file_path="config/settings.json")
+    settings["file_settings"]["exp_tag"] = exp_tag
     settings["file_settings"]["config_filepath"] = layout_path
     save_settings(settings, file_path="config/settings.json")
     
@@ -201,7 +186,6 @@ def initialisation():
     thread.daemon = True
     thread.start()
     
-    session["last_action"] = f"Initializing experiment: {exp_tag}"
     return redirect(url_for("index"))
 
 
@@ -209,6 +193,12 @@ def initialisation():
 def input_measure_wells():
     """Show measure wells form"""
     return render_template("input_measure_wells.html")
+
+
+@app.route("/input_characterise_solution", methods=["POST"])
+def input_characterise_solution():
+    """Show characterise solution form"""
+    return render_template("input_characterise_solution.html")
 
 
 def measure_wells_thread(sample_csv_path):
@@ -236,25 +226,48 @@ def measure_wells_thread(sample_csv_path):
         traceback.print_exc()
 
 
+def characterise_solution_thread(sample_csv_path):
+    """Run characterise solution in background thread"""
+    global protocol
+    
+    try:
+        if protocol is None:
+            print("[Server] Error: Protocol not initialized")
+            return
+        
+        # Update settings with sample info path
+        settings = load_settings(file_path="config/settings.json")
+        settings["file_settings"]["sample_info_filepath"] = sample_csv_path
+        save_settings(settings, file_path="config/settings.json")
+        
+        # Run characterisation protocol
+        protocol.characterise_solution()
+        
+        print("[Server] Characterisation completed successfully")
+        
+    except Exception as e:
+        print(f"[Server] Characterisation failed: {e}")
+        import traceback
+        traceback.print_exc()
+
+
 @app.route("/measure_wells", methods=["POST"])
 def measure_wells():
     """Handle measure wells form submission"""
     global protocol
     
     if protocol is None:
-        session["last_action"] = "Error: Initialize protocol first"
         return redirect(url_for("index"))
     
     csv_file = request.files.get("csv_file")
     
     if not csv_file:
-        session["last_action"] = "Error: No sample CSV file provided"
         return redirect(url_for("index"))
     
     # Save sample info CSV
     sample_dir = "config/info"
     os.makedirs(sample_dir, exist_ok=True)
-    sample_path = os.path.join(sample_dir, csv_file.filename)
+    sample_path = os.path.join(sample_dir, csv_file.filename).replace("\\", "/")
     csv_file.save(sample_path)
     
     # Start measurement in background thread
@@ -262,9 +275,34 @@ def measure_wells():
     thread.daemon = True
     thread.start()
     
-    session["last_action"] = "Starting measurements..."
     return redirect(url_for("index"))
 
+
+@app.route("/characterise_solution", methods=["POST"])
+def characterise_solution():
+    """Handle characterise solution form submission"""
+    global protocol
+    
+    if protocol is None:
+        return redirect(url_for("index"))
+    
+    csv_file = request.files.get("csv_file")
+    
+    if not csv_file:
+        return redirect(url_for("index"))
+    
+    # Save sample info CSV
+    sample_dir = "config/info"
+    os.makedirs(sample_dir, exist_ok=True)
+    sample_path = os.path.join(sample_dir, csv_file.filename).replace("\\", "/")
+    csv_file.save(sample_path)
+    
+    # Start characterisation in background thread
+    thread = threading.Thread(target=characterise_solution_thread, args=(sample_path,))
+    thread.daemon = True
+    thread.start()
+    
+    return redirect(url_for("index"))
 
 
 
