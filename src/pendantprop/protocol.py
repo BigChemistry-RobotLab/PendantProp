@@ -22,8 +22,11 @@ warnings.filterwarnings(
 )
 
 class Protocol:
-    def __init__(self):
-        self.settings = load_settings(file_path="config/settings.json")
+    def __init__(self, settings: dict = None):
+        if settings is None:
+            self.settings = load_settings(file_path="config/settings.json")
+        else:
+            self.settings = settings
         self.file_settings = self.settings["file_settings"]
         self.config = Config(settings=self.settings)
         self.left_pipette, self.right_pipette, self.containers = self.config.load_all()

@@ -12,6 +12,8 @@ print("=" * 70)
 print("Test sensor")
 print("=" * 70)
 settings = load_settings(file_path="config/settings.json")
+settings['file_settings']['exp_tag'] = "test_sensor"
+
 sensor_real = SensorAPI(settings=settings)
 data = sensor_real.capture_sensor_data()
 

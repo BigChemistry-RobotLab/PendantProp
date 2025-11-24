@@ -25,9 +25,10 @@ config.home()
 droplet_manager.measure(source=source)
 
 config.home()
-# # save meta data
-# config.save_layout_final()
-# save_settings(settings)
 
-# # Log the protocol summary at the end
-# config.log_protocol_summary()
+# save meta data
+config.save_layout_final()
+save_settings(settings)
+
+# Log the protocol summary at the end
+config.log_protocol_summary()

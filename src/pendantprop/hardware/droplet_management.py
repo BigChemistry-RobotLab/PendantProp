@@ -68,8 +68,8 @@ class DropletManager:
             self.logger.info("Using Mock Pendant Drop Camera (simulate mode enabled)")
             self.pd_cam = MockPendantDropCamera()
             self.pd_cam.start_capture()
-            # self.CHECK_TIME = 1  # speed up checks in simulate mode
-            # self.MAX_MEASURE_TIME = 5  # speed up measurements in simulate mode
+            self.CHECK_TIME = 0.1  # speed up checks in simulate mode
+            self.MAX_MEASURE_TIME = 1  # speed up measurements in simulate mode
         else:
             self.logger.info("Using Real Pendant Drop Camera")
             self.pd_cam = PendantDropCamera()

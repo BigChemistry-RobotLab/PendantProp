@@ -9,6 +9,7 @@ from pendantprop.hardware.opentrons.washing import Washer
 
 # Import settings and set experiment tag
 settings = load_settings(file_path="config/settings.json")
+settings['file_settings']['exp_tag'] = "test_washing"
 
 # Initialize platform with PendantProp Config
 config = Config(settings=settings)

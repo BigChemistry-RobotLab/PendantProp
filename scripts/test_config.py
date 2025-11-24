@@ -3,7 +3,7 @@ from pendantprop.hardware.opentrons.config import Config
 
 # import settings and set exp tag 
 settings = load_settings(file_path="config/settings.json")
-settings['file_settings']['exp_tag'] = "test_opentrons_api"
+settings['file_settings']['exp_tag'] = "test_config"
 
 # initialise platform
 config = Config(settings=settings)

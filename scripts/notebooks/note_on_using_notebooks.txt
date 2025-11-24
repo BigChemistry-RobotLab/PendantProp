@@ -1,0 +1,1 @@
+Sometimes it is nice to use notebooks to go cell by cell, for example with calibration. To run this, bring the notebook to the root of the folder (otherwise we have pathing issues).
