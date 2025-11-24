@@ -1,18 +1,19 @@
 {
     "general_settings": {
-        "simulate": false
+        "simulate": false,
+        "refresh_rate": 1.0
     },
     "file_settings": {
-        "exp_tag": "test_real3",
+        "exp_tag": "test",
         "output_folder": "output",
         "output_folder_pictures": "output/pictures",
         "meta_data_folder": "meta_data",
         "data_folder": "data",
-        "sample_info_filepath": "config/info\\sample_info.csv",
+        "sample_info_filepath": "config/info/sample_info.csv",
         "container_data_folder": "container_data",
-        "config_filepath": "config/layouts\\layout.csv",
+        "config_filepath": "config/layouts/layout.csv",
         "custom_labware_folder": "config/custom_labware",
-        "plot_folder_server": "src/pendantprop/server/static/plots_cache"
+        "cache_images_folder": "src/pendantprop/server/static/cache_images"
     },
     "robot_settings": {
         "robot_ip": "169.254.164.30",
@@ -48,30 +49,25 @@
     },
     "pendant_drop_settings": {
         "explore_points": 5,
-        "worthington_limit_lower": 0.4,
-        "worthington_limit_upper": 0.9,
-        "initial_drop_volume": 5.0,
+        "worthington_limit_lower": 0.6,
+        "worthington_limit_upper": 0.8,
+        "initial_drop_volume": 4.0,
         "check_time": 1.0,
-        "equilibration_time": 60.0,
-        "max_measure_time": 30.0,
+        "equilibration_time": 30,
+        "equilibration_sensistivity": 0.5,
+        "max_measure_time": 600.0,
         "max_retries": 5,
-        "drop_volume_decrease_after_retry": 0.35,
+        "drop_volume_decrease_after_retry": 0.5,
         "drop_volume_increase_resolution": 0.5,
         "flow_rate": 0.5,
         "pendant_drop_depth_offset": -10.5,
         "well_id_drop_stage": "10A1",
-        "n_equilibration_points": 300
-    },
-    "camera_settings": {
-        "capture_interval": 1.0
-    },
-    "plot_settings": {
-        "plot_update_interval": 1.0
+        "n_equilibration_points": 100
     },
     "image_analysis_settings": {
-        "diameter_needle_mm": 1.32,
         "diameter_needle_px": 360.0,
-        "diameter_tolerance_percent": 10.0,
+        "scale": 0.003507,
+        "diameter_tolerance_percent": 5.0,
         "st_water": 72.37,
         "density": 0.9982,
         "gravity_constant": 9.80665
