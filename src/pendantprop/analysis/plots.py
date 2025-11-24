@@ -108,9 +108,45 @@ class Plotter:
             )
             self._create_empty_plot(f"dynamic_surface_tension_plot_{drop_count}")
 
-    # def plot_results_concentration(self, df: pd.DataFrame, solution_name: str):
-    #     try:
-    #         if not df.empty:
+    def plot_results_concentration(self, df: pd.DataFrame):
+        try:
+            if not df.empty:
+                sample_ids = df["sample id"].to_list()
+                parent_ids = [s.rsplit('_', 1)[0] for s in sample_ids]
+                latest_parent_id = parent_ids[-1]
+                df_solution = df.loc[df["sample id"].str.startswith(latest_parent_id)]
+                contents = df_solution["content"].to_list()
+                total_surfactant_conc = self._contents2concentrations(contents)
+                st_eq = df_solution["surface tension eq. (mN/m)"].to_list()
+
+                fig, ax = plt.subplots()
+                ax.scatter(
+                    total_surfactant_conc,
+                    st_eq,
+                    color="C0",
+                    label="Data Points",
+                )
+                ax.set_ylim(20, 80)
+                ax.set_xscale("log")
+                ax.set_xlabel("Total Surfactant Concentration (mM)", fontsize=self.fontsize_labels)
+                ax.set_ylabel(
+                    "Surface Tension Eq. (mN/m)", fontsize=self.fontsize_labels
+                )
+                ax.set_title(
+                    f"{self.file_settings['exp_tag']}, solution: {latest_parent_id}",
+                    fontsize=self.fontsize_labels,
+                )
+                plt.tight_layout()
+                plt.savefig(
+                    f"{self.save_root}/{self.file_settings['data_folder']}/results_plot.png"
+                )
+                plt.savefig(f"{self.cache_images_folder}/results_plot.png")
+                plt.close(fig)
+        except Exception as e:
+            print(
+                f"Plotter: could not create plot results with concentrations. Error: {e}"
+            )
+            self._create_empty_plot("results_plot_concentration")
     #             df_solution = df.loc[df["solution"] == solution_name]
     #             # concentrations = df_solution["concentration"]
     #             # st_eq = df_solution["surface tension eq. (mN/m)"]
@@ -170,3 +206,22 @@ class Plotter:
         )
         plt.savefig(f"{self.cache_images_folder}/{plot_name}.png")
         plt.close(fig)
+
+    def _content2concentration(self, content: dict) -> float:
+        """Convert content dictionary to total surfactant concentration."""
+        total_conc = 0.0
+        for key, value in content.items():
+            try:
+                conc = float(value)
+                total_conc += conc
+            except (ValueError, TypeError):
+                continue
+        return total_conc
+    
+    def _contents2concentrations(self, contents: list) -> list:
+        """Convert list of content dictionaries to list of total surfactant concentrations."""
+        concentrations = []
+        for content in contents:
+            total_conc = self._content2concentration(content)
+            concentrations.append(total_conc)
+        return concentrations

@@ -7,3 +7,5 @@ tube rack 50 mL,3dprinted_50_tuberack_50000ul,container,6,A3,50,water,pure,,
 sample plate,greinerblackwalls_96_wellplate_392ul,container,7,,,,,,
 wash plate,greinerblackwalls_96_wellplate_392ul,container,3,,,,,,
 drop_stage,dropstage_1_reservoir_5000ul,container,10,A1,,,,,
+stock plate,greinerblackwalls_96_wellplate_392ul,container,8,A1,0.3,SDS,10,,
+stock plate,greinerblackwalls_96_wellplate_392ul,container,8,A2,0.3,CTAB,1,C12E3,100

@@ -12,7 +12,8 @@ from opentrons_api.load_save_functions import load_settings
 # Define the test scripts to run
 TEST_SCRIPTS = [
     "test_config.py",
-    "test_protocol.py",
+    "test_protocol_measure_wells.py",
+    "test_protocol_characterisation.py",
     "test_droplet_manager.py",
     "test_washing.py",
     "test_camera.py",  

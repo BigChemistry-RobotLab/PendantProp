@@ -11,38 +11,22 @@ from opentrons_api.containers import Container
 from pendantprop.hardware.sensor_api import SensorAPI
 from pendantprop.utils.utils import calculate_equillibrium_value
 
-def initialize_results(type: str) -> pd.DataFrame: 
+def initialize_results() -> pd.DataFrame: 
     # Initialize an empty DataFrame with the required columns
-    if type == "wells":
-        return pd.DataFrame(
-            columns=[
-                "sample id",
-                "surface tension eq. (mN/m)",
-                "drop count",
-                "drop volume (uL)",
-                "measure time (s)",
-                "valid measurement",
-                "temperature (C)",
-                "humidity (%)",
-                "pressure (Pa)",
-            ]
-        )
-    elif type == "serial_dilution":
-        return pd.DataFrame(
-            columns=[
-                "sample id",
-                "solution",
-                "concentration",
-                "surface tension eq. (mN/m)",
-                "drop count",
-                "drop volume (uL)",
-                "measure time (s)",
-                "valid measurement",
-                "temperature (C)",
-                "humidity (%)",
-                "pressure (Pa)",
-            ]
-        )
+    return pd.DataFrame(
+        columns=[
+            "sample id",
+            "surface tension eq. (mN/m)",
+            "valid measurement",
+            "content",
+            "drop count",
+            "drop volume (uL)",
+            "measure time (s)",
+            "temperature (C)",
+            "humidity (%)",
+            "pressure (Pa)",
+        ]
+    )
 
 def append_results(
     results: pd.DataFrame,
@@ -52,7 +36,6 @@ def append_results(
     drop_parameters: dict,
     n_eq_points: int,
     sensor_api: SensorAPI,
-    type: str,
 ):
     if dynamic_surface_tension:
         save_dynamic_surface_tension(settings, dynamic_surface_tension, container=container)
@@ -62,7 +45,6 @@ def append_results(
             column_index=1,
         )
         results = add_data_to_results(
-            type=type,
             results=results,
             container=container,
             surface_tension_eq=st_eq,
@@ -90,7 +72,6 @@ def save_dynamic_surface_tension(settings: dict, dynamic_surface_tension: list, 
 
 
 def add_data_to_results(
-    type: str,
     results: pd.DataFrame,
     container: Container,
     surface_tension_eq: float,
@@ -98,43 +79,22 @@ def add_data_to_results(
     sensor_api=SensorAPI,
 ):
     sensor_data = sensor_api.capture_sensor_data()
-    if type == "wells":
-        new_row = pd.DataFrame(
-            {
-                "sample id": [container.sample_id],
-                "valid measurement": [drop_parameters["valid_measurement"]],
-                "surface tension eq. (mN/m)": [surface_tension_eq],
-                "drop count": [drop_parameters["drop_count"]],
-                "drop volume (uL)": [drop_parameters["drop_volume"]],
-                "measure time (s)": [drop_parameters["measure_time"]],
-                "temperature (C)": [float(sensor_data["Temperature (C)"])],
-                "humidity (%)": [float(sensor_data["Humidity (%)"])],
-                "pressure (Pa)": [float(sensor_data["Pressure (Pa)"])],
-            }
-        )
-        results = pd.concat([results, new_row], ignore_index=True)
-        return results
-    # elif type == "serial_dilution":
-    #     new_row = pd.DataFrame(
-    #         {
-    #             "well id": [container.WELL_ID],
-    #             "valid measurement": [drop_parameters["valid_measurement"]],
-    #             "solution": [container.solution_name],
-    #             "concentration": [container.concentration],
-    #             "surface tension eq. (mN/m)": [surface_tension_eq],
-    #             "drop count": [drop_parameters["drop_count"]],
-    #             "drop volume (uL)": [drop_parameters["drop_volume"]],
-    #             "measure time (s)": [drop_parameters["measure_time"]],
-    #             "flow rate (uL/s)": [drop_parameters["flow_rate"]],
-    #             "temperature (C)": [float(sensor_data["Temperature (C)"])],
-    #             "humidity (%)": [float(sensor_data["Humidity (%)"])],
-    #             "pressure (Pa)": [float(sensor_data["Pressure (Pa)"])],
-    #         }
-    #     )
-    #     results = pd.concat([results, new_row], ignore_index=True)
-    #     return results
-    else:
-        print(f"Unknown results type: {type}")
+    new_row = pd.DataFrame(
+        {
+            "sample id": [container.sample_id],
+            "valid measurement": [drop_parameters["valid_measurement"]],
+            "surface tension eq. (mN/m)": [surface_tension_eq],
+            "content": [container.content],
+            "drop count": [drop_parameters["drop_count"]],
+            "drop volume (uL)": [drop_parameters["drop_volume"]],
+            "measure time (s)": [drop_parameters["measure_time"]],
+            "temperature (C)": [float(sensor_data["Temperature (C)"])],
+            "humidity (%)": [float(sensor_data["Humidity (%)"])],
+            "pressure (Pa)": [float(sensor_data["Pressure (Pa)"])],
+        }
+    )
+    results = pd.concat([results, new_row], ignore_index=True)
+    return results
 
 def save_results(results: pd.DataFrame, settings: dict):
     file_settings = settings["file_settings"]

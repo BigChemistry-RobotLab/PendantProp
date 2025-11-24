@@ -224,7 +224,6 @@ class DropletManager:
     def prepare_pendant_drop(self):
         self.logger.info("Preparing pendant drop.")
         # initialize left pipette
-
         if not self.left_pipette.has_tip:
             self.left_pipette.pick_up_tip()
 
