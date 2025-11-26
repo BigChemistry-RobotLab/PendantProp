@@ -8,6 +8,7 @@ from opentrons_api.containers import Container
 from opentrons_api.formulater import Formulater
 from pendantprop.hardware.opentrons.config import Config
 from pendantprop.hardware.droplet_management import DropletManager
+from pendantprop.hardware.opentrons.washing import Washer
 from pendantprop.analysis.plots import Plotter
 from pendantprop.hardware.sensor_api import SensorAPI
 from pendantprop.utils.load_save_functions import (
@@ -45,6 +46,13 @@ class Protocol:
             settings=self.settings,
             left_pipette=self.left_pipette,
             containers=self.containers,
+        )
+        self.washer = Washer(
+            settings=self.settings,
+            left_pipette=self.left_pipette,
+            right_pipette=self.right_pipette,
+            containers=self.containers,
+            labware=self.config.labware,
         )
         self.logger = Logger(
             name="protocol",
@@ -123,6 +131,8 @@ class Protocol:
                 stock_id=well_id_sample,
                 solvent_id=solvent_id,
                 n_dil=self.settings["pendant_drop_settings"]["n_dilutions"],
+                well_volume=self.settings["pendant_drop_settings"]["well_volume"],
+                mix_repeat=self.settings["pendant_drop_settings"]["mix_repeat"],
                 drop_right_tip_only=True,
             )
             for i in range(self.settings["pendant_drop_settings"]["n_dilutions"], 0, -1):
@@ -130,12 +140,16 @@ class Protocol:
                 sample_id_dilution = f"{sample_id}_{i}"
                 self.containers[well_id_to_measure].sample_id = sample_id_dilution
                 self.measure_well(well_id=well_id_to_measure, type=type)
+            self.washer.wash()
 
         self.logger.info("Finished characterisation protocol.\n\n\n")
         self.config.home()
         self.config.save_layout_final()
         self.config.log_protocol_summary()
 
+    def calibrate(self, well_id_water: str):
+        self.logger.info(f"Starting calibration protocol with water well ID: {well_id_water}...\n\n\n")
+        pass
 
     def _append_save_plot_results(
         self,

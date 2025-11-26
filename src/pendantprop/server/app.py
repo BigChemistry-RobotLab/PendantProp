@@ -106,7 +106,9 @@ def update_settings():
     current_settings["sensor_settings"]["serial_port"] = request.form.get("serial_port")
     
     # Update pendant drop settings
-    current_settings["pendant_drop_settings"]["explore_points"] = int(request.form.get("explore_points"))
+    current_settings["pendant_drop_settings"]["n_dilutions"] = int(request.form.get("n_dilutions"))
+    current_settings["pendant_drop_settings"]["well_volume"] = int(request.form.get("well_volume"))
+    current_settings["pendant_drop_settings"]["mix_repeat"] = int(request.form.get("mix_repeat"))
     current_settings["pendant_drop_settings"]["worthington_limit_lower"] = float(request.form.get("worthington_limit_lower"))
     current_settings["pendant_drop_settings"]["worthington_limit_upper"] = float(request.form.get("worthington_limit_upper"))
     current_settings["pendant_drop_settings"]["initial_drop_volume"] = float(request.form.get("initial_drop_volume"))
@@ -141,6 +143,12 @@ def input_initialisation():
     return render_template("input_initialisation.html")
 
 
+@app.route("/input_calibrate", methods=["POST"])
+def input_calibrate():
+    """Show calibration form"""
+    return render_template("input_calibrate.html")
+
+
 def initialize_protocol_thread(layout_csv_path):
     """Initialize protocol in background thread"""
     global protocol, settings
@@ -156,6 +164,26 @@ def initialize_protocol_thread(layout_csv_path):
         
     except Exception as e:
         print(f"[Server] Protocol initialization failed: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+def calibrate_thread(well_id_water):
+    """Run calibration in background thread"""
+    global protocol
+    
+    try:
+        if protocol is None:
+            print("[Server] Error: Protocol not initialized")
+            return
+        
+        # Run calibration protocol
+        protocol.calibrate(well_id_water=well_id_water)
+        
+        print("[Server] Calibration completed successfully")
+        
+    except Exception as e:
+        print(f"[Server] Calibration failed: {e}")
         import traceback
         traceback.print_exc()
 
@@ -183,6 +211,27 @@ def initialisation():
     
     # Start initialization in background thread
     thread = threading.Thread(target=initialize_protocol_thread, args=(layout_path,))
+    thread.daemon = True
+    thread.start()
+    
+    return redirect(url_for("index"))
+
+
+@app.route("/calibrate", methods=["POST"])
+def calibrate():
+    """Handle calibration form submission"""
+    global protocol
+    
+    if protocol is None:
+        return redirect(url_for("index"))
+    
+    well_id_water = request.form.get("well_id_water")
+    
+    if not well_id_water:
+        return redirect(url_for("index"))
+    
+    # Start calibration in background thread
+    thread = threading.Thread(target=calibrate_thread, args=(well_id_water,))
     thread.daemon = True
     thread.start()
     
@@ -241,7 +290,7 @@ def characterise_solution_thread(sample_csv_path):
         save_settings(settings, file_path="config/settings.json")
         
         # Run characterisation protocol
-        protocol.characterise_solution()
+        protocol.characterise_solutions()
         
         print("[Server] Characterisation completed successfully")
         

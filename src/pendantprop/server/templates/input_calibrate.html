@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Calibrate - PendantProp</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-droplet"></i> PendantProp</h1>
+        <h2>Calibrate</h2>
+    </div>
+
+    <div class="form-container">
+        <form action="/calibrate" method="post">
+            <div class="form-group">
+                <label for="well_id_water">
+                    <i class="fas fa-water"></i> Water Well ID:
+                </label>
+                <input type="text" 
+                       id="well_id_water" 
+                       name="well_id_water" 
+                       placeholder="e.g., 1A1" 
+                       required>
+                <small>Enter the well ID containing water for calibration</small>
+            </div>
+
+            <div class="info-box">
+                <p><strong>Calibration Process:</strong></p>
+                <ul>
+                    <li>Ensure the specified well contains pure water</li>
+                    <li>The system will measure the surface tension</li>
+                    <li>Calibration values will be used for subsequent measurements</li>
+                </ul>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-warning">
+                    <i class="fas fa-play"></i> Start Calibration
+                </button>
+                <a href="/" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <footer>
+        <p>PendantProp v2.0</p>
+    </footer>
+</body>
+</html>

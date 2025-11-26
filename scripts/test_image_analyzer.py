@@ -6,8 +6,9 @@ from opentrons_api.load_save_functions import load_settings
 settings = load_settings(file_path="config/settings.json")
 analyzer = PendantDropAnalysis(settings=settings)
 
-img = cv2.imread("docs/example_drop.png")
-st, wo, analysis_img = analyzer.analyse_image(img=img, vol_droplet=20)
+# img = cv2.imread("docs/example_drop.png")
+img = analyzer.select_image()
+st, wo, analysis_img = analyzer.analyse_image(img=img, vol_droplet=10)
 print(f"Surface Tension: {st} mN/m")
 print(f"Worthington Number: {wo}")
 

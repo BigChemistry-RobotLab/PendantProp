@@ -1,3 +1,7 @@
 sample ID,well ID,solvent
-SDS,8A1,water
-CTAB,8A2,water
+SDS1,8A1,water
+SDS1,8A2,water
+SDS1,8A3,water
+TTAB1,8B1,water
+TTAB1,8B2,water
+TTAB1,8B3,water
