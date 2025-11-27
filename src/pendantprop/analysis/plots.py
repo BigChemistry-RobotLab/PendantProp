@@ -138,7 +138,7 @@ class Plotter:
                 )
                 plt.tight_layout()
                 plt.savefig(
-                    f"{self.save_root}/{self.file_settings['data_folder']}/results_plot.png"
+                    f"{self.save_root}/{self.file_settings['data_folder']}/results_{latest_parent_id}.png"
                 )
                 plt.savefig(f"{self.cache_images_folder}/results_plot.png")
                 plt.close(fig)
