@@ -1,6 +1,6 @@
 # Pendantprop
 ### An autonomous platform for efficient surfactant characterization
-The corresponding github repository for the work *An Autonomous Robotic Module for Efficient Surface Tension Measurements of Formulations*. Currently, this repository is still under development and it is recommend to go to the branch v1 for a stable version (see below).
+The corresponding github repository for the work *An Autonomous Robotic Module for Efficient Surface Tension Measurements of Formulations* (doi: https://doi.org/10.1038/s41524-025-01842-9). Currently, this repository is still under development and it is recommend to go to the branch v1 for a stable version (see below).
 
 ## Conda setup
 Use the following commands to clone the repository and set up the required conda environment: 
