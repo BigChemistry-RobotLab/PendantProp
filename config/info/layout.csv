@@ -1,7 +1,7 @@
 labware name,labware file,function,deck position,well,initial volume (mL),compound 1,concentration 1,compound 2,concentration 2
 "tips P20, 1",needlecoated_1_tiprack_20ul,tips,1,,,,,,
 "tips P1000, 1",sarstedt_77_tiprack_1000ul,tips,2,,,,,,
-"tips P1000, 1",sarstedt_77_tiprack_1000ul,tips,5,,,,,,
+"tips P1000, 2",sarstedt_77_tiprack_1000ul,tips,5,,,,,,
 tube rack 50 mL,3dprinted_50_tuberack_50000ul,container,6,A1,50,water,pure,,
 tube rack 50 mL,3dprinted_50_tuberack_50000ul,container,6,B2,50,water_wash,pure,,
 tube rack 50 mL,3dprinted_50_tuberack_50000ul,container,6,B3,30,trash,pure,,
