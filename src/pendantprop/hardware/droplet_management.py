@@ -75,6 +75,38 @@ class DropletManager:
             self.pd_cam = PendantDropCamera()
             self.pd_cam.start_capture()
     
+    def calibrate(self, source: Container, vol_droplet: float = 19.0, calibration_time: float = 60.0) -> float:
+        """
+        Calibrate camera by measuring scale from a water droplet.
+        """
+        self.logger.info(f"Starting calibration with source {source.WELL_ID} and droplet volume {vol_droplet}.")
+        self.source = source
+        self.prepare_pendant_drop()
+        self.left_pipette.dispense(
+            volume=vol_droplet,
+            destination=self.containers[self.WELL_ID_DROP_STAGE],
+            depth_offset=self.PENDANT_DROP_DEPTH_OFFSET,
+            flow_rate=self.FLOW_RATE,
+            log=False,
+            update_info=False,
+        )
+        self.drop_volume = vol_droplet
+        start_time = time.time()
+        scales = []
+        while time.time() - start_time < calibration_time:
+            try:
+                st, wo, img, analysis_img = self._analyze_current_img(vol_droplet=vol_droplet)
+                scale = self.analyzer.img2scale(img=img)
+                scales.append(scale)
+                print(f"Surface tension: {st:6.3f} mN/m | Wortington number: {wo:6.3f} | Scale: {scale:6.6f} mm/px")
+            except Exception as e:
+                pass
+            time.sleep(0.01)
+        average_scale = np.mean(scales)
+        self.logger.info(f"Calibration completed. Average scale: {average_scale:6.6f} mm/px")
+        self.return_pendant_drop()
+        return average_scale
+
     def measure(self, source: Container):
         # set sample id if not set
         if source.sample_id is None:
