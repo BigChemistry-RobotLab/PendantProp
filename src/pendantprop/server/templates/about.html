@@ -39,9 +39,35 @@
             <h3><i class="fas fa-flask"></i> Measurement Workflow</h3>
             <ol>
                 <li><strong>Initialize:</strong> Upload deck layout and configure experiment</li>
+                <li><strong>Calibrate:</strong> Measure scale factor using water droplet (optional but recommended)</li>
                 <li><strong>Measure:</strong> Upload sample information and start measurements</li>
                 <li><strong>Analyze:</strong> View real-time results and plots</li>
             </ol>
+        </div>
+
+        <div class="about-section">
+            <h3><i class="fas fa-ruler"></i> Calibration</h3>
+            <p>
+                Camera calibration determines the scale factor (mm/pixel) by measuring a water droplet 
+                of known surface tension. This ensures accurate surface tension measurements for your samples.
+            </p>
+            <ul>
+                <li><strong>When to calibrate:</strong> Before each experiment session or when changing camera/lighting setup</li>
+                <li><strong>Requirements:</strong> Pure, distilled water at room temperature</li>
+                <li><strong>Process:</strong> Forms a pendant water droplet, analyzes geometry, calculates scale</li>
+                <li><strong>Duration:</strong> ~60 seconds</li>
+                <li><strong>Result:</strong> Update the <code>scale</code> parameter in settings with the measured value</li>
+            </ul>
+        </div>
+
+        <div class="about-section">
+            <h3><i class="fas fa-users"></i> Contributors</h3>
+            <div style="margin-top: 15px;">
+                <p><strong>Pim Dankloff</strong> - Main Developer</p>
+                <p><strong>Mats van Rossum</strong> - Prototype Developer</p>
+                <p><strong>Derk van ten Klooster</strong> - Developer</p>
+                <p><strong>Will Robinson</strong> - Supervision</p>
+            </div>
         </div>
 
         <div class="about-section">

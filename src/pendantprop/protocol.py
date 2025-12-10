@@ -88,7 +88,7 @@ class Protocol:
         well_ids = sample_info["well ID"].tolist()
         for well_id in well_ids:
             self.measure_well(well_id=well_id, type=type)
-
+            self.washer.wash_with_ethanol_predefined()
         self.logger.info("Finished measure wells protocol.\n\n\n")
         self.config.home()
         self.config.save_layout_final()
@@ -148,8 +148,10 @@ class Protocol:
         self.config.log_protocol_summary()
 
     def calibrate(self, well_id_water: str):
-        self.logger.info(f"Starting calibration protocol with water well ID: {well_id_water}...\n\n\n")
-        pass
+        self.logger.info(f"Starting calibration with water well ID: {well_id_water}...\n\n\n")
+        scale = self.droplet_manager.calibrate(source=self.containers[well_id_water])
+        self.logger.info(f"Finished calibration, measured scale: {scale}. Add this to settings to implement change.\n\n\n")
+        self.config.home()
 
     def _append_save_plot_results(
         self,

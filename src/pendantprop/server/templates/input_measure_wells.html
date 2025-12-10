@@ -24,16 +24,7 @@
                        name="csv_file" 
                        accept=".csv" 
                        required>
-                <small>Upload CSV file with sample information (well ID, sample ID, etc.)</small>
-            </div>
-
-            <div class="info-box">
-                <h4><i class="fas fa-info-circle"></i> CSV Format</h4>
-                <p>Your CSV file should contain at least these columns:</p>
-                <ul>
-                    <li><strong>well ID:</strong> Well identifier (e.g., A1, B2)</li>
-                    <li><strong>sample ID:</strong> Sample identifier</li>
-                </ul>
+                <small>Upload CSV file with sample information (see <code>config/info/sample_info_measure_wells.csv</code> for example)</small>
             </div>
 
             <div class="button-group">
@@ -45,6 +36,49 @@
                 </a>
             </div>
         </form>
+
+        <div class="info-box" style="margin-top: 20px;">
+            <p><strong><i class="fas fa-info-circle"></i> Measure Wells Protocol</strong></p>
+            <p>Measure dynamic surface tension for multiple samples. The system will:</p>
+            <ul>
+                <li>Pick up sample from each specified well</li>
+                <li>Form a pendant drop and capture images over time</li>
+                <li>Analyze droplet geometry to calculate surface tension</li>
+                <li>Clean the needle after each measurement (ethanol wash → water wash → trash)</li>
+                <li>Save results and generate plots organized by sample ID</li>
+            </ul>
+        </div>
+
+        <div class="info-box" style="background-color: #e7f3ff; border-left: 4px solid #2196F3; margin-top: 15px;">
+            <p><strong><i class="fas fa-clipboard-check"></i> Sample Info Requirements:</strong></p>
+            <ul>
+                <li><strong>Required columns:</strong> <code>well ID</code>, <code>sample ID</code></li>
+                <li><strong>Well ID:</strong> Must match container names in <code>layout.csv</code> (e.g., "8A1", "8B2")</li>
+                <li><strong>Concentration (optional):</strong> If concentration data is needed in results, include it in The <code>layout.csv</code> file.</li>
+                <li><strong>One row per well:</strong> Each well will be measured sequentially</li>
+            </ul>
+        </div>
+
+        <div class="warning-box" style="margin-top: 15px; padding: 10px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+            <p style="margin: 0;"><strong><i class="fas fa-exclamation-triangle"></i> Critical - Washing Requirements:</strong></p>
+            <ul style="margin: 5px 0 0 20px;">
+                <li><strong>Automated cleaning sequence:</strong> After each measurement, the needle is automatically cleaned:
+                    <ol style="margin: 5px 0;">
+                        <li><strong>Ethanol wash</strong> - removes sticky surfactants and sample residues</li>
+                        <li><strong>Water wash</strong> - rinses away ethanol</li>
+                        <li><strong>Trash</strong> - disposes of wash waste</li>
+                    </ol>
+                </li>
+                <li><strong>Sufficient supplies:</strong> Ensure your deck layout includes containers with adequate volumes:
+                    <ul>
+                        <li><code>ethanol_wash</code> - for removing surfactants</li>
+                        <li><code>water_wash</code> - for ethanol removal</li>
+                        <li><code>trash</code> - for waste disposal</li>
+                    </ul>
+                </li>
+                <li><strong>See example:</strong> Check <code>config/layouts/layout.csv</code> for proper naming and positioning of wash containers.</li>
+            </ul>
+        </div>
     </div>
 
     <footer>

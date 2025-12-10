@@ -259,7 +259,7 @@ class Washer:
             well_id_water_wash,
         ]
 
-        tip_mapping = {well_id_water_wash: "D1", well_id_ethanol_wash: "D6", well_id_trash: "D11"}
+        tip_mapping = {well_id_ethanol_wash: "D1", well_id_water_wash: "D6", well_id_trash: "D11"}
         
         for i, solvent_id in enumerate(solvent_ids):
             #check if previous solvent used is the same
@@ -275,14 +275,11 @@ class Washer:
             self.right_pipette.aspirate(
                 volume=wash_settings["wash_volume_ul"],
                 source=self.containers[solvent_id],
-                touch_tip=True,
             )
             self.right_pipette.dispense(
                 volume=wash_settings["wash_volume_ul"],
                 destination=self.containers[well_id_wash_well],
-                touch_tip=True,
                 blow_out=True,
-                update_info=False,
             )
             # if next solvent is different or last iteration, return tip
             if i == len(solvent_ids) - 1 or solvent_id != solvent_ids[i + 1]:
@@ -307,9 +304,7 @@ class Washer:
             #transfer solvent to trash
             self.right_pipette.aspirate(
                 volume=wash_settings["wash_volume_ul"],
-                source=self.containers[well_id_wash_well],
-                touch_tip=True,
-                update_info=False)
+                source=self.containers[well_id_wash_well])
             self.right_pipette.dispense(
                 volume=wash_settings["wash_volume_ul"],
                 destination=self.containers[well_id_trash],

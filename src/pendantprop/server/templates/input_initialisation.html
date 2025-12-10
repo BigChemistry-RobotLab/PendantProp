@@ -14,6 +14,18 @@
     </div>
 
     <div class="form-container">
+        <div class="info-box" style="margin-bottom: 20px;">
+            <p><strong><i class="fas fa-info-circle"></i> Protocol Initialization</strong></p>
+            <p>Initialize the PendantProp protocol by providing an experiment tag and uploading your deck layout configuration. This will:</p>
+            <ul>
+                <li>Load and validate the deck layout</li>
+                <li>Initialize the robot connection and pipettes</li>
+                <li>Set up containers and labware positions</li>
+                <li>Create output directories for data and results</li>
+                <li>Home the robot and pick up the initial tip</li>
+            </ul>
+        </div>
+
         <form action="/initialisation" method="post" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="exp_tag">
@@ -22,9 +34,9 @@
                 <input type="text" 
                        id="exp_tag" 
                        name="exp_tag" 
-                       placeholder="e.g., experiment_001" 
+                       placeholder="e.g., SDS_characterization_2025" 
                        required>
-                <small>A unique identifier for this experiment</small>
+                <small>A unique identifier for this experiment. Will be used for output folder naming.</small>
             </div>
 
             <div class="form-group">
@@ -36,12 +48,26 @@
                        name="csv_file" 
                        accept=".csv" 
                        required>
-                <small>Upload the deck layout configuration file</small>
+                <small>Upload the deck layout configuration file (see <code>config/layouts/layout.csv</code> for example)</small>
+            </div>
+
+            <div class="info-box" style="background-color: #e7f3ff; border-left: 4px solid #2196F3;">
+                <p><strong><i class="fas fa-clipboard-check"></i> Layout File Requirements:</strong></p>
+                <ul>
+                    <li><strong>No duplicates:</strong> Each container name and labware position must be unique</li>
+                    <li><strong>Multiple items:</strong> Use numbered naming like "sample plate, 1" and "sample plate, 2"</li>
+                    <li><strong>Columns required:</strong> container, labware, position, sample ID (optional)</li>
+                    <li><strong>Positions:</strong> Must match Opentrons deck positions (1-11 for OT2)</li>
+                </ul>
+            </div>
+
+            <div class="warning-box" style="margin-top: 15px; padding: 10px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                <p style="margin: 0;"><i class="fas fa-exclamation-triangle"></i> <strong>Before initializing:</strong> Ensure the robot deck is set up according to your layout file and all labware is properly positioned.</p>
             </div>
 
             <div class="button-group">
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-play"></i> Initialize
+                    <i class="fas fa-play"></i> Initialize Protocol
                 </button>
                 <a href="/" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Cancel

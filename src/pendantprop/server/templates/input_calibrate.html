@@ -28,12 +28,25 @@
             </div>
 
             <div class="info-box">
-                <p><strong>Calibration Process:</strong></p>
+                <p><strong><i class="fas fa-info-circle"></i> Calibration Process:</strong></p>
                 <ul>
-                    <li>Ensure the specified well contains pure water</li>
-                    <li>The system will measure the surface tension</li>
-                    <li>Calibration values will be used for subsequent measurements</li>
+                    <li><strong>Purpose:</strong> Calibrates the camera by measuring the scale (mm/px) from a water droplet</li>
+                    <li><strong>Requirements:</strong> Ensure the specified well contains pure, distilled water at room temperature</li>
+                    <li><strong>Process:</strong> The system will:
+                        <ul>
+                            <li>Pick up water from the specified well</li>
+                            <li>Form a pendant drop at the drop stage</li>
+                            <li>Capture images and analyze droplet geometry</li>
+                            <li>Calculate the scale factor (mm/pixel) using known water properties</li>
+                            <li>Measure over a calibration period to get an average value</li>
+                        </ul>
+                    </li>
+                    <li><strong>Output:</strong> The measured scale will be logged. Update the <code>scale</code> parameter in settings to apply the calibration</li>
+                    <li><strong>Duration:</strong> Calibration typically takes ~60 seconds</li>
                 </ul>
+                <div class="warning-box" style="margin-top: 15px; padding: 10px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                    <p style="margin: 0;"><i class="fas fa-exclamation-triangle"></i> <strong>Note:</strong> Make sure the needle is clean and the drop stage is properly positioned before starting calibration.</p>
+                </div>
             </div>
 
             <div class="button-group">

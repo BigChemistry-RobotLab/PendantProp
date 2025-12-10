@@ -24,15 +24,7 @@
                        name="csv_file" 
                        accept=".csv" 
                        required>
-                <small>Upload CSV file with sample information for characterisation</small>
-            </div>
-
-            <div class="info-box">
-                <p><strong>CSV Format:</strong></p>
-                <ul>
-                    <li>Column headers: well_id, sample_id, etc.</li>
-                    <li>One row per solution to characterise</li>
-                </ul>
+                <small>Upload CSV file with sample information (see <code>config/info/sample_info.csv</code> for example)</small>
             </div>
 
             <div class="button-group">
@@ -44,6 +36,35 @@
                 </a>
             </div>
         </form>
+
+        <div class="info-box" style="margin-top: 20px;">
+            <p><strong><i class="fas fa-info-circle"></i> Solution Characterisation</strong></p>
+            <p>Perform automated dilution series and surface tension measurements. The system will:</p>
+            <ul>
+                <li>Create serial dilutions from the parent sample using the specified solvent</li>
+                <li>Measure dynamic surface tension at each concentration</li>
+                <li>Generate concentration-dependent surface tension plots</li>
+                <li>Save all results to the output folder with your experiment tag</li>
+            </ul>
+        </div>
+
+        <div class="info-box" style="background-color: #e7f3ff; border-left: 4px solid #2196F3; margin-top: 15px;">
+            <p><strong><i class="fas fa-clipboard-check"></i> Sample Info Requirements:</strong></p>
+            <ul>
+                <li><strong>Required columns:</strong> <code>well ID</code>, <code>sample ID</code>, <code>solvent</code></li>
+                <li><strong>Solvent specification:</strong> Must specify which solvent to use for dilutions (e.g., "water", "ethanol")</li>
+                <li><strong>Well ID format:</strong> Match the container names from your layout (e.g., "7A1" for position A1 in container 7)</li>
+                <li><strong>One row per parent sample:</strong> Each sample will be automatically diluted according to settings</li>
+            </ul>
+        </div>
+
+        <div class="warning-box" style="margin-top: 15px; padding: 10px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+            <p style="margin: 0;"><strong><i class="fas fa-exclamation-triangle"></i> Critical:</strong></p>
+            <ul style="margin: 5px 0 0 20px;">
+                <li><strong>Parent sample concentration:</strong> Ensure the parent sample in <code>layout.csv</code> is labeled with the correct concentration. The dilution series concentrations are calculated from this value, so errors here will propagate to <code>results.csv</code>.</li>
+                <li><strong>Solvent location:</strong> Make sure the specified solvent container is present in the deck layout and has sufficient volume for all dilutions.</li>
+            </ul>
+        </div>
     </div>
 
     <footer>
