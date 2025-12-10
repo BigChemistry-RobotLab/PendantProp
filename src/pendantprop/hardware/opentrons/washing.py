@@ -103,6 +103,112 @@ class Washer:
 
         self.wash_index += 1
 
+    def wash_with_ethanol(self, wash_settings: Dict = None):
+        if wash_settings is None:
+            wash_settings = self.wash_settings
+
+        self.logger.info(
+            f"Starting needle wash procedure with ethanol- "
+            f"Wash volume: {wash_settings['wash_volume_ul']} µL, "
+            f"Mixing: {wash_settings['mixing_volume_ul']} µL × {wash_settings['mix_repeats']}"
+        )
+        try:
+            well_id_water_wash = get_well_ids_compounds(
+                containers=self.containers,
+                compound=wash_settings["name_wash_container"],
+            )[0]
+            well_id_ethanol_wash = get_well_ids_compounds(
+                containers=self.containers,
+                compound=wash_settings["name_ethanol_container"],
+            )[0]
+            well_id_trash = get_well_ids_compounds(
+                containers=self.containers,
+                compound=wash_settings["name_trash_container"],
+            )[0]
+            well_id_wash_well = self._get_well_id_from_index(
+                well_index=self.wash_index,
+                plate_location=self.labware[wash_settings["name_wash_plate"]][
+                    "location"
+                ],
+            )
+        except ValueError as e:
+            self.logger.error(f"Error getting well IDs for washing: {e}")
+            return
+
+        if not self.left_pipette.has_tip:
+            self.logger.error("Left pipette has no needle for washing!")
+            return
+
+        solvent_ids = [
+            well_id_ethanol_wash,
+            well_id_ethanol_wash,
+            well_id_water_wash,
+            well_id_water_wash,
+            well_id_water_wash,
+        ]
+
+        for solvent_id in solvent_ids:
+            if not self.right_pipette.has_tip:
+                self.right_pipette.pick_up_tip()
+
+            # QUESTION by STEFAN - doesnt solvent_id already give the wash well id?
+            # --> if/else redundant?
+
+            if solvent_id == well_id_ethanol_wash:
+                well_id_wash_well = self._get_well_id_from_index(
+                    well_index=self.wash_index,
+                    plate_location=self.labware[wash_settings["name_wash_plate"]][
+                        "location"
+                    ],
+                )
+            elif solvent_id == well_id_water_wash:
+                well_id_wash_well = self._get_well_id_from_index(
+                    well_index=self.wash_index + 1,
+                    plate_location=self.labware[wash_settings["name_wash_plate"]][
+                        "location"
+                    ],
+                )
+
+            # transfer solvent to cleaning well
+            self.right_pipette.aspirate(
+                volume=wash_settings["wash_volume_ul"],
+                source=self.containers[solvent_id],
+                touch_tip=True,
+            )
+            self.right_pipette.dispense(
+                volume=wash_settings["wash_volume_ul"],
+                destination=self.containers[well_id_wash_well],
+                touch_tip=True,
+                update_info=False,
+            )
+
+            # flush needle with water via mixing
+            self.left_pipette.mixing(
+                container=self.containers[well_id_wash_well],
+                volume_mix=wash_settings["mixing_volume_ul"],
+                repeat=wash_settings["mix_repeats"],
+                touch_tip=False,
+            )
+
+            # transfer water in cleaning well to trash falcon tube
+            self.right_pipette.aspirate(
+                volume=wash_settings["wash_volume_ul"],
+                source=self.containers[well_id_wash_well],
+                touch_tip=True,
+                update_info=False,
+            )
+            # TODO: what if trash is full? Handle that case.
+            self.right_pipette.dispense(
+                volume=wash_settings["wash_volume_ul"],
+                destination=self.containers[well_id_trash],
+                blow_out=True,
+                update_info=False,
+            )
+
+            self.right_pipette.drop_tip()
+
+        self.wash_index += 1
+
     def _get_well_id_from_index(self, well_index: int, plate_location: int):
         """
         Assumes 96 well plate
