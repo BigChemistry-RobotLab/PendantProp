@@ -1,7 +1,3 @@
-"""
-Example: Using PendantProp custom containers with Opentrons robot
-This example demonstrates how to use LightHolder and DropStage in a protocol.
-"""
 
 from opentrons_api.load_save_functions import load_settings, save_settings
 from pendantprop.hardware.opentrons.config import Config  # Use PendantProp Config!
@@ -26,8 +22,14 @@ washer = Washer(
     )
 
 # Example washing procedure using the Washer class
-washer.wash()
+washer.wash_with_ethanol_predefined()
 
+# save meta data
+config.save_layout_final()
+save_settings(settings)
+
+# Log the protocol summary at the end
+config.log_protocol_summary()
 
 
 

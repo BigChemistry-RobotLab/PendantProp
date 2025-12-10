@@ -13,8 +13,8 @@ left_pipette, right_pipette, containers = config.load_all()
 config.home()
 
 # protocol
-left_pipette.pick_up_tip()
-left_pipette.drop_tip()
+# left_pipette.pick_up_tip()
+# left_pipette.drop_tip()
 right_pipette.pick_up_tip()
 right_pipette.drop_tip()
 
