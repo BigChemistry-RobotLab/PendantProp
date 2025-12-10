@@ -46,6 +46,7 @@ class DropletManager:
             self.pendant_drop_settings["pendant_drop_depth_offset"]
         )
         self.FLOW_RATE = float(self.pendant_drop_settings["flow_rate"])
+        self.FLOW_RATE_ASPIRATION = float(self.pendant_drop_settings["flow_rate_aspiration"])
         self.CHECK_TIME = float(self.pendant_drop_settings["check_time"])
         self.DROP_VOLUME_INCREASE_RESOLUTION = float(self.pendant_drop_settings[
             "drop_volume_increase_resolution"
@@ -167,6 +168,13 @@ class DropletManager:
                 drop_count=self.drop_count
             )
             if wo < self.WORTINGTON_NUMBER_LIMIT_LOWER:
+                # Check if drop volume is approaching maximum limit (no liquid available)
+                if self.drop_volume >= 19.5:  # Close to 20 uL limit
+                    self.logger.warning(f"Drop volume reached maximum limit ({self.drop_volume:.2f} uL). No liquid available or droplet cannot be formed. Stopping measurement.")
+                    valid_measurement = False
+                    drop_time = time.time() - start_time
+                    break
+                
                 self.logger.info(f"Wortington number {wo:6.3f} below lower limit. Increasing drop volume by {self.DROP_VOLUME_INCREASE_RESOLUTION} uL.")
                 self.left_pipette.dispense(
                     volume=self.DROP_VOLUME_INCREASE_RESOLUTION,
@@ -228,7 +236,7 @@ class DropletManager:
             self.left_pipette.pick_up_tip()
 
         self.left_pipette.mixing(container=self.source, volume_mix=15, repeat=3, touch_tip=False)
-        self.left_pipette.aspirate(volume=20, source=self.source, flow_rate=10)
+        self.left_pipette.aspirate(volume=20, source=self.source, flow_rate=self.FLOW_RATE_ASPIRATION)
     
     def dispense_pendant_drop(self):
         wortington_number = 0
