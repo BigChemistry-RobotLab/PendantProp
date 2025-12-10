@@ -1109,7 +1109,7 @@
         "format": "irregular",
         "quirks": [],
         "isTiprack": true,
-        "tipLength": 60.2,
+        "tipLength": 58.8,
         "isMagneticModuleCompatible": false,
         "loadName": "sarstedt_96_tiprack_300ul"
     },
