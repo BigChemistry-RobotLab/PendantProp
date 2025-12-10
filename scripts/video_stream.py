@@ -10,7 +10,7 @@ print("Press 'q' to quit")
 print("=" * 70)
 
 # Create camera instance and start capturing
-simulate = True  # Change to True to use mock camera
+simulate = False  # Change to True to use mock camera
 if simulate:
     from pendantprop.hardware.cameras.pd_cam_mock import MockPendantDropCamera
     print("Using Mock Camera (simulate mode enabled)")

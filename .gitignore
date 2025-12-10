@@ -1,8 +1,13 @@
 old/
 output/
 legacy/
+config/
+docs/
+
 config/settings.json
 src/pendantprop/server/**/*.png
+playbook.ipynb
+scripts/notebooks/playbook.ipynb
 
 # Byte-compiled / cache
 __pycache__/
