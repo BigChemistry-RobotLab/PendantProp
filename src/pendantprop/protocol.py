@@ -88,7 +88,7 @@ class Protocol:
         well_ids = sample_info["well ID"].tolist()
         for well_id in well_ids:
             self.measure_well(well_id=well_id, type=type)
-            self.washer.wash_with_ethanol_predefined()
+            self.washer.wash_with_ethanol()
         self.logger.info("Finished measure wells protocol.\n\n\n")
         self.config.home()
         self.config.save_layout_final()
