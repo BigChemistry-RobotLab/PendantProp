@@ -1,16 +1,16 @@
 /* PendantProp Server Styles */
 
 :root {
-    --primary-color: #2c3e50;
-    --secondary-color: #3498db;
-    --success-color: #27ae60;
-    --info-color: #16a085;
-    --warning-color: #f39c12;
-    --danger-color: #e74c3c;
-    --light-bg: #ecf0f1;
-    --border-color: #bdc3c7;
-    --text-color: #2c3e50;
-    --hover-color: #34495e;
+    --primary-color: #C2673A;
+    --secondary-color: #E67E50;
+    --success-color: #8B9556;
+    --info-color: #D4A373;
+    --warning-color: #E69F67;
+    --danger-color: #D45B4A;
+    --light-bg: #FDF6E3;
+    --border-color: #E8D5C4;
+    --text-color: #3E3226;
+    --hover-color: #9D5228;
 }
 
 * {
@@ -99,7 +99,7 @@ body {
 }
 
 .btn-success:hover {
-    background-color: #229954;
+    background-color: #6f7a3f;
 }
 
 .btn-info {
@@ -108,7 +108,7 @@ body {
 }
 
 .btn-info:hover {
-    background-color: #138d75;
+    background-color: #b8915f;
 }
 
 .btn-secondary {

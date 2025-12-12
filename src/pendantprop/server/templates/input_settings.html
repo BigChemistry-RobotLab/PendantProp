@@ -49,24 +49,27 @@
                 <div class="form-row">
                     <label for="robot_ip">Robot IP:</label>
                     <input type="text" id="robot_ip" name="robot_ip" value="{{ settings.robot_settings.robot_ip }}">
-                    <small>IP address of the Opentrons robot</small>
+                    <small>IP address of the Opentrons robot (check robot settings or use default for ethernet connection)</small>
                 </div>
                 <div class="form-row">
                     <label for="robot_type">Robot Type:</label>
                     <input type="text" id="robot_type" name="robot_type" value="{{ settings.robot_settings.robot_type }}">
-                    <small>OT2 or Flex</small>
+                    <small>Robot model: "OT2" for Opentrons OT-2 or "Flex" for Opentrons Flex</small>
                 </div>
                 <div class="form-row">
                     <label for="left_pipette_name">Left Pipette:</label>
                     <input type="text" id="left_pipette_name" name="left_pipette_name" value="{{ settings.robot_settings.left_pipette_name }}">
+                    <small>Pipette model on left mount (e.g., "p20_single_gen2", "flex_1channel_1000")</small>
                 </div>
                 <div class="form-row">
                     <label for="right_pipette_name">Right Pipette:</label>
                     <input type="text" id="right_pipette_name" name="right_pipette_name" value="{{ settings.robot_settings.right_pipette_name }}">
+                    <small>Pipette model on right mount (e.g., "p1000_single_gen2", "flex_1channel_1000")</small>
                 </div>
                 <div class="form-row">
                     <label for="well_depth_mm">Well Depth (mm):</label>
                     <input type="number" step="0.1" id="well_depth_mm" name="well_depth_mm" value="{{ settings.robot_settings.well_depth_mm }}">
+                    <small>Well height of sample plate - used for calculating pipette positions (note: internal variable name is 'well_depth' but represents height)</small>
                 </div>
             </div>
 
@@ -76,18 +79,22 @@
                 <div class="form-row">
                     <label for="wash_volume_ul">Wash Volume (µL):</label>
                     <input type="number" id="wash_volume_ul" name="wash_volume_ul" value="{{ settings.wash_settings.wash_volume_ul }}">
+                    <small>Volume used for each wash cycle</small>
                 </div>
                 <div class="form-row">
                     <label for="wash_repeats">Wash Repeats:</label>
                     <input type="number" id="wash_repeats" name="wash_repeats" value="{{ settings.wash_settings.wash_repeats }}">
+                    <small>Number of times to repeat the washing process</small>
                 </div>
                 <div class="form-row">
                     <label for="mixing_volume_ul">Mixing Volume (µL):</label>
                     <input type="number" id="mixing_volume_ul" name="mixing_volume_ul" value="{{ settings.wash_settings.mixing_volume_ul }}">
+                    <small>Volume to use for mixing during wash</small>
                 </div>
                 <div class="form-row">
                     <label for="mix_repeats">Mix Repeats:</label>
                     <input type="number" id="mix_repeats" name="mix_repeats" value="{{ settings.wash_settings.mix_repeats }}">
+                    <small>Number of times to repeat the mixing step</small>
                 </div>
             </div>
 
@@ -107,66 +114,92 @@
                 <div class="form-row">
                     <label for="n_dilutions">Number of Dilutions:</label>
                     <input type="number" id="n_dilutions" name="n_dilutions" value="{{ settings.pendant_drop_settings.n_dilutions }}">
+                    <small>Number of dilution steps for characterization protocol</small>
                 </div>
                 <div class="form-row">
                     <label for="well_volume">Well Volume (µL):</label>
                     <input type="number" id="well_volume" name="well_volume" value="{{ settings.pendant_drop_settings.well_volume }}">
+                    <small>Total volume in each dilution well</small>
                 </div>
                 <div class="form-row">
                     <label for="mix_repeat">Mix Repeats:</label>
                     <input type="number" id="mix_repeat" name="mix_repeat" value="{{ settings.pendant_drop_settings.mix_repeat }}">
+                    <small>Number of mixing cycles for dilutions</small>
                 </div>
                 <div class="form-row">
                     <label for="worthington_limit_lower">Worthington Lower Limit:</label>
                     <input type="number" step="0.01" id="worthington_limit_lower" name="worthington_limit_lower" value="{{ settings.pendant_drop_settings.worthington_limit_lower }}">
+                    <small>Below this threshold the droplet is too spherical - system will dispense more liquid</small>
                 </div>
                 <div class="form-row">
                     <label for="worthington_limit_upper">Worthington Upper Limit:</label>
                     <input type="number" step="0.01" id="worthington_limit_upper" name="worthington_limit_upper" value="{{ settings.pendant_drop_settings.worthington_limit_upper }}">
+                    <small>Above this threshold the droplet is about to fall - system will aspirate some liquid</small>
                 </div>
                 <div class="form-row">
                     <label for="initial_drop_volume">Initial Drop Volume (µL):</label>
                     <input type="number" step="0.1" id="initial_drop_volume" name="initial_drop_volume" value="{{ settings.pendant_drop_settings.initial_drop_volume }}">
+                    <small>Starting volume for pendant drop formation</small>
                 </div>
                 <div class="form-row">
                     <label for="check_time">Check Time (s):</label>
                     <input type="number" step="0.1" id="check_time" name="check_time" value="{{ settings.pendant_drop_settings.check_time }}">
+                    <small>Time between image captures during measurement</small>
                 </div>
                 <div class="form-row">
                     <label for="equilibration_time">Equilibration Time (s):</label>
                     <input type="number" id="equilibration_time" name="equilibration_time" value="{{ settings.pendant_drop_settings.equilibration_time }}">
+                    <small>If surface tension is stable (within equilibration sensitivity) for this duration, measurement stops</small>
+                </div>
+                <div class="form-row">
+                    <label for="equilibration_sensitivity">Equilibration Sensitivity:</label>
+                    <input type="number" step="0.1" id="equilibration_sensitivity" name="equilibration_sensitivity" value="{{ settings.pendant_drop_settings.equilibration_sensistivity }}">
+                    <small>Acceptable variation in surface tension to consider the drop equilibrated (smaller = stricter)</small>
                 </div>
                 <div class="form-row">
                     <label for="max_measure_time">Max Measure Time (s):</label>
                     <input type="number" id="max_measure_time" name="max_measure_time" value="{{ settings.pendant_drop_settings.max_measure_time }}">
+                    <small>Maximum time allowed for a single measurement before timeout</small>
                 </div>
                 <div class="form-row">
                     <label for="max_retries">Max Retries:</label>
                     <input type="number" id="max_retries" name="max_retries" value="{{ settings.pendant_drop_settings.max_retries }}">
+                    <small>Number of attempts to form a valid drop if Worthington criteria not met</small>
                 </div>
                 <div class="form-row">
                     <label for="drop_volume_decrease_after_retry">Volume Decrease After Retry (µL):</label>
                     <input type="number" step="0.01" id="drop_volume_decrease_after_retry" name="drop_volume_decrease_after_retry" value="{{ settings.pendant_drop_settings.drop_volume_decrease_after_retry }}">
+                    <small>Amount to reduce drop volume on each retry attempt</small>
                 </div>
                 <div class="form-row">
                     <label for="drop_volume_increase_resolution">Volume Increase Resolution (µL):</label>
                     <input type="number" step="0.01" id="drop_volume_increase_resolution" name="drop_volume_increase_resolution" value="{{ settings.pendant_drop_settings.drop_volume_increase_resolution }}">
+                    <small>Step size for incrementally growing drop to target volume</small>
                 </div>
                 <div class="form-row">
                     <label for="flow_rate">Flow Rate (µL/s):</label>
                     <input type="number" step="0.01" id="flow_rate" name="flow_rate" value="{{ settings.pendant_drop_settings.flow_rate }}">
+                    <small>Dispense rate for drop formation (slower = more controlled)</small>
+                </div>
+                <div class="form-row">
+                    <label for="flow_rate_aspiration">Aspiration Flow Rate (µL/s):</label>
+                    <input type="number" step="0.1" id="flow_rate_aspiration" name="flow_rate_aspiration" value="{{ settings.pendant_drop_settings.flow_rate_aspiration }}">
+                    <small>Rate for aspirating liquid from wells (if high viscosity, use slower rate)</small>
                 </div>
                 <div class="form-row">
                     <label for="pendant_drop_depth_offset">Depth Offset (mm):</label>
                     <input type="number" step="0.1" id="pendant_drop_depth_offset" name="pendant_drop_depth_offset" value="{{ settings.pendant_drop_settings.pendant_drop_depth_offset }}">
+                    <small>Z-axis offset relative to drop stage surface (negative = below surface)</small>
                 </div>
                 <div class="form-row">
                     <label for="well_id_drop_stage">Drop Stage Well ID:</label>
                     <input type="text" id="well_id_drop_stage" name="well_id_drop_stage" value="{{ settings.pendant_drop_settings.well_id_drop_stage }}">
+                    <small>Container ID where drop formation occurs (must match layout.csv)</small>
                 </div>
                 <div class="form-row">
                     <label for="n_equilibration_points">Equilibration Points:</label>
                     <input type="number" id="n_equilibration_points" name="n_equilibration_points" value="{{ settings.pendant_drop_settings.n_equilibration_points }}">
+                    <small>Number of points at the end of measurement to calculate equilibrium surface tension value from</small>
                 </div>
             </div>
 
@@ -176,27 +209,32 @@
                 <div class="form-row">
                     <label for="scale">Scale (mm/pixel):</label>
                     <input type="number" step="0.000001" id="scale" name="scale" value="{{ settings.image_analysis_settings.scale }}">
-                    <small>Conversion factor from pixels to millimeters</small>
+                    <small>Conversion factor from pixels to millimeters - obtain from calibration protocol</small>
                 </div>
                 <div class="form-row">
                     <label for="diameter_needle_px">Needle Diameter (px):</label>
-                    <input type="number" id="diameter_needle_px" name="diameter_needle_px" value="{{ settings.image_analysis_settings.diameter_needle_px }}">
+                    <input type="number" step="0.1" id="diameter_needle_px" name="diameter_needle_px" value="{{ settings.image_analysis_settings.diameter_needle_px }}">
+                    <small>Needle outer diameter in pixels - used for scale validation and drop detection</small>
                 </div>
                 <div class="form-row">
                     <label for="diameter_tolerance_percent">Diameter Tolerance (%):</label>
-                    <input type="number" id="diameter_tolerance_percent" name="diameter_tolerance_percent" value="{{ settings.image_analysis_settings.diameter_tolerance_percent }}">
+                    <input type="number" step="0.1" id="diameter_tolerance_percent" name="diameter_tolerance_percent" value="{{ settings.image_analysis_settings.diameter_tolerance_percent }}">
+                    <small>Allowed deviation from expected needle diameter - increases rejection if too strict</small>
                 </div>
                 <div class="form-row">
                     <label for="st_water">Surface Tension Water (mN/m):</label>
                     <input type="number" step="0.01" id="st_water" name="st_water" value="{{ settings.image_analysis_settings.st_water }}">
+                    <small>Known surface tension of water at room temperature - used for calibration (typically ~72 mN/m)</small>
                 </div>
                 <div class="form-row">
                     <label for="density">Density (g/cm³):</label>
-                    <input type="number" step="0.001" id="density" name="density" value="{{ settings.image_analysis_settings.density }}">
+                    <input type="number" step="0.0001" id="density" name="density" value="{{ settings.image_analysis_settings.density }}">
+                    <small>Liquid density for surface tension calculation (water ≈ 0.998 g/cm³)</small>
                 </div>
                 <div class="form-row">
                     <label for="gravity_constant">Gravity Constant (m/s²):</label>
                     <input type="number" step="0.00001" id="gravity_constant" name="gravity_constant" value="{{ settings.image_analysis_settings.gravity_constant }}">
+                    <small>Gravitational acceleration - standard value is 9.80665 m/s²</small>
                 </div>
             </div>
 
