@@ -182,23 +182,42 @@ class DropletManager:
         drop_time = 0
         equilibration_start_time = None
         last_st = None
+        zero_st_count = 0  # Track consecutive zero st readings
 
         while time.time() - start_time < self.MAX_MEASURE_TIME:
             wo, st, img, analysis_img = self._average_wo_st_in_time_interval(vol_droplet=self.drop_volume, time_interval=self.CHECK_TIME)
             current_time = time.time() - start_time
-            dynamic_surface_tension.append([current_time, st])
-            print(f"Surface tension: {st:6.3f} mN/m | Wortington number: {wo:6.3f} | Time: {current_time:6.1f}s")
+            
+            # Check for zero or near-zero surface tension
+            if st < 1:  # Consider st < 1 as zero (accounts for noise/errors)
+                zero_st_count += 1
+                self.logger.warning(f"Zero or very low surface tension detected ({st:.3f} mN/m). Count: {zero_st_count}/4")
+                print(f"Surface tension: {st:6.3f} mN/m (ZERO - not recorded) | Wortington number: {wo:6.3f} | Time: {current_time:6.1f}s")
+                
+                # Break if we have 4 consecutive zero readings
+                if zero_st_count >= 4:
+                    self.logger.warning("4 consecutive zero surface tension readings detected. Droplet likely fell off or analyzer error. Stopping measurement.")
+                    valid_measurement = False
+                    drop_time = time.time() - start_time
+                    break
+            else:
+                # Valid st reading - reset counter and record data
+                zero_st_count = 0
+                dynamic_surface_tension.append([current_time, st])
+                print(f"Surface tension: {st:6.3f} mN/m | Wortington number: {wo:6.3f} | Time: {current_time:6.1f}s")
             
             # Save image for streaming and record
             self._save_img(img = img)
             self._save_img_for_stream(img=analysis_img)
 
-            # Plot dynamic surface tension at intervals
-            self.plotter.plot_dynamic_surface_tension(
-                dynamic_surface_tension=dynamic_surface_tension,
-                container=self.source,
-                drop_count=self.drop_count
-            )
+            # Plot dynamic surface tension at intervals (only if we have data)
+            if len(dynamic_surface_tension) > 0:
+                self.plotter.plot_dynamic_surface_tension(
+                    dynamic_surface_tension=dynamic_surface_tension,
+                    container=self.source,
+                    drop_count=self.drop_count
+                )
+            
             if wo < self.WORTINGTON_NUMBER_LIMIT_LOWER:
                 # Check if drop volume is approaching maximum limit (no liquid available)
                 if self.drop_volume >= 19.5:  # Close to 20 uL limit
@@ -228,15 +247,9 @@ class DropletManager:
                     update_info=False,
                 )
                 self.drop_volume -= self.DROP_VOLUME_INCREASE_RESOLUTION
-
-            # Check if surface tension is too low
-            if st < 15:
-                valid_measurement = False
-                drop_time = time.time() - start_time
-                break
             
-            # Check for equilibration (stable surface tension)
-            if last_st is not None:
+            # Check for equilibration (stable surface tension) - only if st is valid (not zero)
+            if st >= 1 and last_st is not None and last_st >= 1:
                 st_change = abs(st - last_st)
                 if st_change < self.EQUILIBRATION_SENSISTIVITY:  # Surface tension stable within sensitivity threshold
                     if equilibration_start_time is None:
@@ -248,7 +261,9 @@ class DropletManager:
                 else:
                     equilibration_start_time = None  # Reset if surface tension changes
             
-            last_st = st
+            # Update last_st only if current st is valid
+            if st >= 1:
+                last_st = st
         
         if valid_measurement:
             self.logger.info("Successful pendant drop measurement.")
