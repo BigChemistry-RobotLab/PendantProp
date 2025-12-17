@@ -12,6 +12,7 @@ scale = analyzer.img2scale(img=img)
 print(f"Surface Tension: {st} mN/m")
 print(f"Worthington Number: {wo}")
 print(f"Scale: {scale} mm/px")
+print(f"Diameter (px): {analyzer.needle_diameter_px_measured}, Diameter (mm): {analyzer.needle_diameter_mm}")
 
 # Resize to 50% for display
 # width = int(analysis_img.shape[1] * 0.5)

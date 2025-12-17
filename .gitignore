@@ -7,6 +7,7 @@ docs/
 config/settings.json
 src/pendantprop/server/**/*.png
 playbook.ipynb
+captured_image.png
 scripts/notebooks/playbook.ipynb
 
 # Byte-compiled / cache

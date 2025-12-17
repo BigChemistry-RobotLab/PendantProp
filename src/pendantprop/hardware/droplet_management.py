@@ -260,7 +260,7 @@ class DropletManager:
         
         return dynamic_surface_tension, valid_measurement, drop_time
 
-    
+
     def prepare_pendant_drop(self):
         self.logger.info("Preparing pendant drop.")
         # initialize left pipette
