@@ -1,5 +1,6 @@
 import pandas as pd
 import warnings
+import os
 
 from opentrons_api.load_save_functions import load_settings
 from opentrons_api.utils import find_empty_rows, get_well_ids_compounds
@@ -32,6 +33,9 @@ class Protocol:
         else:
             self.settings = settings
         self.file_settings = self.settings["file_settings"]
+
+        self._check_data_folder_exists()
+
         self.config = Config(settings=self.settings)
         self.left_pipette, self.right_pipette, self.containers = self.config.load_all()
         self.formulater = Formulater(
@@ -201,3 +205,12 @@ class Protocol:
             if any(keyword in labware_name for keyword in keywords):
                 filtered_rows.append(row_id)
         return filtered_rows
+    
+    def _check_data_folder_exists(self):
+        data_folder = f"{self.file_settings['output_folder']}/{self.file_settings['exp_tag']}/{self.file_settings['data_folder']}"
+        if os.path.exists(data_folder):
+            # raise error which stops protocol
+            raise FileExistsError(f"Data folder {data_folder} already exists. To prevent overwriting data, please change the experiment tag or move/delete the existing folder.")
+        else:
+            os.makedirs(data_folder)
+
