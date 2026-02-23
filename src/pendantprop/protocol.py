@@ -140,7 +140,7 @@ class Protocol:
                 sample_id_dilution = f"{sample_id}_{i}"
                 self.containers[well_id_to_measure].sample_id = sample_id_dilution
                 self.measure_well(well_id=well_id_to_measure, type=type)
-            self.washer.wash()
+            self.washer.wash_with_ethanol()
 
         self.logger.info("Finished characterisation protocol.\n\n\n")
         self.config.home()
