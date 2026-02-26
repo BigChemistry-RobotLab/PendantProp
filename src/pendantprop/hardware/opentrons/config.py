@@ -5,13 +5,7 @@ from opentrons_api.config import Config as BaseConfig
 from pendantprop.hardware.opentrons.special_containers import LightHolder, DropStage
 
 # Import base containers that might be needed
-from opentrons_api.containers import (
-    FalconTube15,
-    FalconTube50,
-    Eppendorf,
-    GlassVial,
-    PlateWell
-)
+from opentrons_api.containers import *
 
 class Config(BaseConfig):
     """
@@ -65,7 +59,7 @@ class Config(BaseConfig):
         elif "tube rack 50 mL" in labware_name:
             return FalconTube50
         elif "eppendorf rack" in labware_name:
-            return Eppendorf
+            return SmallEppendorf
         elif "plate" in labware_name:
             return PlateWell
         else:
