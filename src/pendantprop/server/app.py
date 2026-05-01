@@ -17,6 +17,7 @@ from flask import (
     session,
     send_from_directory,
 )
+import time
 
 from opentrons_api.load_save_functions import load_settings, save_settings
 from pendantprop.protocol import Protocol
@@ -203,7 +204,7 @@ def initialisation():
     layout_dir = "config/layouts"
     os.makedirs(layout_dir, exist_ok=True)
     layout_path = os.path.join(layout_dir, csv_file.filename).replace("\\", "/")
-    csv_file.save(layout_path)
+    # csv_file.save(layout_path)
     
     # Update settings
     settings = load_settings(file_path="config/settings.json")
@@ -291,6 +292,8 @@ def characterise_solution_thread(sample_csv_path):
         settings["file_settings"]["sample_info_filepath"] = sample_csv_path
         save_settings(settings, file_path="config/settings.json")
         
+        time.sleep(2)  # Small delay to ensure settings are saved before protocol runs
+
         # Run characterisation protocol
         protocol.characterise_solutions()
         
@@ -319,7 +322,7 @@ def measure_wells():
     sample_dir = "config/info"
     os.makedirs(sample_dir, exist_ok=True)
     sample_path = os.path.join(sample_dir, csv_file.filename).replace("\\", "/")
-    csv_file.save(sample_path)
+    # csv_file.save(sample_path)
     
     # Start measurement in background thread
     thread = threading.Thread(target=measure_wells_thread, args=(sample_path,))
@@ -346,7 +349,7 @@ def characterise_solution():
     sample_dir = "config/info"
     os.makedirs(sample_dir, exist_ok=True)
     sample_path = os.path.join(sample_dir, csv_file.filename).replace("\\", "/")
-    csv_file.save(sample_path)
+    # csv_file.save(sample_path)
     
     # Start characterisation in background thread
     thread = threading.Thread(target=characterise_solution_thread, args=(sample_path,))
