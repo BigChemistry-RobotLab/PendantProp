@@ -83,6 +83,7 @@ class DropletManager:
         self.logger.info(f"Starting calibration with source {source.WELL_ID} and droplet volume {vol_droplet}.")
         self.source = source
         self.sample_id = source.sample_id
+        self.drop_count = 1
         self.prepare_pendant_drop()
         self.left_pipette.dispense(
             volume=vol_droplet,
@@ -278,7 +279,6 @@ class DropletManager:
                 valid_measurement = True
         
         return dynamic_surface_tension, valid_measurement, drop_time
-
 
     def prepare_pendant_drop(self):
         self.logger.info("Preparing pendant drop.")
