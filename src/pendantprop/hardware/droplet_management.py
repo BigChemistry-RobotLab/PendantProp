@@ -82,12 +82,13 @@ class DropletManager:
         """
         self.logger.info(f"Starting calibration with source {source.WELL_ID} and droplet volume {vol_droplet}.")
         self.source = source
+        self.sample_id = source.sample_id
         self.prepare_pendant_drop()
         self.left_pipette.dispense(
             volume=vol_droplet,
             destination=self.containers[self.WELL_ID_DROP_STAGE],
             depth_offset=self.PENDANT_DROP_DEPTH_OFFSET,
-            flow_rate=self.FLOW_RATE,
+            flow_rate=0.5,
             log=False,
             update_info=False,
         )
@@ -99,10 +100,13 @@ class DropletManager:
                 st, wo, img, analysis_img = self._analyze_current_img(vol_droplet=vol_droplet)
                 scale = self.analyzer.img2scale(img=img)
                 scales.append(scale)
+                self._save_img(img=img)
+                self._save_img_for_stream(img=analysis_img)
                 print(f"Surface tension: {st:6.3f} mN/m | Wortington number: {wo:6.3f} | Scale: {scale:6.6f} mm/px")
             except Exception as e:
+                print(f"Error during calibration measurement: {e}. Retrying...")
                 pass
-            time.sleep(0.01)
+            time.sleep(0.1)
         average_scale = np.mean(scales)
         self.logger.info(f"Calibration completed. Average scale: {average_scale:6.6f} mm/px")
         self.return_pendant_drop()
