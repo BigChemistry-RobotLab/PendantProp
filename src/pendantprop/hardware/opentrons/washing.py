@@ -308,6 +308,7 @@ class Washer:
             self.right_pipette.dispense(
                 volume=wash_settings["wash_volume_ul"],
                 destination=self.containers[well_id_trash],
+                depth_offset=10, # slightly above the liquid to avoid contimination
                 blow_out=True)
         self.right_pipette.return_tip(well=tip_mapping[well_id_trash])
 

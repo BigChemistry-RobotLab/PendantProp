@@ -47,6 +47,7 @@ class DropletManager:
         )
         self.FLOW_RATE = float(self.pendant_drop_settings["flow_rate"])
         self.FLOW_RATE_ASPIRATION = float(self.pendant_drop_settings["flow_rate_aspiration"])
+        self.CHECK_TIME_WHILE_DISPENSING = float(self.pendant_drop_settings["check_time_while_dispensing"])
         self.CHECK_TIME = float(self.pendant_drop_settings["check_time"])
         self.DROP_VOLUME_INCREASE_RESOLUTION = float(self.pendant_drop_settings[
             "drop_volume_increase_resolution"
@@ -154,7 +155,7 @@ class DropletManager:
                 time.sleep(drop_time)
 
             # measure pendant drop
-            dynamic_surface_tension, valid_measurement, drop_time = self.measure_pendant_drop()
+            dynamic_surface_tension, valid_measurement, drop_time, measure_time = self.measure_pendant_drop()
             self.return_pendant_drop()
 
             if valid_measurement:
@@ -172,7 +173,7 @@ class DropletManager:
         
         drop_parameters = {
             "drop_volume": self.drop_volume,
-            "measure_time": self.MAX_MEASURE_TIME,  #TODO later dynamic measure time
+            "measure_time": measure_time,
             "drop_count": self.drop_count,
             "valid_measurement": valid_measurement,
         }
@@ -278,7 +279,7 @@ class DropletManager:
                 self.logger.info("Pendant drop measurement completed (max time reached).")
                 valid_measurement = True
         
-        return dynamic_surface_tension, valid_measurement, drop_time
+        return dynamic_surface_tension, valid_measurement, drop_time, current_time
 
     def prepare_pendant_drop(self):
         self.logger.info("Preparing pendant drop.")
@@ -320,7 +321,7 @@ class DropletManager:
                 update_info=False,
             )
             drop_volume += self.DROP_VOLUME_INCREASE_RESOLUTION
-            wortington_number, surface_tension, img, analysis_img = self._average_wo_st_in_time_interval(vol_droplet=drop_volume, time_interval=self.CHECK_TIME)
+            wortington_number, surface_tension, img, analysis_img = self._average_wo_st_in_time_interval(vol_droplet=drop_volume, time_interval=self.CHECK_TIME_WHILE_DISPENSING)
             print(f"Current drop volume: {drop_volume:2f} uL | Wortington number: {wortington_number:6.3f}")
             self._save_img_before_measurement(img = img)
             self._save_img_for_stream(img = img)
